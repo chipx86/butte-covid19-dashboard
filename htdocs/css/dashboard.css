@@ -1,0 +1,370 @@
+body {
+  background: #C8E2FC;
+  margin: 0;
+  padding: 2em;
+  font-family: Sans-Serif;
+  font-size: 14px;
+}
+
+
+/*
+ * Bar graph.
+ */
+.bc19-c-bar-graph {
+  display: grid;
+  margin: 0;
+  padding: 1em;
+}
+
+.bc19-c-bar-graph.-is-horiz {
+  grid-template-columns: 4em auto;
+  align-items: center;
+}
+
+.bc19-c-bar-graph.-is-horiz .bc19-c-bar-graph__bar {
+  border-radius: 0 10px 10px 0;
+  padding-right: 5px;
+  margin: 5px 0;
+  grid-row: auto;
+  grid-column: 2;
+}
+
+.bc19-c-bar-graph.-is-horiz .bc19-c-bar-graph__label {
+  grid-column: 1;
+  grid-row: auto;
+  text-align: right;
+}
+
+.bc19-c-bar-graph__bar {
+  background: #4783EF;
+  box-sizing: border-box;
+  color: white;
+  font-size: 80%;
+  grid-area: bar;
+  margin: 5px;
+  padding: 3px;
+  text-align: right;
+}
+
+.bc19-c-bar-graph__group {
+  margin: 0 0.5rem;
+}
+
+.bc19-c-bar-graph__label {
+  font-size: 90%;
+  grid-area: label;
+  margin: 5px;
+}
+
+.bc19-c-bar-graph__title {
+  color: #777;
+  font-size: 120%;
+  font-weight: normal;
+  grid-column: 2 span;
+  margin: 0 0 0.5em 0;
+  padding: 0;
+}
+
+
+/*
+ * Counter graph.
+ */
+.bc19-c-counter {
+  display: inline-block;
+  margin: 1.5em;
+  text-align: center;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.bc19-c-counter.-is-good .bc19-c-counter__value {
+  color: #26ab26;
+}
+
+.bc19-c-counter.-is-bad .bc19-c-counter__value {
+  color: red;
+}
+
+.bc19-c-counter__relative {
+  color: #777;
+  line-height: 1.5em;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.bc19-c-counter__relative-value {
+  font-weight: bold;
+}
+
+.bc19-c-counter__relative-value::before {
+  display: inline;
+}
+
+.bc19-c-counter__relative-value.-is-up::before {
+  content: "▴ ";
+}
+
+.bc19-c-counter__relative-value.-is-down::before {
+  content: "▾ ";
+}
+
+.bc19-c-counter__relative-value.-is-up,
+.bc19-c-counter.-up-is-bad .bc19-c-counter__relative-value.-is-down {
+  color: #26ab26;
+}
+
+.bc19-c-counter__relative-value.-is-down,
+.bc19-c-counter.-up-is-bad .bc19-c-counter__relative-value.-is-up {
+  color: red;
+}
+
+.bc19-c-counter__title {
+  color: #777;
+  font-size: 120%;
+  font-weight: normal;
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.bc19-c-counter__value {
+  font-size: 500%;
+}
+
+
+/*
+ * Timeline graph
+ */
+.bc19-c-timeline-graph {
+  margin: 1em 0 0 0;
+  padding: 0 1em 0 0;
+}
+
+.bc19-c-timeline-graph + .bc19-c-timeline-graph {
+  margin-top: 2em;
+}
+
+.bc19-c-timeline-graph__title {
+  color: #777;
+  font-size: 120%;
+  font-weight: normal;
+  margin: 0 0 0.5em 0;
+  padding: 0;
+}
+
+.bc19-c-timeline-graph__subtitle {
+  color: #666;
+  font-size: 100%;
+  font-weight: normal;
+  margin: 0 0 0.5em 0;
+  padding: 0;
+}
+
+.bc19-c-timeline-graph .bb-xgrid-line line {
+  stroke: #999999;
+}
+
+.bc19-c-timeline-graph .bb-xgrid-line text {
+  fill: #AA0000;
+  font-size: 11px;
+  background: white;
+}
+
+
+/*
+ * Main dashboard layout.
+ */
+.bc19-c-dashboard {
+  background: white;
+  display: grid;
+  border: 1px #666 solid;
+  border-radius: 6px;
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  grid-template-rows: auto;
+  grid-template-columns: 20em auto;
+  grid-template-areas:
+    "intro intro"
+    "exports exports"
+    "case-counters case-counters"
+    "cases-breakdown case-graphs"
+    "more-graphs more-graphs"
+    "viral-testing-info viral-testing-info"
+    "viral-test-counters viral-test-counters"
+    "population-test-counters population-test-counters"
+    "viral-test-graphs viral-test-graphs";
+}
+
+.bc19-c-dashboard__header {
+  background: #ffeebc;
+  border-top: 1px rgba(0, 0, 0, 0.4) solid;
+  border-bottom: 1px rgba(0, 0, 0, 0.4) solid;
+  margin: 0;
+  padding: 2em;
+  text-align: center;
+}
+
+.bc19-c-dashboard__header:first-child,
+.bc19-c-dashboard__header + .bc19-c-dashboard__header {
+  border-top: 0;
+}
+
+.bc19-c-dashboard__header.-is-intro {
+  grid-area: intro;
+}
+
+.bc19-c-dashboard__header.-is-exports {
+  color: #333;
+  grid-area: exports;
+  background: #EEE;
+  padding-top: 1em;
+  padding-bottom: 1em;
+  line-height: 1.5;
+}
+
+.bc19-c-dashboard__header.-is-exports a {
+  color: blue;
+  font-weight: bold;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.bc19-c-dashboard__header.-is-exports a {
+  margin-left: 1em;
+}
+
+.bc19-c-dashboard__header.-is-viral-testing-intro {
+  grid-area: viral-testing-info;
+  margin-top: 2em;
+}
+
+.bc19-c-dashboard__header h1,
+.bc19-c-dashboard__header h2 {
+  margin: 0 0 1em 0;
+  padding: 0;
+}
+
+.bc19-c-dashboard__header p:last-child {
+  margin-bottom: 0;
+}
+
+.bc19-c-dashboard__section {
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+.bc19-c-dashboard__section.-has-counters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+}
+
+.bc19-c-dashboard__section.-has-counters .bc19-c-counter {
+  flex: 1 1 0;
+}
+
+.bc19-c-dashboard__section.-is-case-counters {
+  grid-area: case-counters;
+}
+
+.bc19-c-dashboard__section.-is-case-graphs {
+  grid-area: case-graphs;
+}
+
+.bc19-c-dashboard__section.-is-cases-breakdown {
+  grid-area: cases-breakdown;
+  padding-right: 1em;
+}
+
+.bc19-c-dashboard__section.-is-population-test-counters {
+  grid-area: population-test-counters;
+}
+
+.bc19-c-dashboard__section.-is-viral-test-counters {
+  grid-area: viral-test-counters;
+}
+
+.bc19-c-dashboard__section.-is-viral-test-graphs {
+  grid-area: viral-test-graphs;
+}
+
+.bc19-c-dashboard__section.-is-more-graphs {
+  grid-area: more-graphs;
+}
+
+.bc19-c-dashboard__section.-is-more-graphs.-is-open #more-graphs-expander {
+  display: none;
+}
+
+.bc19-c-dashboard__section.-is-more-graphs.-is-open #more-graphs-subsection {
+  display: grid;
+  grid-template-columns: 50% 50%;
+  align-items: end;
+}
+
+#more-graphs-expander {
+  background: #4989E8;
+  border-radius: 10px;
+  color: white;
+  display: block;
+  margin: 2em 2em 0 2em;
+  padding: 1.5em;
+  text-align: center;
+  text-decoration: none;
+}
+
+#more-graphs-subsection {
+  display: none;
+}
+
+#more-graphs-subsection .bc19-c-timeline-graph {
+  flex: 1 1 0;
+}
+
+#twitter-widget-0,
+.twitter-follow-button {
+  color: blue;
+  text-decoration: none;
+}
+
+
+/*
+ * Mobile rules.
+ */
+@media only screen and (max-width: 800px) {
+  body {
+    padding: 0;
+  }
+
+  .bc19-c-dashboard {
+    box-shadow: none;
+    border: 0;
+    margin: 0;
+    grid-template-areas:
+      "intro intro"
+      "exports exports"
+      "case-counters case-counters"
+      "cases-breakdown cases-breakdown"
+      "case-graphs case-graphs"
+      "more-graphs more-graphs"
+      "viral-testing-info viral-testing-info"
+      "viral-test-counters viral-test-counters"
+      "population-test-counters population-test-counters"
+      "viral-test-graphs viral-test-graphs";
+
+      padding-bottom: 2em;
+  }
+
+  .bc19-c-dashboard__header p {
+    text-align: justify;
+  }
+
+  .bc19-c-dashboard__header h1 {
+    font-size: 140%;
+  }
+
+  .bc19-c-dashboard__section.-is-more-graphs.-is-open #more-graphs-subsection {
+    grid-template-columns: 100%;
+  }
+}

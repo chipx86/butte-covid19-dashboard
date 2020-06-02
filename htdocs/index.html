@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html>
+ <head>
+  <title>Unofficial Butte County COVID-19 Dashboard</title>
+  <meta charset="utf-8">
+  <meta http-equiv="content-type: text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="title" content="Unofficial Butte County COVID-19 Dashboard">
+  <meta name="description" content="Detailed trends and information on the COVID-19 situation in Butte County.">
+  <meta property="og:description" content="Detailed trends and information on the COVID-19 situation in Butte County.">
+  <meta property="og:image" content="images/preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Preview of the COVID-19 Statistics">
+  <meta property="og:site_name" content="Unofficial Butte County COVID-19 Dashboard">
+  <meta property="og:title" content="Unofficial Butte County COVID-19 Dashboard">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://bc19.live">
+  <meta property="og:updated_time" content="@@BUILDTIME@@">
+  <meta property="twitter:description" content="Detailed trends and information on the COVID-19 situation in Butte County.">
+  <meta property="twitter:image" content="images/preview.png">
+  <meta property="twitter:image:width" content="1200">
+  <meta property="twitter:image:height" content="630">
+  <meta property="twitter:image:alt" content="Preview of the COVID-19 Statistics">
+  <meta property="twitter:site" content="@chipx86">
+  <meta property="twitter:title" content="Unofficial Butte County COVID-19 Dashboard">
+  <meta property="twitter:updated_time" content="@@BUILDTIME@@">
+
+  <link rel="stylesheet" href="css/dashboard.css?@@BUILDTIME@@">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/1.12.10/billboard.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/1.12.10/theme/graph.css">
+ </head>
+ <body>
+  <div class="bc19-c-dashboard">
+   <header class="bc19-c-dashboard__header -is-intro"
+           aria-label="Dashboard introduction">
+    <!--
+    <a class="twitter-follow-button" href="https://twitter.com/chipx86"
+       data-size="large" data-show-count="false">Follow on Twitter</a>
+    -->
+
+    <h1>Butte County COVID-19 Cases</h1>
+    <p>
+     Case/testing data current as of
+     <span id="case_updated_date"><em>&lt;checking...&gt;</em></span> (updated
+     weekdays). Hospital data current as of
+     <span id="hospital_updated_date"><em>&lt;checking...&gt;</em></span>
+     (generally one day behind case data).
+    </p>
+    <p>
+     Data independently assembled by Christian Hammond based on the
+     <a href="https://infogram.com/1pe66wmyjnmvkrhm66x9362kp3al60r57ex">Butte
+     County Dashboard</a>,
+     <a href="https://public.tableau.com/shared/WNZ72P8FP?:display_count=y&:origin=viz_share_link">State hospital data</a>,
+     and news reports.
+    </p>
+    <p>
+     Some data is incomplete, due to lack of historical county data. If you
+     have any missing data, please <a href="https://twitter.com/chipx86">reach
+     out!</a>
+    </p>
+   </header>
+
+   <header class="bc19-c-dashboard__header -is-exports"
+           aria-label="Exported data">
+    For the data enthusiasts:
+
+    <a class="bc19-c-dashboard__export"
+       href="data/json/timeline.json?@@BUILDTIME@@">JSON Data</a>
+    <a class="bc19-c-dashboard__export"
+       href="data/csv/timeline.csv?@@BUILDTIME@@">CSV Data</a>
+    <a class="bc19-c-dashboard__export"
+       href="https://docs.google.com/spreadsheets/d/1cDD-vcOT6mZIgv4S3yflAyqUx9w-BbQ_vv9_bkk00lg/edit?usp=sharing">Spreadsheet (So Much Data)</a>
+   </header>
+
+   <section class="bc19-c-dashboard__section -has-counters
+                   -is-case-counters"
+            aria-label="General case-related counts">
+    <figure class="bc19-c-counter -up-is-bad" id="total-cases-counter">
+     <h3 class="bc19-c-counter__title">Total Cases</h3>
+     <div class="bc19-c-counter__value">0</div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       since yesterday
+     </div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       in the last 7 days
+     </div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       in the last 30 days
+     </div>
+    </figure>
+
+    <figure class="bc19-c-counter -up-is-bad" id="deaths-counter">
+     <h3 class="bc19-c-counter__title">Total Deaths</h3>
+     <div class="bc19-c-counter__value">0</div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       since yesterday
+     </div>
+    </figure>
+
+    <figure class="bc19-c-counter -up-is-bad" id="in-isolation-counter">
+     <h3 class="bc19-c-counter__title">In Isolation</h3>
+     <div class="bc19-c-counter__value">0</div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       since previous day
+     </div>
+    </figure>
+
+    <figure class="bc19-c-counter -up-is-bad" id="hospitalized-counter">
+     <h3 class="bc19-c-counter__title">Hospitalized (State Data)</h3>
+     <div class="bc19-c-counter__value">0</div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       since previous day
+     </div>
+    </figure>
+
+    <figure class="bc19-c-counter -up-is-bad" id="icu-counter">
+     <h3 class="bc19-c-counter__title">In ICU</h3>
+     <div class="bc19-c-counter__value">0</div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       since previous day
+     </div>
+    </figure>
+   </section>
+
+   <section class="bc19-c-dashboard__section -is-cases-breakdown"
+            aria-label="Breakdown of Cases">
+    <figure class="bc19-c-bar-graph -is-horiz" id="by_age_graph">
+     <h3 class="bc19-c-bar-graph__title">Total Cases By Age Group</h3>
+    </figure>
+
+    <figure class="bc19-c-bar-graph -is-horiz" id="by_region_graph">
+     <h3 class="bc19-c-bar-graph__title">Total Cases By Region</h3>
+    </figure>
+
+    <figure class="bc19-c-bar-graph -is-horiz" id="by_hospital_graph">
+     <h3 class="bc19-c-bar-graph__title">Current Cases By Hospital</h3>
+    </figure>
+   </section>
+
+   <section class="bc19-c-dashboard__section -is-case-graphs">
+    <figure class="bc19-c-timeline-graph">
+     <h3 class="bc19-c-timeline-graph__title">Total Confirmed Cases</h3>
+     <div id="total_cases_graph"></div>
+    </figure>
+
+    <figure class="bc19-c-timeline-graph">
+     <h3 class="bc19-c-timeline-graph__title">New Cases</h3>
+     <div id="new_cases_graph"></div>
+    </figure>
+
+    <figure class="bc19-c-timeline-graph">
+     <h3 class="bc19-c-timeline-graph__title">Deaths</h3>
+     <div id="deaths_graph"></div>
+    </figure>
+   </section>
+
+   <section class="bc19-c-dashboard__section -is-more-graphs"
+            id="more-graphs-section"
+            aria-label="More Graphs">
+    <a id="more-graphs-expander" href="#all-charts">View More Graphs</a>
+
+    <div id="more-graphs-subsection">
+     <figure class="bc19-c-timeline-graph">
+      <h3 class="bc19-c-timeline-graph__title"
+          id="cases_by_region_timeline_graph_label">
+       Timeline of Cases By Region
+      </h3>
+      <div id="cases_by_region_timeline_graph"
+           aria-labelled-by="cases_by_region_timeline_graph_label"></div>
+     </figure>
+
+     <figure class="bc19-c-timeline-graph">
+      <h3 class="bc19-c-timeline-graph__title"
+          id="cases_by_age_timeline_graph_label">
+       Timeline of Cases By Age
+      </h3>
+      <div id="cases_by_age_timeline_graph"
+           aria-labelled-by="cases_by_age_timeline_graph_label"></div>
+     </figure>
+
+     <figure class="bc19-c-timeline-graph">
+      <h3 class="bc19-c-timeline-graph__title"
+          id="isolation_timeline_graph_label">
+       People In Isolation
+      </h3>
+      <div id="isolation_timeline_graph"
+           aria-labelled-by="isolation_timeline_graph_label"></div>
+     </figure>
+
+     <figure class="bc19-c-timeline-graph">
+      <h3 class="bc19-c-timeline-graph__title"
+          id="hospitalizations_icu_timeline_graph_label">
+       Total Hospitalizations vs. ICU
+      </h3>
+      <div id="hospitalizations_icu_timeline_graph"
+           aria-labelled-by="hospitalizations_icu_timeline_graph_label"></div>
+     </figure>
+    </div>
+   </section>
+
+   <header class="bc19-c-dashboard__header -is-viral-testing-intro"
+           aria-label="Viral tests introduction">
+    <h2>Viral Testing</h2>
+    <p>
+     <strong>NOTE:</strong> The number of tests performed is MORE THAN the
+     number of people tested! There is <em>no</em> public data on the number
+     of <strong>people</strong> tested.
+    </p>
+   </header>
+
+   <section class="bc19-c-dashboard__section -has-counters
+                   -is-viral-test-counters"
+            aria-label="Viral test statistics">
+    <figure class="bc19-c-counter" id="total-tests-counter">
+     <h3 class="bc19-c-counter__title">Total Tests (NOT People!)</h3>
+     <div class="bc19-c-counter__value">0</div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       since yesterday
+     </div>
+    </figure>
+
+    <figure class="bc19-c-counter -is-bad -up-is-bad"
+         id="positive-test-results-counter">
+     <h3 class="bc19-c-counter__title">Positive Test Results</h3>
+     <div class="bc19-c-counter__value">0</div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       since yesterday
+     </div>
+    </figure>
+
+    <figure class="bc19-c-counter -up-is-bad" id="positive-test-rate-counter">
+     <h3 class="bc19-c-counter__title">Test Positivity Rate</h3>
+     <div class="bc19-c-counter__value">0</div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       since previous day
+     </div>
+    </figure>
+   </section>
+
+   <section class="bc19-c-dashboard__section -has-counters
+                   -is-population-test-counters"
+            aria-label="Population testing statistics">
+    <figure class="bc19-c-counter" id="county-population-counter">
+     <h3 class="bc19-c-counter__title">County Population (2019)</h3>
+     <div class="bc19-c-counter__value"></div>
+    </figure>
+
+    <figure class="bc19-c-counter -is-good" id="pop-tested-pct-counter">
+     <h3 class="bc19-c-counter__title">Population Tested</h3>
+     <div class="bc19-c-counter__value"></div>
+     <div class="bc19-c-counter__relative">
+      fewer than <span id="pop-tested-pct-counter-people"></span> people
+     </div>
+    </figure>
+
+    <figure class="bc19-c-counter -is-bad" id="pop-not-tested-pct-counter">
+     <h3 class="bc19-c-counter__title">Population NOT Tested</h3>
+     <div class="bc19-c-counter__value"></div>
+     <div class="bc19-c-counter__relative">
+      more than <span id="pop-not-tested-pct-counter-people"></span> people
+     </div>
+    </figure>
+   </section>
+
+   <section class="bc19-c-dashboard__section -is-viral-test-graphs"
+            aria-label="Viral testing graphs">
+    <figure class="bc19-c-timeline-graph">
+     <h3 class="bc19-c-timeline-graph__title">
+       % of Cases In Each Batch of Test Results
+     </h3>
+     <h4 class="bc19-c-timeline-graph__subtitle">
+       Most early historical data is unavailable
+     </h4>
+     <div id="cases_in_test_results_graph"></div>
+    </figure>
+
+    <figure class="bc19-c-timeline-graph">
+     <h3 class="bc19-c-timeline-graph__title">
+       Test Results
+     </h3>
+     <h4 class="bc19-c-timeline-graph__subtitle">
+       Most early historical data is unavailable
+     </h4>
+     <div id="test_results_graph"></div>
+    </figure>
+   </section>
+  </div>
+
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/1.12.10/billboard.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/1.12.10/plugin/billboardjs-plugin-textoverlap.min.js"></script>
+  <script src="js/dashboard.js?@@BUILDTIME@@"></script>
+  <script>BC19.setupGraphs("@@BUILDTIME@@");</script>
+  <!-- <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script> -->
+ </body>
+</html>
