@@ -229,10 +229,6 @@ body {
   white-space: nowrap;
 }
 
-.bc19-c-dashboard__header.-is-exports a {
-  margin-left: 1em;
-}
-
 .bc19-c-dashboard__header.-is-viral-testing-intro {
   grid-area: viral-testing-info;
   margin-top: 2em;
