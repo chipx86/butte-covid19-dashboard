@@ -38,8 +38,8 @@ Data Exports
 
 The following data is made available for others to use:
 
-* [BC19.live Timeline Data (CSV)](https://bc19.live/data/json/timeline.json)
-* [BC19.live Timeline Data (JSON)](https://bc19.live/data/csv/timeline.csv)
+* [BC19.live Timeline Data (CSV)](https://bc19.live/data/csv/timeline.csv)
+* [BC19.live Timeline Data (JSON)](https://bc19.live/data/json/timeline.json)
 * [BC19.live Timeline Data (Google Sheets)](https://docs.google.com/spreadsheets/d/1cDD-vcOT6mZIgv4S3yflAyqUx9w-BbQ_vv9_bkk00lg/edit?usp=sharing)
 * [State Skilled Nursing Facilities - Butte County Only (CSV)](https://bc19.live/data/csv/skilled-nursing-facilities.csv)
 * [State Hospital Case Statistics - Butte County Only (CSV)](https://bc19.live/data/csv/state-hospitals.csv)

@@ -300,6 +300,26 @@ BC19.setupBBGraph = function(options) {
     const graph = bb.generate(options);
     BC19.graphs.push(graph);
 
+    if (!options.tooltip || !options.tooltip.format) {
+        graph.config(
+            'tooltip.format.value',
+            function(_graph, value, ratio, id, index) {
+                if (index > 0) {
+                    const prevValue =
+                        _graph.data(id)[0].values[index - 1].value;
+
+                    if (prevValue > value) {
+                        return value + ' (-' + (prevValue - value) + ')';
+                    } else if (prevValue < value) {
+                        return value + ' (+' + (value - prevValue) + ')';
+                    }
+                }
+
+                return value;
+            }.bind(this, graph));
+    }
+
+
     if (zoomGroup) {
         if (BC19.graphZoomGroups[zoomGroup] === undefined) {
             BC19.graphZoomGroups[zoomGroup] = [graph];
@@ -769,6 +789,15 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         },
         legend: {
             show: true,
+        },
+        tooltip: {
+            linked: true,
+
+            format: {
+                value: (value, ratio, id) => {
+                    return value + ' (' + (ratio * 100).toFixed(1) + '%)';
+                },
+            },
         },
         zoomGroup: 'viral-tests',
     });
