@@ -998,8 +998,8 @@ BC19.showMoreGraphs = function() {
             ],
             names: {
                 cases: 'Confirmed Cases',
-                hospitalizations: 'Currently In Isolation',
-                icu: 'Total Released From Isolation',
+                hospitalizations: 'All Hospitalizations',
+                icu: 'Just In ICU',
             },
             order: null,
             types: {
