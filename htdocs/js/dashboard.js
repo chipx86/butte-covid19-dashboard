@@ -572,7 +572,7 @@ BC19.setupByRegionGraph = function(timeline) {
 
 
 BC19.setupByHospitalGraph = function(timeline) {
-    const dateInfo = timeline.latestPerHospitalDataRow;
+    const dateInfo = BC19.latestPerHospitalDataRow;
     const hospitalData = dateInfo.hospitalizations.state_data;
 
     BC19.setupBarGraph(
