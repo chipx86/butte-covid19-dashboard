@@ -188,7 +188,7 @@ BC19.processTimelineData = function(timeline) {
 
         const stateData = row.hospitalizations.state_data;
 
-        if (stateData.enloe_hospital !== null) {
+        if (stateData.positive !== null) {
             latestStateDataRow = row;
         }
     }
