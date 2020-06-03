@@ -17,6 +17,7 @@ mkdir -p $BUILD_DIR/scripts
 
 $SOURCE_DIR/scripts/build-exports.py
 
+cp $SOURCE_DIR/htdocs/*.png $BUILD_DIR/htdocs
 cp $SOURCE_DIR/htdocs/css/*.css $BUILD_DIR/htdocs/css
 cp $SOURCE_DIR/htdocs/images/*.png $BUILD_DIR/htdocs/images
 cp $SOURCE_DIR/htdocs/js/*.js $BUILD_DIR/htdocs/js
