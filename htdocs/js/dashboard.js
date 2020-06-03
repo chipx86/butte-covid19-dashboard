@@ -123,6 +123,7 @@ BC19.processTimelineData = function(timeline) {
 
     let latestCasesRow;
     let latestStateDataRow;
+    let latestPerHospitalDataRow;
 
     for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
@@ -191,6 +192,10 @@ BC19.processTimelineData = function(timeline) {
         if (stateData.positive !== null) {
             latestStateDataRow = row;
         }
+
+        if (stateData.enloe_hospital !== null) {
+            latestPerHospitalDataRow = row;
+        }
     }
 
     if (latestCasesRow === null) {
@@ -207,6 +212,8 @@ BC19.processTimelineData = function(timeline) {
 
     BC19.latestCasesRow = latestCasesRow;
     BC19.latestStateDataRow = latestStateDataRow;
+    BC19.latestPerHospitalDataRow = latestPerHospitalDataRow;
+
     BC19.graphData = {
         dates: graphDates,
         notes: graphNotes,
@@ -565,7 +572,7 @@ BC19.setupByRegionGraph = function(timeline) {
 
 
 BC19.setupByHospitalGraph = function(timeline) {
-    const dateInfo = timeline.latestStateDataRow;
+    const dateInfo = timeline.latestPerHospitalDataRow;
     const hospitalData = dateInfo.hospitalizations.state_data;
 
     BC19.setupBarGraph(
