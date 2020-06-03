@@ -198,7 +198,7 @@ def convert_butte_dashboard_to_csv(info, in_fp, out_filename):
         ('Confirmed Cases', ('confirmed_cases',)),
         ('Deaths', ('deaths',)),
         ('Currently In Isolation', ('in_isolation', 'current')),
-        ('Total Released From Isolation', ('in_isolation', 'released')),
+        ('Total Released From Isolation', ('in_isolation', 'total_released')),
         ('Total Viral Tests', ('viral_tests', 'total')),
         ('Daily Viral Test Results', ('viral_tests', 'results')),
         ('Currently Hospitalized', ('hospitalized', 'current')),
