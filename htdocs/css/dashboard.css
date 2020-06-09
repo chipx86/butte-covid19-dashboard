@@ -80,8 +80,19 @@ a:visited {
   color: #26ab26;
 }
 
+.bc19-c-bar-graph__rel-value.-is-down::before {
+  content: "▼ ";
+  font-size: 80%;
+  vertical-align: middle;
+}
+
 .bc19-c-bar-graph__rel-value.-is-up {
   color: red;
+}
+
+.bc19-c-bar-graph__rel-value.-is-up::before {
+  content: "▲ ";
+  font-size: 80%;
 }
 
 .bc19-c-bar-graph__title {
@@ -126,14 +137,15 @@ a:visited {
 
 .bc19-c-counter__relative-value::before {
   display: inline;
+  font-size: 60%;
 }
 
 .bc19-c-counter__relative-value.-is-up::before {
-  content: "▴ ";
+  content: "▲ ";
 }
 
 .bc19-c-counter__relative-value.-is-down::before {
-  content: "▾ ";
+  content: "▼ ";
 }
 
 .bc19-c-counter__relative-value.-is-up,

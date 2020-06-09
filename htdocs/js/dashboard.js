@@ -373,10 +373,10 @@ BC19.setupBarGraph = function(graph, options, data) {
             let relClass = '';
 
             if (d.relValue > 0) {
-                relValue = '+' + d.relValue;
+                relValue = d.relValue;
                 relClass = '-is-up';
             } else if (d.relValue < 0) {
-                relValue = d.relValue;
+                relValue = -d.relValue;
                 relClass = '-is-down';
             }
 
