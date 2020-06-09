@@ -5,7 +5,7 @@ import json
 import os
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.request import urlopen
 
 
@@ -167,15 +167,27 @@ def parse_butte_dashboard(info, in_fp, out_filename):
             'dates': [],
         }
 
+    dates_data = dataset['dates']
+
     try:
-        latest_date_key = dataset['dates'][-1]['date']
+        latest_date_key = dates_data[-1]['date']
     except (IndexError, KeyError):
         latest_date_key = None
 
     if latest_date_key == date_key:
-        dataset['dates'][-1] = row_result
+        dates_data[-1] = row_result
     else:
-        dataset['dates'].append(row_result)
+        # See if we have days we're missing. If so, we need to fill in the
+        # gaps. This is mainly to keep the spreadsheet rows aligned.
+        latest_date = datetime.strptime(latest_date_key, '%Y-%m-%d')
+
+        for day in range(1, (datestamp - latest_date).days):
+            day_str = (latest_date + timedelta(days=day)).strftime('%Y-%m-%d')
+            dates_data.append({
+                'date': day_str,
+            })
+
+        dates_data.append(row_result)
 
     with open(out_filename, 'w') as fp:
         json.dump(dataset,
@@ -188,6 +200,9 @@ def convert_butte_dashboard_to_csv(info, in_fp, out_filename):
     def _get_key_value(d, paths):
         for path in paths:
             d = d.get(path)
+
+            if d is None:
+                break
 
         return d
 
