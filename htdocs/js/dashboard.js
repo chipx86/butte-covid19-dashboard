@@ -32,6 +32,9 @@ window.BC19 = {
     graphsData: {},
     graphZoomGroups: {},
     zoomingGraphs: {},
+    latestCasesRow: null,
+    latestStateDataRow: null,
+    latestPerHospitalDataRow: null,
     commonTimelineOptions: {
         bar: {
             radius: {
@@ -360,8 +363,23 @@ BC19.setupBarGraph = function(graph, options, data) {
                 .attr('class', 'bc19-c-bar-graph__bar')
                 .attr('id', 'by_age_graph_' + d.data_id)
                 .style('width', x(d.value) + '%')
-                .text(showPct ? Math.round((d.value / total) * 100) + '%'
-                              : d.value)
+                .text(showPct
+                      ? d.value + '  ' +
+                        Math.round((d.value / total) * 100) + '%'
+                      : d.value)
+                .node());
+
+            let relValue = '';
+
+            if (d.relValue > 0) {
+                relValue = '+' + d.relValue;
+            } else if (d.relValue < 0) {
+                relValue = d.relValue;
+            }
+
+            this.appendChild(d3.create('span')
+                .attr('class', 'bc19-c-bar-graph__rel-value')
+                .text(relValue)
                 .node());
         });
 };
@@ -526,66 +544,74 @@ BC19.setupCounters = function(timeline) {
 
 
 BC19.setupByAgeGraph = function(timeline) {
-    const ageRanges = timeline.latestCasesRow.age_ranges_in_years;
+    const ageRanges = BC19.latestCasesRow.age_ranges_in_years;
+    const prevIndex = BC19.latestCasesRow.i - 1;
+    const prevAgeRanges = timeline.dates[prevIndex].age_ranges_in_years;
 
     BC19.setupBarGraph(
         d3.select('#by_age_graph'),
-        {
-            pct: true,
-        },
+        {},
         [
             {
                 data_id: '0_17',
                 label: '0-17',
                 value: ageRanges['0-17'],
+                relValue: ageRanges['0-17'] - prevAgeRanges['0-17'],
             },
             {
                 data_id: '18_49',
                 label: '18-49',
                 value: ageRanges['18-49'],
+                relValue: ageRanges['18-49'] - prevAgeRanges['18-49'],
             },
             {
                 data_id: '50_64',
                 label: '50-64',
                 value: ageRanges['50-64'],
+                relValue: ageRanges['50-64'] - prevAgeRanges['50-64'],
             },
             {
                 data_id: '65_plus',
                 label: '65+',
                 value: ageRanges['65_plus'],
+                relValue: ageRanges['65_plus'] - prevAgeRanges['65_plus'],
             },
         ]);
 };
 
 
 BC19.setupByRegionGraph = function(timeline) {
-    const regions = timeline.latestCasesRow.regions;
+    const regions = BC19.latestCasesRow.regions;
+    const prevIndex = BC19.latestCasesRow.i - 1;
+    const prevRegions = timeline.dates[prevIndex].regions;
 
     BC19.setupBarGraph(
         d3.select('#by_region_graph'),
-        {
-            pct: true,
-        },
+        {},
         [
             {
                 data_id: 'chico',
                 label: 'Chico',
                 value: regions.chico.cases,
+                relValue: regions.chico.cases - prevRegions.chico.cases,
             },
             {
                 data_id: 'oroville',
                 label: 'Oroville',
                 value: regions.oroville.cases,
+                relValue: regions.oroville.cases - prevRegions.oroville.cases,
             },
             {
                 data_id: 'gridley',
                 label: 'Gridley',
                 value: regions.gridley.cases,
+                relValue: regions.gridley.cases - prevRegions.gridley.cases,
             },
             {
                 data_id: 'other',
                 label: 'Other',
                 value: regions.other.cases,
+                relValue: regions.other.cases - prevRegions.other.cases,
             },
         ]);
 };
@@ -593,7 +619,9 @@ BC19.setupByRegionGraph = function(timeline) {
 
 BC19.setupByHospitalGraph = function(timeline) {
     const dateInfo = BC19.latestPerHospitalDataRow;
-    const hospitalData = dateInfo.hospitalizations.state_data;
+    const prevIndex = BC19.latestPerHospitalDataRow.i - 1;
+    const data = dateInfo.hospitalizations.state_data;
+    const prevData = timeline.dates[prevIndex].hospitalizations.state_data;
 
     BC19.setupBarGraph(
         d3.select('#by_hospital_graph'),
@@ -602,12 +630,14 @@ BC19.setupByHospitalGraph = function(timeline) {
             {
                 data_id: 'enloe',
                 label: 'Enloe Hospital',
-                value: hospitalData.enloe_hospital,
+                value: data.enloe_hospital,
+                relValue: data.enloe_hospital - prevData.enloe_hospital,
             },
             {
                 data_id: 'oroville',
                 label: 'Oroville Hospital',
-                value: hospitalData.oroville_hospital,
+                value: data.oroville_hospital,
+                relValue: data.oroville_hospital - prevData.oroville_hospital,
             },
         ]);
 };

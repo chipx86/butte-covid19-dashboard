@@ -27,6 +27,7 @@ body {
   margin: 5px 0;
   grid-row: auto;
   grid-column: 2;
+  min-width: 1.5em;
 }
 
 .bc19-c-bar-graph.-is-horiz .bc19-c-bar-graph__label {
@@ -35,15 +36,22 @@ body {
   text-align: right;
 }
 
+.bc19-c-bar-graph.-is-horiz .bc19-c-bar-graph__rel-value {
+  grid-column: 3;
+  grid-row: auto;
+  text-align: right;
+}
+
 .bc19-c-bar-graph__bar {
   background: #4783EF;
   box-sizing: border-box;
   color: white;
-  font-size: 80%;
+  font-size: 70%;
   grid-area: bar;
   margin: 5px;
   padding: 3px;
   text-align: right;
+  white-space: nowrap;
 }
 
 .bc19-c-bar-graph__group {
@@ -54,6 +62,10 @@ body {
   font-size: 90%;
   grid-area: label;
   margin: 5px;
+}
+
+.bc19-c-bar-graph__rel-value {
+  font-size: 70%;
 }
 
 .bc19-c-bar-graph__title {
