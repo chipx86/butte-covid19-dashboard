@@ -177,9 +177,12 @@ body {
 }
 
 .bc19-c-timeline-graph .bb-xgrid-line text {
-  fill: #AA0000;
+  fill: #AA3333;
   font-size: 11px;
   background: white;
+  stroke-width: 3;
+  stroke: white;
+  stroke-opacity: 0.2;
 }
 
 
