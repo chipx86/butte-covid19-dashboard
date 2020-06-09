@@ -7,6 +7,14 @@ body {
 }
 
 
+a:link,
+a:visited {
+  color: blue;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+
 /*
  * Bar graph.
  */
@@ -215,7 +223,19 @@ body {
     "viral-testing-info viral-testing-info"
     "viral-test-counters viral-test-counters"
     "population-test-counters population-test-counters"
-    "viral-test-graphs viral-test-graphs";
+    "viral-test-graphs viral-test-graphs"
+    "footer footer";
+}
+
+.bc19-c-dashboard__footer {
+  padding: 3em 0.5em 0.5em 0.5em;
+  text-align: center;
+  grid-area: footer;
+}
+
+.bc19-c-dashboard__footer p {
+  margin-top: 3em;
+  color: #999;
 }
 
 .bc19-c-dashboard__header {
@@ -360,17 +380,19 @@ body {
     box-shadow: none;
     border: 0;
     margin: 0;
+    grid-template-columns: auto;
     grid-template-areas:
-      "intro intro"
-      "exports exports"
-      "case-counters case-counters"
-      "cases-breakdown cases-breakdown"
-      "case-graphs case-graphs"
-      "more-graphs more-graphs"
-      "viral-testing-info viral-testing-info"
-      "viral-test-counters viral-test-counters"
-      "population-test-counters population-test-counters"
-      "viral-test-graphs viral-test-graphs";
+      "intro"
+      "exports"
+      "case-counters"
+      "cases-breakdown"
+      "case-graphs"
+      "more-graphs"
+      "viral-testing-info"
+      "viral-test-counters"
+      "population-test-counters"
+      "viral-test-graphs"
+      "footer";
 
       padding-bottom: 2em;
   }

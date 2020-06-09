@@ -37,30 +37,15 @@
   <div class="bc19-c-dashboard">
    <header class="bc19-c-dashboard__header -is-intro"
            aria-label="Dashboard introduction">
-    <!--
-    <a class="twitter-follow-button" href="https://twitter.com/chipx86"
-       data-size="large" data-show-count="false">Follow on Twitter</a>
-    -->
-
     <h1>Butte County COVID-19 Cases</h1>
     <p>
-     Case/testing data current as of
-     <span id="case_updated_date"><em>&lt;checking...&gt;</em></span> (updated
-     weekdays). Hospital data current as of
-     <span id="hospital_updated_date"><em>&lt;checking...&gt;</em></span>
-     (generally one day behind case data).
-    </p>
-    <p>
-     Data independently assembled by Christian Hammond based on the
+     Data independently assembled by <a href="https://twitter.com/chipx86">
+     Christian Hammond</a> based on the
      <a href="https://infogram.com/1pe66wmyjnmvkrhm66x9362kp3al60r57ex">Butte
-     County Dashboard</a>,
-     <a href="https://public.tableau.com/shared/WNZ72P8FP?:display_count=y&:origin=viz_share_link">State hospital data</a>,
+     County Dashboard</a> (<span id="case_updated_date"><em>checking...</em></span>) and
+     <a href="https://public.tableau.com/shared/WNZ72P8FP?:display_count=y&:origin=viz_share_link">State hospital data</a>
+     (<span id="hospital_updated_date"><em>checking...</em></span>)
      and news reports.
-    </p>
-    <p>
-     Some data is incomplete, due to lack of historical county data. If you
-     have any missing data, please <a href="https://twitter.com/chipx86">reach
-     out!</a>
     </p>
    </header>
 
@@ -213,6 +198,11 @@
      number of people tested! There is <em>no</em> public data on the number
      of <strong>people</strong> tested.
     </p>
+    <p>
+     Testing data before May 11 is unavailable. Please
+     <a href="https://twitter.com/chipx86">reach out</a> if you have any
+     historical data.
+    </p>
    </header>
 
    <section class="bc19-c-dashboard__section -has-counters
@@ -294,6 +284,15 @@
      <div id="test_results_graph"></div>
     </figure>
    </section>
+
+   <footer class="bc19-c-dashboard__footer">
+    <a href="#" class="bc19-c-dashboard__back-to-top">🔼 Back to Top</a>
+
+    <p>
+     Copyright &copy; 2020 <a href="https://twitter.com/chipx86">Christian
+     Hammond</a>.
+    </p>
+   </footer>
   </div>
 
   <script src="https://d3js.org/d3.v5.min.js"></script>
