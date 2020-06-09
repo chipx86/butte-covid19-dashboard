@@ -68,6 +68,14 @@ body {
   font-size: 70%;
 }
 
+.bc19-c-bar-graph__rel-value.-is-down {
+  color: #26ab26;
+}
+
+.bc19-c-bar-graph__rel-value.-is-up {
+  color: red;
+}
+
 .bc19-c-bar-graph__title {
   color: #777;
   font-size: 120%;

@@ -370,15 +370,18 @@ BC19.setupBarGraph = function(graph, options, data) {
                 .node());
 
             let relValue = '';
+            let relClass = '';
 
             if (d.relValue > 0) {
                 relValue = '+' + d.relValue;
+                relClass = '-is-up';
             } else if (d.relValue < 0) {
                 relValue = d.relValue;
+                relClass = '-is-down';
             }
 
             this.appendChild(d3.create('span')
-                .attr('class', 'bc19-c-bar-graph__rel-value')
+                .attr('class', 'bc19-c-bar-graph__rel-value ' + relClass)
                 .text(relValue)
                 .node());
         });
