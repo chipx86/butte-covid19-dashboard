@@ -371,17 +371,21 @@ BC19.setupBarGraph = function(graph, options, data) {
 
             let relValue = '';
             let relClass = '';
+            let relTitle;
 
             if (d.relValue > 0) {
                 relValue = d.relValue;
                 relClass = '-is-up';
+                relTitle = '+' + relValue + ' since yesterday';
             } else if (d.relValue < 0) {
                 relValue = -d.relValue;
                 relClass = '-is-down';
+                relTitle = '-' + relValue + ' since yesterday';
             }
 
             this.appendChild(d3.create('span')
                 .attr('class', 'bc19-c-bar-graph__rel-value ' + relClass)
+                .attr('title', relTitle)
                 .text(relValue)
                 .node());
         });
