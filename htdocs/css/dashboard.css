@@ -216,7 +216,6 @@ a:visited {
   grid-template-columns: 20em auto;
   grid-template-areas:
     "intro intro"
-    "exports exports"
     "case-counters case-counters"
     "cases-breakdown case-graphs"
     "more-graphs more-graphs"
@@ -233,8 +232,12 @@ a:visited {
   grid-area: footer;
 }
 
+.bc19-c-dashboard__footer nav a {
+  display: block;
+  margin: 2em 0;
+}
+
 .bc19-c-dashboard__footer p {
-  margin-top: 3em;
   color: #999;
 }
 
@@ -254,22 +257,6 @@ a:visited {
 
 .bc19-c-dashboard__header.-is-intro {
   grid-area: intro;
-}
-
-.bc19-c-dashboard__header.-is-exports {
-  color: #333;
-  grid-area: exports;
-  background: #EEE;
-  padding-top: 1em;
-  padding-bottom: 1em;
-  line-height: 1.5;
-}
-
-.bc19-c-dashboard__header.-is-exports a {
-  color: blue;
-  font-weight: bold;
-  text-decoration: none;
-  white-space: nowrap;
 }
 
 .bc19-c-dashboard__header.-is-viral-testing-intro {
@@ -383,7 +370,6 @@ a:visited {
     grid-template-columns: auto;
     grid-template-areas:
       "intro"
-      "exports"
       "case-counters"
       "cases-breakdown"
       "case-graphs"
