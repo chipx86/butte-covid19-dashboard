@@ -60,17 +60,13 @@ window.BC19 = {
 };
 
 
-BC19.parseDate = function(dateStr) {
-    return new Date(dateStr + 'T00:00:00-07:00');
+BC19.parseMDate = function(dateStr) {
+    return moment(dateStr + 'T00:00:00-07:00', 'YYYY-MM-DD');
 };
 
 
-BC19.formatDate = function(date) {
-    return date.toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-    });
+BC19.formatMDate = function(mDate) {
+    return mDate.format('LL');
 };
 
 
@@ -1070,10 +1066,10 @@ BC19.setupGraphs = function(buildTimeStamp) {
             timeline.latestStateDataRow = BC19.latestStateDataRow;
 
             document.getElementById('case_updated_date').innerText =
-                BC19.formatDate(BC19.parseDate(BC19.latestCasesRow.date));
+                BC19.formatMDate(BC19.parseMDate(BC19.latestCasesRow.date));
 
             document.getElementById('hospital_updated_date').innerText =
-                BC19.formatDate(BC19.parseDate(BC19.latestStateDataRow.date));
+                BC19.formatMDate(BC19.parseMDate(BC19.latestStateDataRow.date));
 
             BC19.setupCounters(timeline);
             BC19.setupByAgeGraph(timeline);
