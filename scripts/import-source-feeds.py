@@ -78,6 +78,12 @@ def parse_butte_dashboard(info, in_fp, out_filename):
                          day=int(m.group(2)),
                          year=int(m.group(3)))
 
+    if datestamp.date() != datetime.now().date():
+        # This is stale data not from today. OR it might be new data but
+        # the county forgot to update the datestamp on it *again*. So don't
+        # risk overwriting historical data, and instead bail.
+        return
+
     COUNTER_KEYS_TO_ENTITIES = {
         'confirmed_cases': {
             'labels': ['confirmed cases'],
