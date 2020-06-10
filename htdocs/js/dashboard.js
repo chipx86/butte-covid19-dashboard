@@ -61,7 +61,7 @@ window.BC19 = {
 
 
 BC19.parseMDate = function(dateStr) {
-    return moment(dateStr + 'T00:00:00-07:00', 'YYYY-MM-DD');
+    return moment(dateStr + ' -0700', 'YYYY-MM-DD Z');
 };
 
 
