@@ -290,12 +290,30 @@
    </footer>
   </div>
 
+  <div class="bc19-c-option-pane">
+   <label for="date-selector">Timeline graphs show:</label>
+   <select id="date-selector">
+    <option value="all">All cases</option>
+    <option value="days-7">Last 7 days</option>
+    <option value="days-14">Last 14 days</option>
+    <option value="days-30">Last 30 days</option>
+    <option value="days-60">Last 60 days</option>
+    <option value="days-90">Last 90 days</option>
+    <option value="custom">Choose a date range</option>
+   </select>
+   <div class="bc19-c-option-pane__date-range">
+    <input type="date" id="date-range-from" aria-label="Start of date range">
+    ➝
+    <input type="date" id="date-range-through" aria-label="End of date range">
+   </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.26.0/moment.min.js"></script>
   <script src="https://d3js.org/d3.v5.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/1.12.10/billboard.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/1.12.10/plugin/billboardjs-plugin-textoverlap.min.js"></script>
   <script src="js/dashboard.js?@@BUILDTIME@@"></script>
-  <script>BC19.setupGraphs("@@BUILDTIME@@");</script>
+  <script>BC19.init("@@BUILDTIME@@");</script>
   <!-- <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script> -->
 
   <script async src="https://www.googletagmanager.com/gtag/js?id=UA-1584268-5"></script>

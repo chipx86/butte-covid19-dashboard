@@ -28,6 +28,9 @@ window.BC19 = {
         age_65_plus: '#F9BD34',
     },
 
+    els: {
+    },
+
     graphs: [],
     graphsData: {},
     graphZoomGroups: {},
@@ -39,7 +42,6 @@ window.BC19 = {
         bar: {
             radius: {
                 ratio: 0.3,
-                max: 50,
             },
         },
         grid: {
@@ -51,7 +53,7 @@ window.BC19 = {
             show: false,
         },
         resize: {
-            auto: true,
+            auto: false,
         },
         tooltip: {
             linked: true,
@@ -212,6 +214,8 @@ BC19.processTimelineData = function(timeline) {
     BC19.latestCasesRow = latestCasesRow;
     BC19.latestStateDataRow = latestStateDataRow;
     BC19.latestPerHospitalDataRow = latestPerHospitalDataRow;
+    BC19.firstMDate = BC19.parseMDate(timeline.dates[0].date);
+    BC19.lastMDate = BC19.parseMDate(timeline.dates[rows.length - 1].date);
 
     BC19.graphData = {
         dates: graphDates,
@@ -260,41 +264,6 @@ BC19.processTimelineData = function(timeline) {
 
 BC19.setupBBGraph = function(options) {
     options = Object.assign({}, BC19.commonTimelineOptions, options);
-    const zoomGroup = options.zoomGroup;
-
-    if (zoomGroup) {
-        if (options.zoom === undefined) {
-            options.zoom = {
-                enabled: {
-                    type: 'drag',
-                },
-            };
-        }
-
-        options.zoom.onzoom = function(domain) {
-            if (BC19.zoomingGraphs[zoomGroup] === null) {
-                BC19.zoomingGraphs[zoomGroup] = graph;
-
-                if (BC19.zoomingGraphs[zoomGroup] === graph) {
-                    BC19.graphZoomGroups[zoomGroup].forEach(_graph => {
-                        if (_graph !== graph) {
-                            _graph.zoom(domain);
-                        }
-                    });
-                }
-
-                BC19.zoomingGraphs[zoomGroup] = null;
-            }
-        };
-
-        options.zoom.resetButton = {
-            onclick: function() {
-                BC19.graphZoomGroups[zoomGroup].forEach(_graph => {
-                    _graph.unzoom();
-                });
-            },
-        };
-    }
 
     const graph = bb.generate(options);
     BC19.graphs.push(graph);
@@ -316,17 +285,6 @@ BC19.setupBBGraph = function(options) {
 
                 return value;
             }.bind(this, graph));
-    }
-
-
-    if (zoomGroup) {
-        if (BC19.graphZoomGroups[zoomGroup] === undefined) {
-            BC19.graphZoomGroups[zoomGroup] = [graph];
-        } else {
-            BC19.graphZoomGroups[zoomGroup].push(graph);
-        }
-
-        BC19.zoomingGraphs[zoomGroup] = null;
     }
 
     const svgEl = graph.element.querySelector('svg');
@@ -422,7 +380,7 @@ BC19.setCounter = function(el, options) {
             }
         }
     }
-},
+};
 
 
 BC19.setupCounters = function(timeline) {
@@ -543,7 +501,14 @@ BC19.setupCounters = function(timeline) {
         totalTests.toLocaleString();
     document.getElementById('pop-not-tested-pct-counter-people').innerText =
         (BC19.COUNTY_POPULATION - totalTests).toLocaleString();
-},
+};
+
+
+BC19.forEachGraphAsync = function(cb) {
+    BC19.graphs.forEach(graph => {
+        requestAnimationFrame(() => cb(graph));
+    });
+};
 
 
 BC19.setupByAgeGraph = function(timeline) {
@@ -696,7 +661,6 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 },
             },
         },
-        zoomGroup: 'cases',
     });
 
     BC19.setupBBGraph({
@@ -736,7 +700,6 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 },
             },
         },
-        zoomGroup: 'cases',
     });
 
     BC19.setupBBGraph({
@@ -776,7 +739,6 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 },
             },
         },
-        zoomGroup: 'cases',
     });
 
     BC19.setupBBGraph({
@@ -832,7 +794,6 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 },
             },
         },
-        zoomGroup: 'viral-tests',
     });
 
     BC19.setupBBGraph({
@@ -876,7 +837,6 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         legend: {
             show: true,
         },
-        zoomGroup: 'viral-tests',
     });
 };
 
@@ -1045,7 +1005,98 @@ BC19.showMoreGraphs = function() {
 };
 
 
-BC19.setupGraphs = function(buildTimeStamp) {
+BC19.setDateRange = function(fromDate, toDate, fromResize) {
+    const domain = [fromDate, toDate];
+
+    const newDateRange = {
+        from: fromDate,
+        to: toDate,
+    };
+
+    if (newDateRange === BC19.dateRange && !fromResize) {
+        return;
+    }
+
+    BC19.dateRange = newDateRange;
+
+    const dateRangeThreshold = 5;
+
+    BC19.els.dateRangeFrom.value = moment(fromDate).format('YYYY-MM-DD');
+    BC19.els.dateRangeFrom.max =
+        moment(toDate)
+        .subtract(dateRangeThreshold, 'days')
+        .format('YYYY-MM-DD');
+
+    BC19.els.dateRangeThrough.value = moment(toDate).format('YYYY-MM-DD');
+    BC19.els.dateRangeThrough.min =
+        moment(fromDate)
+        .add(dateRangeThreshold, 'days')
+        .format('YYYY-MM-DD');
+
+    BC19.graphs.forEach(graph => {
+        if (fromResize) {
+            graph.flush(false, true);
+        }
+
+        /*
+         * Ideally we wouldn't reach into the internals of billboard.js, but
+         * the standard zoom support can't be manually-driven. It's always
+         * interactive once enabled, and that doesn't work for us. So we
+         * perform the same internal state updates it would.
+         */
+        graph.internal.initZoom();
+        graph.internal.x.domain(domain);
+        graph.internal.zoomScale = graph.internal.x;
+        graph.internal.xAxis.scale(graph.internal.zoomScale);
+
+        graph.internal.redraw({
+            withTransition: true,
+            withY: false,
+            withDimension: false,
+        });
+    });
+};
+
+
+BC19.setupElements = function() {
+    function onDateRangeChanged() {
+        BC19.setDateRange(
+            moment(dateRangeFromEl.value, 'YYYY-MM-DD').toDate(),
+            moment(dateRangeThroughEl.value, 'YYYY-MM-DD').toDate());
+    }
+
+    document.getElementById('more-graphs-expander').addEventListener(
+        'click',
+        () => BC19.showMoreGraphs());
+
+    const dateSelectorEl = document.getElementById('date-selector');
+    BC19.els.dateSelector = dateSelectorEl;
+    dateSelectorEl.addEventListener(
+        'change',
+        () => _onDateSelectorChanged(dateSelectorEl.value));
+
+    const fromDateValue = BC19.firstMDate.format('YYYY-MM-DD');
+    const throughDateValue = BC19.lastMDate.format('YYYY-MM-DD');
+
+    const dateRangeFromEl = document.getElementById('date-range-from');
+    BC19.els.dateRangeFrom = dateRangeFromEl;
+    dateRangeFromEl.value = fromDateValue;
+    dateRangeFromEl.min = fromDateValue;
+    dateRangeFromEl.max = throughDateValue;
+    dateRangeFromEl.addEventListener('change', onDateRangeChanged);
+
+    const dateRangeThroughEl = document.getElementById('date-range-through');
+    BC19.els.dateRangeThrough = dateRangeThroughEl;
+    dateRangeThroughEl.value = throughDateValue
+    dateRangeThroughEl.min = fromDateValue;
+    dateRangeThroughEl.max = throughDateValue;
+    dateRangeThroughEl.addEventListener('change', onDateRangeChanged);
+
+    window.addEventListener('resize', () => _onWindowResize());
+}
+
+
+BC19.init = function(buildTimeStamp) {
     fetch(new Request('data/json/timeline.json?' + buildTimeStamp))
         .then(response => {
             if (response && response.status === 200) {
@@ -1076,10 +1127,7 @@ BC19.setupGraphs = function(buildTimeStamp) {
             BC19.setupByRegionGraph(timeline);
             BC19.setupByHospitalGraph(timeline);
             BC19.setupMainTimelineGraphs(timeline);
-
-            document.getElementById('more-graphs-expander').addEventListener(
-                'click',
-                event => BC19.showMoreGraphs());
+            BC19.setupElements();
 
             if (window.location.hash === '#all-charts') {
                 BC19.showMoreGraphs();
@@ -1091,3 +1139,44 @@ BC19.setupGraphs = function(buildTimeStamp) {
         });
         */
 };
+
+
+function _onDateSelectorChanged(value) {
+    const rangeEl = document.querySelector('.bc19-c-option-pane__date-range');
+
+    if (value === 'custom') {
+        rangeEl.classList.add('-is-shown');
+        return;
+    }
+
+    let fromMDate = BC19.firstMDate;
+    let toMDate = BC19.lastMDate;
+
+    rangeEl.classList.remove('-is-shown');
+
+    if (value === 'days-7') {
+        fromMDate = moment().subtract(7, 'days');
+    } else if (value === 'days-14') {
+        fromMDate = moment().subtract(14, 'days');
+    } else if (value === 'days-30') {
+        fromMDate = moment().subtract(30, 'days');
+    } else if (value === 'days-60') {
+        fromMDate = moment().subtract(60, 'days');
+    } else if (value === 'days-90') {
+        fromMDate = moment().subtract(90, 'days');
+    }
+
+    BC19.setDateRange(moment.max(fromMDate, BC19.firstMDate).toDate(),
+                      moment.max(toMDate, BC19.lastMDate).toDate());
+}
+
+
+function _onWindowResize() {
+    if (BC19.dateRange) {
+        BC19.setDateRange(BC19.dateRange.from,
+                          BC19.dateRange.to,
+                          true);
+    } else {
+        BC19.forEachGraphAsync(graph => graph.flush(false, true));
+    }
+}

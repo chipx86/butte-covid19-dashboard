@@ -1,7 +1,7 @@
 body {
   background: #C8E2FC;
   margin: 0;
-  padding: 2em;
+  padding: 2em 2em 6em 2em;
   font-family: Sans-Serif;
   font-size: 14px;
 }
@@ -340,6 +340,28 @@ a:visited {
   grid-template-columns: 50% 50%;
   align-items: end;
 }
+
+
+.bc19-c-option-pane {
+  background: #FFF4DC;
+  border-top: 1px #D8CFB2 solid;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1em;
+  text-align: center;
+}
+
+.bc19-c-option-pane__date-range {
+  display: none;
+  margin-top: 1em;
+}
+
+.bc19-c-option-pane__date-range.-is-shown {
+  display: block;
+}
+
 
 #more-graphs-expander {
   background: #4989E8;
