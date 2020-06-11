@@ -858,11 +858,6 @@ BC19.showMoreGraphs = function() {
                 },
             },
         },
-        zoom: {
-            enabled: {
-                type: 'drag',
-            },
-        },
     };
 
     const sectionEl = document.getElementById('more-graphs-section');
