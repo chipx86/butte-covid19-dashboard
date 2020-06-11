@@ -276,6 +276,20 @@ FEEDS = [
         'match': re.compile(b'^Butte,'),
     },
     {
+        'filename': 'columbia-projections-80contactw5p.csv',
+        'format': 'csv',
+        'url':
+        'https://raw.githubusercontent.com/shaman-lab/COVID-19Projection/master/Production/Projection_80w5pcontact.csv',
+        'match': re.compile(b'^Butte County CA'),
+    },
+    {
+        'filename': 'columbia-projections-nochange.csv',
+        'format': 'csv',
+        'url':
+        'https://raw.githubusercontent.com/shaman-lab/COVID-19Projection/master/Production/Projection_nochange.csv',
+        'match': re.compile(b'^Butte County CA'),
+    },
+    {
         'filename': 'butte-dashboard.json',
         'format': 'json',
         'url': 'https://infogram.com/1pe66wmyjnmvkrhm66x9362kp3al60r57ex',
