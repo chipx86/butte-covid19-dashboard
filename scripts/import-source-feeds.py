@@ -6,14 +6,15 @@ import os
 import re
 import sys
 from datetime import datetime, timedelta
-from urllib.request import urlopen
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 
 
 class ParseError(Exception):
     pass
 
 
-def parse_butte_dashboard(info, in_fp, out_filename):
+def parse_butte_dashboard(info, response, out_filename):
     def get_entity(entity_id):
         return (
             dashboard_data['elements']['content']['content']
@@ -54,7 +55,7 @@ def parse_butte_dashboard(info, in_fp, out_filename):
             for row in data[1:]
         }
 
-    html = in_fp.read()
+    html = response.read()
     m = re.search(br'window.infographicData=(.*);</script>', html)
 
     if not m:
@@ -249,13 +250,13 @@ def convert_butte_dashboard_to_csv(info, in_fp, out_filename):
             })
 
 
-def parse_csv(info, in_fp, out_filename):
+def parse_csv(info, response, out_filename):
     match = info['match']
 
     with open(out_filename, 'wb') as out_fp:
-        out_fp.write(in_fp.readline())
+        out_fp.write(response.readline())
 
-        for line in in_fp.readlines():
+        for line in response.readlines():
             line = line
 
             if match.match(line):
@@ -278,15 +279,13 @@ FEEDS = [
     {
         'filename': 'columbia-projections-80contactw5p.csv',
         'format': 'csv',
-        'url':
-        'https://raw.githubusercontent.com/shaman-lab/COVID-19Projection/master/Production/Projection_80w5pcontact.csv',
+        'url': 'https://raw.githubusercontent.com/shaman-lab/COVID-19Projection/master/Production/Projection_80w5pcontact.csv',
         'match': re.compile(b'^Butte County CA'),
     },
     {
         'filename': 'columbia-projections-nochange.csv',
         'format': 'csv',
-        'url':
-        'https://raw.githubusercontent.com/shaman-lab/COVID-19Projection/master/Production/Projection_nochange.csv',
+        'url': 'https://raw.githubusercontent.com/shaman-lab/COVID-19Projection/master/Production/Projection_nochange.csv',
         'match': re.compile(b'^Butte County CA'),
     },
     {
@@ -307,24 +306,58 @@ FEEDS = [
 ]
 
 
+CACHE_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
+                                          '.http-cache'))
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         '..', 'htdocs', 'data'))
+
+
+try:
+    with open(CACHE_FILE, 'r') as fp:
+        cache = json.load(fp)
+except Exception:
+    cache = {}
 
 
 for info in FEEDS:
     filename = info['filename']
     out_filename = os.path.join(DATA_DIR, info['format'], filename)
     parser = info.get('parser')
+    up_to_date = False
 
     if parser is None and info['format'] == 'csv':
         parser = parse_csv
 
     if 'url' in info:
-        with urlopen(info['url']) as in_fp:
+        url = info['url']
+        url_cache_info = cache.get(url)
+
+        request = Request(url)
+
+        if url_cache_info and os.path.exists(out_filename):
             try:
-                result = parser(info, in_fp, out_filename)
-            except ParseError as e:
-                sys.stderr.write('Data parse error while building %s: %s\n'
+                request.add_header('If-None-Match', url_cache_info['etag'])
+            except KeyError:
+                pass
+
+        try:
+            with urlopen(request) as response:
+                try:
+                    result = parser(info, response, out_filename)
+                except ParseError as e:
+                    sys.stderr.write('Data parse error while building %s: %s\n'
+                                     % (filename, e))
+                    continue
+
+                if response.headers.get('etag'):
+                    cache[url] = {
+                        'etag': response.headers['etag'],
+                    }
+        except HTTPError as e:
+            if e.status == 304:
+                up_to_date = True
+            else:
+                sys.stderr.write('HTTP error %s while fetching %s: %s'
                                  % (filename, e))
                 continue
     elif 'local_source' in info:
@@ -342,4 +375,11 @@ for info in FEEDS:
     else:
         sys.stderr.write('Invalid feed entry: %r\n' % info)
 
-    print('Wrote %s' % out_filename)
+    if up_to_date:
+        print('Up-to-date: %s' % out_filename)
+    else:
+        print('Wrote %s' % out_filename)
+
+
+with open(CACHE_FILE, 'w') as fp:
+    json.dump(cache, fp)
