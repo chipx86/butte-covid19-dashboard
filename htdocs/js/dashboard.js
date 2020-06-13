@@ -1087,6 +1087,10 @@ BC19.setupElements = function() {
     dateRangeThroughEl.max = throughDateValue;
     dateRangeThroughEl.addEventListener('change', onDateRangeChanged);
 
+
+    document.querySelector('.bc19-c-dashboard')
+        .classList.remove('-is-loading');
+
     window.addEventListener('resize', () => _onWindowResize());
 }
 
@@ -1117,12 +1121,12 @@ BC19.init = function(buildTimeStamp) {
             document.getElementById('hospital_updated_date').innerText =
                 BC19.formatMDate(BC19.parseMDate(BC19.latestStateDataRow.date));
 
+            BC19.setupElements();
             BC19.setupCounters(timeline);
             BC19.setupByAgeGraph(timeline);
             BC19.setupByRegionGraph(timeline);
             BC19.setupByHospitalGraph(timeline);
             BC19.setupMainTimelineGraphs(timeline);
-            BC19.setupElements();
 
             if (window.location.hash === '#all-charts') {
                 BC19.showMoreGraphs();

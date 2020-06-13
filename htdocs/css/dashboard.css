@@ -238,6 +238,10 @@ a:visited {
     "footer footer";
 }
 
+.bc19-c-dashboard.-is-loading {
+  display: none;
+}
+
 .bc19-c-dashboard__footer {
   background: #F6F6F6;
   border-top: 1px #EEE solid;
