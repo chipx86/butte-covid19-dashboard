@@ -10,8 +10,25 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 
+CACHE_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
+                                          '.http-cache'))
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                        '..', 'htdocs', 'data'))
+CSV_DIR = os.path.join(DATA_DIR, 'csv')
+JSON_DIR = os.path.join(DATA_DIR, 'json')
+
+
 class ParseError(Exception):
     pass
+
+
+def add_nested_key(d, full_key, value):
+    keys = full_key.split(':')
+
+    for key in keys[:-1]:
+        d = d.setdefault(key, {})
+
+    d[keys[-1]] = value
 
 
 def parse_butte_dashboard(info, response, out_filename):
@@ -250,17 +267,50 @@ def convert_butte_dashboard_to_csv(info, in_fp, out_filename):
             })
 
 
+def build_timeline_json(info, in_fp, out_filename):
+    timeline = []
+    reader = csv.DictReader(in_fp, delimiter=',')
+
+    for row in reader:
+        date_info = {}
+        timeline.append(date_info)
+
+        for col_name, col_data in row.items():
+            if col_name != 'row_id':
+                if col_data == '':
+                    col_data = None
+                else:
+                    try:
+                        col_data = int(col_data)
+                    except ValueError:
+                        pass
+
+                add_nested_key(date_info, col_name, col_data)
+
+    with open(out_filename, 'w') as fp:
+        json.dump(
+            {
+                'dates': timeline,
+            },
+            fp,
+            sort_keys=True,
+            indent=2)
+
+
 def parse_csv(info, response, out_filename):
-    match = info['match']
+    match = info.get('match')
 
     with open(out_filename, 'wb') as out_fp:
-        out_fp.write(response.readline())
+        if match is None:
+            out_fp.write(response.read())
+        else:
+            out_fp.write(response.readline())
 
-        for line in response.readlines():
-            line = line
+            for line in response.readlines():
+                line = line
 
-            if match.match(line):
-                out_fp.write(line)
+                if match.match(line):
+                    out_fp.write(line)
 
 
 FEEDS = [
@@ -303,13 +353,21 @@ FEEDS = [
         },
         'parser': convert_butte_dashboard_to_csv,
     },
+    {
+        'filename': 'timeline.csv',
+        'format': 'csv',
+        'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRwJpCeZj4tsxMXqrHFDjIis5Znv-nI0kQk9enEAJAbYzZUBHm7TELQe0wl2huOYEkdaWLyR8N9k_uq/pub?gid=856590862&single=true&output=csv'
+    },
+    {
+        'filename': 'timeline.json',
+        'format': 'json',
+        'local_source': {
+            'filename': 'timeline.csv',
+            'format': 'csv',
+        },
+        'parser': build_timeline_json,
+    },
 ]
-
-
-CACHE_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
-                                          '.http-cache'))
-DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                        '..', 'htdocs', 'data'))
 
 
 try:
