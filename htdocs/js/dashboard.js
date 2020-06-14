@@ -361,6 +361,7 @@ BC19.setCounter = function(el, options) {
 
         for (let i = 0; i < relValues.length; i++) {
             const relValueEl = relativeValueEls[i];
+            const relEl = relValueEl.parentNode;
             const relValue = relValues[i];
             const formatRelValue =
                 options.formatRelValues
@@ -368,13 +369,16 @@ BC19.setCounter = function(el, options) {
                 : (value, relValue) => Math.abs(value - relValue);
 
             relValueEl.innerText = formatRelValue(value, relValue);
-            relValueEl.classList.remove('-is-up');
-            relValueEl.classList.remove('-is-down');
+            relEl.classList.remove('-is-up');
+            relEl.classList.remove('-is-down');
+            relEl.classList.remove('-is-unchanged');
 
             if (relValue > value) {
-                relValueEl.classList.add('-is-down');
+                relEl.classList.add('-is-down');
             } else if (relValue < value) {
-                relValueEl.classList.add('-is-up');
+                relEl.classList.add('-is-up');
+            } else {
+                relEl.classList.add('-is-unchanged');
             }
         }
     }

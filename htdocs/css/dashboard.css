@@ -131,6 +131,10 @@ a:visited {
   white-space: nowrap;
 }
 
+.bc19-c-counter__relative.-is-unchanged {
+ color: lightgrey;
+}
+
 .bc19-c-counter__relative-value {
   font-weight: bold;
 }
@@ -140,21 +144,22 @@ a:visited {
   font-size: 60%;
 }
 
-.bc19-c-counter__relative-value.-is-up::before {
+.bc19-c-counter__relative.-is-unchanged .bc19-c-counter__relative-value::before,
+.bc19-c-counter__relative.-is-up .bc19-c-counter__relative-value::before {
   content: "▲ ";
 }
 
-.bc19-c-counter__relative-value.-is-down::before {
+.bc19-c-counter__relative.-is-down .bc19-c-counter__relative-value::before {
   content: "▼ ";
 }
 
-.bc19-c-counter__relative-value.-is-up,
-.bc19-c-counter.-up-is-bad .bc19-c-counter__relative-value.-is-down {
+.bc19-c-counter__relative.-is-up .bc19-c-counter__relative-value,
+.bc19-c-counter.-up-is-bad .bc19-c-counter__relative.-is-down .bc19-c-counter__relative-value {
   color: #26ab26;
 }
 
-.bc19-c-counter__relative-value.-is-down,
-.bc19-c-counter.-up-is-bad .bc19-c-counter__relative-value.-is-up {
+.bc19-c-counter__relative.-is-down .bc19-c-counter__relative-value,
+.bc19-c-counter.-up-is-bad .bc19-c-counter__relative.-is-up .bc19-c-counter__relative-value {
   color: red;
 }
 
