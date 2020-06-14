@@ -85,21 +85,6 @@ BC19.getDayText = function(date) {
 };
 
 
-BC19.getLatestFromTimeline = function(timeline, checkKeyFunc) {
-    const dates = timeline.dates;
-
-    for (let i = dates.length - 1; i >= 0; i--) {
-        const dateInfo = dates[i];
-
-        if (checkKeyFunc(dateInfo)) {
-            dateInfo.i = i;
-
-            return dateInfo;
-        }
-    }
-};
-
-
 BC19.processTimelineData = function(timeline) {
     const rows = timeline.dates;
     const graphDates = ['date'];
