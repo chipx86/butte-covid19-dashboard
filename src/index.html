@@ -9,7 +9,7 @@
   <meta name="title" content="Unofficial Butte County COVID-19 Dashboard">
   <meta name="description" content="Detailed trends and information on the COVID-19 situation in Butte County.">
   <meta property="og:description" content="Detailed trends and information on the COVID-19 situation in Butte County.">
-  <meta property="og:image" content="images/preview.png">
+  <meta property="og:image" content="./images/preview.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Preview of the COVID-19 Statistics">
@@ -17,19 +17,18 @@
   <meta property="og:title" content="Unofficial Butte County COVID-19 Dashboard">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://bc19.live">
-  <meta property="og:updated_time" content="@@BUILDTIME@@">
   <meta property="twitter:description" content="Detailed trends and information on the COVID-19 situation in Butte County.">
-  <meta property="twitter:image" content="images/preview.png">
+  <meta property="twitter:image" content="./images/preview.png">
   <meta property="twitter:image:width" content="1200">
   <meta property="twitter:image:height" content="630">
   <meta property="twitter:image:alt" content="Preview of the COVID-19 Statistics">
   <meta property="twitter:site" content="@chipx86">
   <meta property="twitter:title" content="Unofficial Butte County COVID-19 Dashboard">
-  <meta property="twitter:updated_time" content="@@BUILDTIME@@">
 
-  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="icon" type="image/png" href="./favicon.png">
 
-  <link rel="stylesheet" href="css/dashboard.css?@@BUILDTIME@@">
+  <link rel="stylesheet" href="./css/dashboard.less">
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/1.12.10/billboard.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/1.12.10/theme/graph.css">
  </head>
@@ -312,8 +311,6 @@
   <script src="https://d3js.org/d3.v5.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/1.12.10/billboard.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/1.12.10/plugin/billboardjs-plugin-textoverlap.min.js"></script>
-  <script src="js/dashboard.js?@@BUILDTIME@@"></script>
-  <script>BC19.init("@@BUILDTIME@@");</script>
   <!-- <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script> -->
 
   <script async src="https://www.googletagmanager.com/gtag/js?id=UA-1584268-5"></script>
@@ -322,6 +319,11 @@ window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', 'UA-1584268-5');
+  </script>
+  <script>
+window.onload = function() {
+ BC19.init();
+};
   </script>
  </body>
 </html>

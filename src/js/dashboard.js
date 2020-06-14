@@ -214,6 +214,7 @@ BC19.processTimelineData = function(timeline) {
     BC19.latestPerHospitalDataRow = latestPerHospitalDataRow;
     BC19.firstMDate = BC19.parseMDate(timeline.dates[0].date);
     BC19.lastMDate = BC19.parseMDate(timeline.dates[rows.length - 1].date);
+    BC19.timeline = timeline;
 
     BC19.graphData = {
         dates: graphDates,
@@ -1114,8 +1115,8 @@ BC19.setupElements = function() {
 }
 
 
-BC19.init = function(buildTimeStamp) {
-    fetch(new Request('data/json/timeline.json?' + buildTimeStamp))
+BC19.init = function() {
+    fetch(new Request('data/json/timeline.json'))
         .then(response => {
             if (response && response.status === 200) {
                 try {

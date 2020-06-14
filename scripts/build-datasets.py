@@ -379,7 +379,12 @@ except Exception:
 
 for info in FEEDS:
     filename = info['filename']
-    out_filename = os.path.join(DATA_DIR, info['format'], filename)
+    out_dir = os.path.join(DATA_DIR, info['format'])
+
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
+    out_filename = os.path.join(out_dir, filename)
     parser = info.get('parser')
     up_to_date = False
 
@@ -432,6 +437,7 @@ for info in FEEDS:
                 continue
     else:
         sys.stderr.write('Invalid feed entry: %r\n' % info)
+        continue
 
     if up_to_date:
         print('Up-to-date: %s' % out_filename)
