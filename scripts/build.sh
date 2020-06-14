@@ -15,7 +15,7 @@ mkdir -p $BUILD_DIR/htdocs/data/json
 mkdir -p $BUILD_DIR/htdocs/data/csv
 mkdir -p $BUILD_DIR/scripts
 
-$SOURCE_DIR/scripts/build-exports.py
+$SOURCE_DIR/scripts/build-datasets.py
 
 cp $SOURCE_DIR/htdocs/*.png $BUILD_DIR/htdocs
 cp $SOURCE_DIR/htdocs/css/*.css $BUILD_DIR/htdocs/css
