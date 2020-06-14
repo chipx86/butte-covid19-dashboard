@@ -72,6 +72,19 @@ BC19.formatMDate = function(mDate) {
 };
 
 
+BC19.getDayText = function(date) {
+    const days = moment().diff(date, 'days');
+
+    if (days === 0) {
+        return 'today';
+    } else if (days === 1) {
+        return 'yesterday';
+    } else {
+        return moment(date).format('dddd');
+    }
+};
+
+
 BC19.getLatestFromTimeline = function(timeline, checkKeyFunc) {
     const dates = timeline.dates;
 
@@ -1088,6 +1101,23 @@ BC19.setupElements = function() {
     dateRangeThroughEl.addEventListener('change', onDateRangeChanged);
 
 
+    document.getElementById('case_updated_date').innerText =
+        BC19.formatMDate(BC19.parseMDate(BC19.latestCasesRow.date));
+
+    document.getElementById('hospital_updated_date').innerText =
+        BC19.formatMDate(BC19.parseMDate(BC19.latestStateDataRow.date));
+
+    const bcdDayText = BC19.getDayText(BC19.latestCasesRow.date);
+    const stateDayText = BC19.getDayText(BC19.latestStateDataRow.date);
+
+    document.querySelectorAll('.bc19-o-bcd-update-day').forEach(el => {
+        el.innerText = bcdDayText;
+    });
+
+    document.querySelectorAll('.bc19-o-state-update-day').forEach(el => {
+        el.innerText = stateDayText;
+    });
+
     document.querySelector('.bc19-c-dashboard')
         .classList.remove('-is-loading');
 
@@ -1114,12 +1144,6 @@ BC19.init = function(buildTimeStamp) {
 
             timeline.latestCasesRow = BC19.latestCasesRow;
             timeline.latestStateDataRow = BC19.latestStateDataRow;
-
-            document.getElementById('case_updated_date').innerText =
-                BC19.formatMDate(BC19.parseMDate(BC19.latestCasesRow.date));
-
-            document.getElementById('hospital_updated_date').innerText =
-                BC19.formatMDate(BC19.parseMDate(BC19.latestStateDataRow.date));
 
             BC19.setupElements();
             BC19.setupCounters(timeline);
