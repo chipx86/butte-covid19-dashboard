@@ -388,8 +388,8 @@ BC19.setCounter = function(el, options) {
 
 BC19.setupCounters = function(timeline) {
     const dates = timeline.dates;
-    const casesRow = timeline.latestCasesRow;
-    const hospitalsRow = timeline.latestStateDataRow;
+    const casesRow = BC19.latestCasesRow;
+    const hospitalsRow = BC19.latestStateDataRow;
     const casesI = casesRow.i;
     const hospitalsI = hospitalsRow.i;
 
@@ -1132,9 +1132,6 @@ BC19.init = function() {
         .then(timeline => {
             BC19.processTimelineData(timeline);
 
-            timeline.latestCasesRow = BC19.latestCasesRow;
-            timeline.latestStateDataRow = BC19.latestStateDataRow;
-
             BC19.setupElements();
             BC19.setupCounters(timeline);
             BC19.setupByAgeGraph(timeline);
@@ -1146,11 +1143,10 @@ BC19.init = function() {
                 BC19.showMoreGraphs();
             }
         })
-        /*
         .catch(msg => {
+            console.log(msg);
             alert(msg);
         });
-        */
 };
 
 
