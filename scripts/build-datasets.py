@@ -38,14 +38,14 @@ class TableauLoader(object):
         self.bootstrap_payload1 = None
         self.bootstrap_payload2 = None
 
-    def bootstrap(self):
+    def bootstrap(self, extra_params={}):
         response = self.session.post(
             ('https://public.tableau.com/vizql/w/%s/v/%s/bootstrapSession/'
              'sessions/%s'
              % (self.owner, self.sheet_urlarg, self.session_id)),
-            data={
+            data=dict({
                 'sheet_id': self.sheet,
-            },
+            }, **extra_params),
             headers={
                 'Accept': 'text/javascript',
                 'Referer': self.referer,
@@ -102,7 +102,7 @@ class TableauLoader(object):
                 'selectOptions': 'select-options-simple',
             })
 
-    def get_bootstrap_data_dicts(self, expected_counts):
+    def get_bootstrap_data_dicts(self, expected_counts={}):
         if self.bootstrap_payload2 is None:
             self.bootstrap_payload2 = json.loads(self.raw_bootstrap_payload2)
 
@@ -408,54 +408,34 @@ def build_state_resources_json(session, response, out_filename, **kwargs):
                                    owner='COVID-19CountyProfile3',
                                    sheet='County Level Combined',
                                    orig_response=response)
-    tableau_loader.bootstrap()
+    tableau_loader.bootstrap({
+        'showParams': json.dumps({
+            'unknownParams': 'County=Butte',
+        }),
+        'stickySessionKey': json.dumps({
+            'workbookId': 6139600,
+        }),
+    })
 
-    main_data_dicts = tableau_loader.get_bootstrap_data_dicts(
-        expected_counts={
-            'datetime': 2,
-        })
-
-    date = datetime.strptime(main_data_dicts['datetime'][-1],
+    data_dicts = tableau_loader.get_bootstrap_data_dicts()
+    date = datetime.strptime(data_dicts['datetime'][-1],
                              '%Y-%m-%d %H:%M:%S')
-
-    # Fetch the Butte County data payload.
-    data = tableau_loader.select(worksheet='Counties by Phase',
-                                 object_ids=[56])
-
-    county_data_dicts = tableau_loader.get_data_dicts(
-        data_columns=(
-            data
-            ['vqlCmdResponse']
-            ['layoutStatus']
-            ['applicationPresModel']
-            ['dataDictionary']
-            ['dataSegments']
-            ['1']
-            ['dataColumns']
-        ),
-        expected_counts={
-            'integer': 13,
-            'real': 9,
-            'cstring': 3,
-        }
-    )
-
-    county_data_ints = county_data_dicts['integer']
-    county_data_reals = county_data_dicts['real']
+    county_data_ints = data_dicts['integer']
+    county_data_reals = data_dicts['real']
 
     add_or_update_json_date_row(
         out_filename,
         {
             'date': date.strftime('%Y-%m-%d'),
-            'beds': county_data_ints[11],
-            'face_shields': county_data_ints[7],
-            'gloves': county_data_ints[8],
-            'gowns': county_data_ints[6],
-            'procedure_masks': county_data_ints[5],
-            'n95_respirators': county_data_ints[4],
-            'icu_beds_pct': int(round(county_data_reals[7], 2) *
+            'beds': county_data_ints[-2],
+            'face_shields': county_data_ints[-6],
+            'gloves': county_data_ints[-5],
+            'gowns': county_data_ints[-7],
+            'procedure_masks': county_data_ints[-8],
+            'n95_respirators': county_data_ints[-9],
+            'icu_beds_pct': int(round(county_data_reals[-2], 2) *
                                           100),
-            'ventilators_pct': int(round(county_data_reals[8], 2) *
+            'ventilators_pct': int(round(county_data_reals[-1], 2) *
                                              100),
         })
 
@@ -536,7 +516,7 @@ FEEDS = [
         'format': 'json',
         'url': (
             'https://public.tableau.com/views/COVID-19CountyProfile3/'
-            'CountyLevelCombined?%3AshowVizHome=no'
+            'CountyLevelCombined?%3AshowVizHome=no&County=Butte'
         ),
         'parser': build_state_resources_json,
     },
