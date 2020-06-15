@@ -464,18 +464,15 @@ BC19.setupCounters = function(timeline) {
     BC19.setCounter(
         document.getElementById('positive-test-rate-counter'),
         {
-            value: curCasesTotal,
+            value: curCasesTotal / totalTests * 100,
             relativeValues: [
-                dates[casesI - 1].confirmed_cases.total,
+                dates[casesI - 1].confirmed_cases.total /
+                dates[casesI - 1].viral_tests.total * 100,
             ],
-            formatValue: value => (value / totalTests * 100).toFixed(2) + '%',
+            formatValue: value => value.toFixed(2) + '%',
             formatRelValues: [
                 (value, relValue) => {
-                    const valuePct = value / totalTests * 100;
-                    const relValuePct =
-                        relValue / dates[casesI - 1].viral_tests.total * 100;
-
-                    return (valuePct - relValuePct).toFixed(2) + '%';
+                    return Math.abs(value - relValue).toFixed(2) + '%';
                 },
             ],
         });
