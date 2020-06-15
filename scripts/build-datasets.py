@@ -153,7 +153,7 @@ def add_or_update_json_date_row(filename, row_data, date_field='date'):
     date_key = row_data[date_field]
 
     if os.path.exists(filename):
-        with open(out_filename, 'r') as fp:
+        with open(filename, 'r') as fp:
             try:
                 dataset = json.load(fp)
             except Exception as e:
@@ -187,7 +187,7 @@ def add_or_update_json_date_row(filename, row_data, date_field='date'):
 
         dates_data.append(row_data)
 
-    with open(out_filename, 'w') as fp:
+    with open(filename, 'w') as fp:
         json.dump(dataset,
                   fp,
                   indent=2,
@@ -577,88 +577,93 @@ FEEDS = [
 ]
 
 
-try:
-    with open(CACHE_FILE, 'r') as fp:
-        cache = json.load(fp)
-except Exception:
-    cache = {}
+def main():
+    try:
+        with open(CACHE_FILE, 'r') as fp:
+            cache = json.load(fp)
+    except Exception:
+        cache = {}
 
+    for info in FEEDS:
+        filename = info['filename']
+        out_dir = os.path.join(DATA_DIR, info['format'])
 
-for info in FEEDS:
-    filename = info['filename']
-    out_dir = os.path.join(DATA_DIR, info['format'])
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
 
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
+        out_filename = os.path.join(out_dir, filename)
+        parser = info.get('parser')
+        up_to_date = False
 
-    out_filename = os.path.join(out_dir, filename)
-    parser = info.get('parser')
-    up_to_date = False
+        if parser is None and info['format'] == 'csv':
+            parser = parse_csv
 
-    if parser is None and info['format'] == 'csv':
-        parser = parse_csv
+        if 'url' in info:
+            url = info['url']
+            url_cache_info = cache.get(url)
 
-    if 'url' in info:
-        url = info['url']
-        url_cache_info = cache.get(url)
+            session = requests.Session()
+            session.headers['User-Agent'] = USER_AGENT
 
-        session = requests.Session()
-        session.headers['User-Agent'] = USER_AGENT
+            headers = {}
 
-        headers = {}
+            if url_cache_info and os.path.exists(out_filename):
+                try:
+                    headers['If-None-Match'] = url_cache_info['etag']
+                except KeyError:
+                    pass
 
-        if url_cache_info and os.path.exists(out_filename):
-            try:
-                headers['If-None-Match'] = url_cache_info['etag']
-            except KeyError:
-                pass
+            response = session.get(url, headers=headers)
 
-        response = session.get(url, headers=headers)
+            if response.status_code == 200:
+                try:
+                    result = parser(info=info,
+                                    response=response,
+                                    out_filename=out_filename,
+                                    session=session)
+                except ParseError as e:
+                    sys.stderr.write('Data parse error while building %s: %s\n'
+                                     % (filename, e))
+                    continue
 
-        if response.status_code == 200:
-            try:
-                result = parser(info=info,
-                                response=response,
-                                out_filename=out_filename,
-                                session=session)
-            except ParseError as e:
-                sys.stderr.write('Data parse error while building %s: %s\n'
-                                 % (filename, e))
+                if response.headers.get('etag'):
+                    cache[url] = {
+                        'etag': response.headers['etag'],
+                    }
+            elif response.status_code == 304:
+                up_to_date = True
+            else:
+                sys.stderr.write('HTTP error %s while fetching %s: %s'
+                                 % (response.status_code, filename,
+                                    response.text))
                 continue
+        elif 'local_source' in info:
+            local_source = info['local_source']
+            source_filename = os.path.join(DATA_DIR, local_source['format'],
+                                           local_source['filename'])
 
-            if response.headers.get('etag'):
-                cache[url] = {
-                    'etag': response.headers['etag'],
-                }
-        elif response.status_code == 304:
-            up_to_date = True
+            with open(source_filename, 'r') as in_fp:
+                try:
+                    result = parser(info=info,
+                                    in_fp=in_fp,
+                                    out_filename=out_filename)
+                except ParseError as e:
+                    sys.stderr.write('Data parse error while building %s: %s\n'
+                                     % (filename, e))
+                    continue
         else:
-            sys.stderr.write('HTTP error %s while fetching %s: %s'
-                             % (response.status_code, filename, response.text))
+            sys.stderr.write('Invalid feed entry: %r\n' % info)
             continue
-    elif 'local_source' in info:
-        local_source = info['local_source']
-        source_filename = os.path.join(DATA_DIR, local_source['format'],
-                                       local_source['filename'])
 
-        with open(source_filename, 'r') as in_fp:
-            try:
-                result = parser(info=info,
-                                in_fp=in_fp,
-                                out_filename=out_filename)
-            except ParseError as e:
-                sys.stderr.write('Data parse error while building %s: %s\n'
-                                 % (filename, e))
-                continue
-    else:
-        sys.stderr.write('Invalid feed entry: %r\n' % info)
-        continue
-
-    if up_to_date:
-        print('Up-to-date: %s' % out_filename)
-    else:
-        print('Wrote %s' % out_filename)
+        if up_to_date:
+            print('Up-to-date: %s' % out_filename)
+        else:
+            print('Wrote %s' % out_filename)
 
 
-with open(CACHE_FILE, 'w') as fp:
-    json.dump(cache, fp)
+    with open(CACHE_FILE, 'w') as fp:
+        json.dump(cache, fp)
+
+
+if __name__ == '__main__':
+    main()
