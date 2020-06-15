@@ -38,7 +38,7 @@ def add_nested_key(d, full_key, value):
     d[keys[-1]] = value
 
 
-def parse_butte_dashboard(info, response, out_filename):
+def parse_butte_dashboard(response, out_filename, **kwargs):
     def get_entity(entity_id):
         return (
             dashboard_data['elements']['content']['content']
@@ -226,7 +226,7 @@ def parse_butte_dashboard(info, response, out_filename):
                   sort_keys=True)
 
 
-def convert_butte_dashboard_to_csv(info, in_fp, out_filename):
+def convert_butte_dashboard_to_csv(in_fp, out_filename, **kwargs):
     def _get_key_value(d, paths):
         for path in paths:
             d = d.get(path)
@@ -273,7 +273,7 @@ def convert_butte_dashboard_to_csv(info, in_fp, out_filename):
             })
 
 
-def build_timeline_json(info, in_fp, out_filename):
+def build_timeline_json(in_fp, out_filename, **kwargs):
     timeline = []
     reader = csv.DictReader(in_fp, delimiter=',')
 
@@ -303,7 +303,7 @@ def build_timeline_json(info, in_fp, out_filename):
             indent=2)
 
 
-def parse_csv(info, response, out_filename):
+def parse_csv(info, response, out_filename, **kwargs):
     match = info.get('match')
 
     with open(out_filename, 'wb') as out_fp:
@@ -418,7 +418,10 @@ for info in FEEDS:
 
         if response.status_code == 200:
             try:
-                result = parser(info, response, out_filename)
+                result = parser(info=info,
+                                response=response,
+                                out_filename=out_filename,
+                                session=session)
             except ParseError as e:
                 sys.stderr.write('Data parse error while building %s: %s\n'
                                  % (filename, e))
@@ -441,7 +444,9 @@ for info in FEEDS:
 
         with open(source_filename, 'r') as in_fp:
             try:
-                result = parser(info, in_fp, out_filename)
+                result = parser(info=info,
+                                in_fp=in_fp,
+                                out_filename=out_filename)
             except ParseError as e:
                 sys.stderr.write('Data parse error while building %s: %s\n'
                                  % (filename, e))
