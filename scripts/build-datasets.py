@@ -7,7 +7,8 @@ import re
 import sys
 from datetime import datetime, timedelta
 from urllib.error import HTTPError
-from urllib.request import Request, urlopen
+
+import requests
 
 
 CACHE_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
@@ -16,6 +17,12 @@ DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         '..', 'htdocs', 'data'))
 CSV_DIR = os.path.join(DATA_DIR, 'csv')
 JSON_DIR = os.path.join(DATA_DIR, 'json')
+
+
+USER_AGENT = (
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 '
+    '(KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36'
+)
 
 
 class ParseError(Exception):
@@ -72,14 +79,13 @@ def parse_butte_dashboard(info, response, out_filename):
             for row in data[1:]
         }
 
-    html = response.read()
-    m = re.search(br'window.infographicData=(.*);</script>', html)
+    m = re.search(r'window.infographicData=(.*);</script>', response.text)
 
     if not m:
         raise ParseError('Unable to find infographicData in Butte Dashboard')
 
     try:
-        dashboard_data = json.loads(m.group(1).decode('utf-8'))
+        dashboard_data = json.loads(m.group(1))
     except Exception as e:
         raise ParseError('Unable to parse infographicData in Butte Dashboard: '
                          '%s'
@@ -302,11 +308,13 @@ def parse_csv(info, response, out_filename):
 
     with open(out_filename, 'wb') as out_fp:
         if match is None:
-            out_fp.write(response.read())
+            out_fp.write(response.content)
         else:
-            out_fp.write(response.readline())
+            lines = response.content.splitlines(True)
 
-            for line in response.readlines():
+            out_fp.write(lines[0])
+
+            for line in lines[1:]:
                 line = line
 
                 if match.match(line):
@@ -395,34 +403,37 @@ for info in FEEDS:
         url = info['url']
         url_cache_info = cache.get(url)
 
-        request = Request(url)
+        session = requests.Session()
+        headers = {
+            'User-Agent': USER_AGENT,
+        }
 
         if url_cache_info and os.path.exists(out_filename):
             try:
-                request.add_header('If-None-Match', url_cache_info['etag'])
+                headers['If-None-Match'] = url_cache_info['etag']
             except KeyError:
                 pass
 
-        try:
-            with urlopen(request) as response:
-                try:
-                    result = parser(info, response, out_filename)
-                except ParseError as e:
-                    sys.stderr.write('Data parse error while building %s: %s\n'
-                                     % (filename, e))
-                    continue
+        response = session.get(url, headers=headers)
 
-                if response.headers.get('etag'):
-                    cache[url] = {
-                        'etag': response.headers['etag'],
-                    }
-        except HTTPError as e:
-            if e.status == 304:
-                up_to_date = True
-            else:
-                sys.stderr.write('HTTP error %s while fetching %s: %s'
+        if response.status_code == 200:
+            try:
+                result = parser(info, response, out_filename)
+            except ParseError as e:
+                sys.stderr.write('Data parse error while building %s: %s\n'
                                  % (filename, e))
                 continue
+
+            if response.headers.get('etag'):
+                cache[url] = {
+                    'etag': response.headers['etag'],
+                }
+        elif response.status_code == 304:
+            up_to_date = True
+        else:
+            sys.stderr.write('HTTP error %s while fetching %s: %s'
+                             % (response.status_code, filename, response.text))
+            continue
     elif 'local_source' in info:
         local_source = info['local_source']
         source_filename = os.path.join(DATA_DIR, local_source['format'],
