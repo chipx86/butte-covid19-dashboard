@@ -6,7 +6,7 @@ import os
 import re
 import sys
 from datetime import datetime, timedelta
-from urllib.error import HTTPError
+from urllib.parse import quote
 
 import requests
 
@@ -25,6 +25,117 @@ USER_AGENT = (
 )
 
 
+class TableauLoader(object):
+    def __init__(self, session, owner, sheet, orig_response):
+        self.session = session
+        self.owner = owner
+        self.sheet = sheet
+        self.sheet_urlarg = self.sheet.replace(' ', '')
+        self.session_id = orig_response.headers['x-session-id']
+        self.referer = orig_response.url
+        self.raw_bootstrap_payload1 = None
+        self.raw_bootstrap_payload2 = None
+        self.bootstrap_payload1 = None
+        self.bootstrap_payload2 = None
+
+    def bootstrap(self):
+        response = self.session.post(
+            ('https://public.tableau.com/vizql/w/%s/v/%s/bootstrapSession/'
+             'sessions/%s'
+             % (self.owner, self.sheet_urlarg, self.session_id)),
+            data={
+                'sheet_id': self.sheet,
+            },
+            headers={
+                'Accept': 'text/javascript',
+                'Referer': self.referer,
+                'X-Requested-With': 'XMLHttpRequest',
+                'x-tsi-active-tab': self.sheet,
+                'x-tsi-supports-accepted': 'true',
+            })
+
+        # The response contains two JSON payloads, each prefixed by a length.
+        data = response.text
+        i = data.find(';')
+        length = int(data[:i])
+        self.raw_bootstrap_payload1 = data[i + 1:length + i + 1]
+
+        data = data[length + i + 1:]
+        i = data.find(';')
+        length = int(data[:i])
+        self.raw_bootstrap_payload2 = data[i + 1:length + i + 1]
+
+    def run_command(self, command, post_data):
+        response = self.session.post(
+            ('https://public.tableau.com/vizql/w/%s/v/%s/sessions/%s/'
+             'commands/%s'
+             % (self.owner, self.sheet_urlarg, self.session_id, command)),
+            files={
+                key: (None, value)
+                for key, value in post_data.items()
+            },
+            headers={
+                'Accept': 'text/javascript',
+                'Referer': self.referer,
+                'Origin': 'https://public.tableau.com',
+                'sec-fetch-dest': 'empty',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'same-origin',
+                'X-Requested-With': 'XMLHttpRequest',
+                'x-tsi-active-tab': self.sheet,
+                'x-tsi-supports-accepted': 'true',
+            },
+        )
+
+        return response.json()
+
+    def select(self, worksheet, object_ids):
+        return self.run_command(
+            'tabdoc/select',
+            {
+                'dashboard': self.sheet,
+                'worksheet': worksheet,
+                'selection': json.dumps({
+                    'objectIds': object_ids,
+                    'selectionType': 'tuples',
+                }),
+                'selectOptions': 'select-options-simple',
+            })
+
+    def get_bootstrap_data_dicts(self, expected_counts):
+        if self.bootstrap_payload2 is None:
+            self.bootstrap_payload2 = json.loads(self.raw_bootstrap_payload2)
+
+        return self.get_data_dicts(
+            data_columns=(
+                self.bootstrap_payload2
+                ['secondaryInfo']
+                ['presModelMap']
+                ['dataDictionary']
+                ['presModelHolder']
+                ['genDataDictionaryPresModel']
+                ['dataSegments']
+                ['0']
+                ['dataColumns']
+            ),
+            expected_counts=expected_counts)
+
+    def get_data_dicts(self, data_columns, expected_counts):
+        data_dicts = {
+            item['dataType']: item['dataValues']
+            for item in data_columns
+        }
+
+        for key, count in expected_counts.items():
+            value_count = len(data_dicts[key])
+
+            if value_count != count:
+                raise ParseError('Unexpected number of %s data values: %s'
+                                 % (key, value_count))
+
+        return data_dicts
+
+
 class ParseError(Exception):
     pass
 
@@ -36,6 +147,51 @@ def add_nested_key(d, full_key, value):
         d = d.setdefault(key, {})
 
     d[keys[-1]] = value
+
+
+def add_or_update_json_date_row(filename, row_data, date_field='date'):
+    date_key = row_data[date_field]
+
+    if os.path.exists(filename):
+        with open(out_filename, 'r') as fp:
+            try:
+                dataset = json.load(fp)
+            except Exception as e:
+                raise ParseError('Unable to load existing dataset: %s', e)
+    else:
+        dataset = {
+            'dates': [],
+        }
+
+    dates_data = dataset['dates']
+
+    try:
+        latest_date_key = dates_data[-1][date_field]
+    except (IndexError, KeyError):
+        latest_date_key = None
+
+    if latest_date_key == date_key:
+        dates_data[-1] = row_data
+    else:
+        # See if we have days we're missing. If so, we need to fill in the
+        # gaps. This is mainly to keep the spreadsheet rows aligned.
+        if latest_date_key is not None:
+            cur_date = datetime.strptime(date_key, '%Y-%m-%d')
+            latest_date = datetime.strptime(latest_date_key, '%Y-%m-%d')
+
+            for day in range(1, (cur_date - latest_date).days):
+                dates_data.append({
+                    date_field: (latest_date +
+                                 timedelta(days=day)).strftime('%Y-%m-%d'),
+                })
+
+        dates_data.append(row_data)
+
+    with open(out_filename, 'w') as fp:
+        json.dump(dataset,
+                  fp,
+                  indent=2,
+                  sort_keys=True)
 
 
 def parse_butte_dashboard(response, out_filename, **kwargs):
@@ -154,11 +310,9 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
         for key, entity_id in CHART_KEYS_TO_ENTITIES.items()
     })
 
-    date_key = datestamp.strftime('%Y-%m-%d')
-
     try:
         row_result = {
-            'date': date_key,
+            'date': datestamp.strftime('%Y-%m-%d'),
             'confirmed_cases': scraped_data['confirmed_cases'],
             'deaths': scraped_data['deaths'],
             'in_isolation': {
@@ -186,47 +340,10 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
     except Exception as e:
         raise ParseError('Unable to build row data: %s' % e)
 
-    if os.path.exists(out_filename):
-        with open(out_filename, 'r') as fp:
-            try:
-                dataset = json.load(fp)
-            except Exception as e:
-                raise ParseError('Unable to load existing dataset: %s', e)
-    else:
-        dataset = {
-            'dates': [],
-        }
-
-    dates_data = dataset['dates']
-
-    try:
-        latest_date_key = dates_data[-1]['date']
-    except (IndexError, KeyError):
-        latest_date_key = None
-
-    if latest_date_key == date_key:
-        dates_data[-1] = row_result
-    else:
-        # See if we have days we're missing. If so, we need to fill in the
-        # gaps. This is mainly to keep the spreadsheet rows aligned.
-        latest_date = datetime.strptime(latest_date_key, '%Y-%m-%d')
-
-        for day in range(1, (datestamp - latest_date).days):
-            day_str = (latest_date + timedelta(days=day)).strftime('%Y-%m-%d')
-            dates_data.append({
-                'date': day_str,
-            })
-
-        dates_data.append(row_result)
-
-    with open(out_filename, 'w') as fp:
-        json.dump(dataset,
-                  fp,
-                  indent=2,
-                  sort_keys=True)
+    add_or_update_json_date_row(out_filename, row_result)
 
 
-def convert_butte_dashboard_to_csv(in_fp, out_filename, **kwargs):
+def convert_json_to_csv(info, in_fp, out_filename, **kwargs):
     def _get_key_value(d, paths):
         for path in paths:
             d = d.get(path)
@@ -236,40 +353,22 @@ def convert_butte_dashboard_to_csv(in_fp, out_filename, **kwargs):
 
         return d
 
+    key_map = info['key_map']
     dataset = json.load(in_fp)
-
-    KEY_MAP = [
-        ('Date', ('date',)),
-        ('Confirmed Cases', ('confirmed_cases',)),
-        ('Deaths', ('deaths',)),
-        ('Currently In Isolation', ('in_isolation', 'current')),
-        ('Total Released From Isolation', ('in_isolation', 'total_released')),
-        ('Total Viral Tests', ('viral_tests', 'total')),
-        ('Daily Viral Test Results', ('viral_tests', 'results')),
-        ('Currently Hospitalized', ('hospitalized', 'current')),
-        ('Age 0-17 Years', ('age_ranges_in_years', '0-17')),
-        ('Age 18-49 Years', ('age_ranges_in_years', '18-49')),
-        ('Age 50-64 Years', ('age_ranges_in_years', '50-64')),
-        ('Age 65+ Years', ('age_ranges_in_years', '65_plus')),
-        ('Chico Cases', ('regions', 'chico')),
-        ('Gridley Cases', ('regions', 'gridley')),
-        ('Oroville Cases', ('regions', 'oroville')),
-        ('Other Region Cases', ('regions', 'other')),
-    ]
 
     with open(out_filename, 'w') as fp:
         csv_writer = csv.DictWriter(
             fp,
             fieldnames=[
                 key_entry[0]
-                for key_entry in KEY_MAP
+                for key_entry in key_map
             ])
         csv_writer.writeheader()
 
         for row in dataset.get('dates', []):
             csv_writer.writerow({
                 key: _get_key_value(row, paths)
-                for key, paths in KEY_MAP
+                for key, paths in key_map
             })
 
 
@@ -301,6 +400,64 @@ def build_timeline_json(in_fp, out_filename, **kwargs):
             fp,
             sort_keys=True,
             indent=2)
+
+
+def build_state_resources_json(session, response, out_filename, **kwargs):
+    # Set up the session and fetch the initial payloads.
+    tableau_loader = TableauLoader(session=session,
+                                   owner='COVID-19CountyProfile3',
+                                   sheet='County Level Combined',
+                                   orig_response=response)
+    tableau_loader.bootstrap()
+
+    main_data_dicts = tableau_loader.get_bootstrap_data_dicts(
+        expected_counts={
+            'datetime': 2,
+        })
+
+    date = datetime.strptime(main_data_dicts['datetime'][-1],
+                             '%Y-%m-%d %H:%M:%S')
+
+    # Fetch the Butte County data payload.
+    data = tableau_loader.select(worksheet='Counties by Phase',
+                                 object_ids=[56])
+
+    county_data_dicts = tableau_loader.get_data_dicts(
+        data_columns=(
+            data
+            ['vqlCmdResponse']
+            ['layoutStatus']
+            ['applicationPresModel']
+            ['dataDictionary']
+            ['dataSegments']
+            ['1']
+            ['dataColumns']
+        ),
+        expected_counts={
+            'integer': 13,
+            'real': 9,
+            'cstring': 3,
+        }
+    )
+
+    county_data_ints = county_data_dicts['integer']
+    county_data_reals = county_data_dicts['real']
+
+    add_or_update_json_date_row(
+        out_filename,
+        {
+            'date': date.strftime('%Y-%m-%d'),
+            'beds': county_data_ints[11],
+            'face_shields': county_data_ints[7],
+            'gloves': county_data_ints[8],
+            'gowns': county_data_ints[6],
+            'procedure_masks': county_data_ints[5],
+            'n95_respirators': county_data_ints[4],
+            'icu_beds_pct': int(round(county_data_reals[7], 2) *
+                                          100),
+            'ventilators_pct': int(round(county_data_reals[8], 2) *
+                                             100),
+        })
 
 
 def parse_csv(info, response, out_filename, **kwargs):
@@ -335,12 +492,6 @@ FEEDS = [
         'match': re.compile(b'^Butte,'),
     },
     {
-        'filename': 'columbia-projections-80contactw5p.csv',
-        'format': 'csv',
-        'url': 'https://raw.githubusercontent.com/shaman-lab/COVID-19Projection/master/Production/Projection_80w5pcontact.csv',
-        'match': re.compile(b'^Butte County CA'),
-    },
-    {
         'filename': 'columbia-projections-nochange.csv',
         'format': 'csv',
         'url': 'https://raw.githubusercontent.com/shaman-lab/COVID-19Projection/master/Production/Projection_nochange.csv',
@@ -359,7 +510,55 @@ FEEDS = [
             'filename': 'butte-dashboard.json',
             'format': 'json',
         },
-        'parser': convert_butte_dashboard_to_csv,
+        'parser': convert_json_to_csv,
+        'key_map': [
+            ('Date', ('date',)),
+            ('Confirmed Cases', ('confirmed_cases',)),
+            ('Deaths', ('deaths',)),
+            ('Currently In Isolation', ('in_isolation', 'current')),
+            ('Total Released From Isolation', ('in_isolation',
+                                               'total_released')),
+            ('Total Viral Tests', ('viral_tests', 'total')),
+            ('Daily Viral Test Results', ('viral_tests', 'results')),
+            ('Currently Hospitalized', ('hospitalized', 'current')),
+            ('Age 0-17 Years', ('age_ranges_in_years', '0-17')),
+            ('Age 18-49 Years', ('age_ranges_in_years', '18-49')),
+            ('Age 50-64 Years', ('age_ranges_in_years', '50-64')),
+            ('Age 65+ Years', ('age_ranges_in_years', '65_plus')),
+            ('Chico Cases', ('regions', 'chico')),
+            ('Gridley Cases', ('regions', 'gridley')),
+            ('Oroville Cases', ('regions', 'oroville')),
+            ('Other Region Cases', ('regions', 'other')),
+        ],
+    },
+    {
+        'filename': 'state-resources.json',
+        'format': 'json',
+        'url': (
+            'https://public.tableau.com/views/COVID-19CountyProfile3/'
+            'CountyLevelCombined?%3AshowVizHome=no'
+        ),
+        'parser': build_state_resources_json,
+    },
+    {
+        'filename': 'state-resources.csv',
+        'format': 'csv',
+        'local_source': {
+            'filename': 'state-resources.json',
+            'format': 'json',
+        },
+        'parser': convert_json_to_csv,
+        'key_map': [
+            ('Date', ('date',)),
+            ('Beds', ('beds',)),
+            ('Face Shields', ('face_shields',)),
+            ('Gloves', ('gloves',)),
+            ('Gowns', ('gowns',)),
+            ('N95 Respirators', ('n95_respirators',)),
+            ('Procedure Masks', ('procedure_masks',)),
+            ('ICU Beds Percent', ('icu_beds_pct',)),
+            ('Ventilators Percent', ('ventilators_pct',)),
+        ],
     },
     {
         'filename': 'timeline.csv',
@@ -404,9 +603,9 @@ for info in FEEDS:
         url_cache_info = cache.get(url)
 
         session = requests.Session()
-        headers = {
-            'User-Agent': USER_AGENT,
-        }
+        session.headers['User-Agent'] = USER_AGENT
+
+        headers = {}
 
         if url_cache_info and os.path.exists(out_filename):
             try:

@@ -46,3 +46,5 @@ The following data is made available for others to use:
 * [Butte County Dashboard (JSON)](https://bc19.live/data/json/butte-dashboard.json)
 * [State Skilled Nursing Facilities - Butte County Only (CSV)](https://bc19.live/data/csv/skilled-nursing-facilities.csv)
 * [State Hospital Case Statistics - Butte County Only (CSV)](https://bc19.live/data/csv/state-hospitals.csv)
+* [State Resources - Butte County Only (CSV)](https://bc19.live/data/csv/state-resources.csv)
+* [State Resources - Butte County Only (JSON)](https://bc19.live/data/json/state-resources.json)
