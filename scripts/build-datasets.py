@@ -511,35 +511,35 @@ FEEDS = [
             ('Other Region Cases', ('regions', 'other')),
         ],
     },
-    {
-        'filename': 'state-resources.json',
-        'format': 'json',
-        'url': (
-            'https://public.tableau.com/views/COVID-19CountyProfile3/'
-            'CountyLevelCombined?%3AshowVizHome=no&County=Butte'
-        ),
-        'parser': build_state_resources_json,
-    },
-    {
-        'filename': 'state-resources.csv',
-        'format': 'csv',
-        'local_source': {
-            'filename': 'state-resources.json',
-            'format': 'json',
-        },
-        'parser': convert_json_to_csv,
-        'key_map': [
-            ('Date', ('date',)),
-            ('Beds', ('beds',)),
-            ('Face Shields', ('face_shields',)),
-            ('Gloves', ('gloves',)),
-            ('Gowns', ('gowns',)),
-            ('N95 Respirators', ('n95_respirators',)),
-            ('Procedure Masks', ('procedure_masks',)),
-            ('ICU Beds Percent', ('icu_beds_pct',)),
-            ('Ventilators Percent', ('ventilators_pct',)),
-        ],
-    },
+#    {
+#        'filename': 'state-resources.json',
+#        'format': 'json',
+#        'url': (
+#            'https://public.tableau.com/views/COVID-19CountyProfile3/'
+#            'CountyLevelCombined?%3AshowVizHome=no&County=Butte'
+#        ),
+#        'parser': build_state_resources_json,
+#    },
+#    {
+#        'filename': 'state-resources.csv',
+#        'format': 'csv',
+#        'local_source': {
+#            'filename': 'state-resources.json',
+#            'format': 'json',
+#        },
+#        'parser': convert_json_to_csv,
+#        'key_map': [
+#            ('Date', ('date',)),
+#            ('Beds', ('beds',)),
+#            ('Face Shields', ('face_shields',)),
+#            ('Gloves', ('gloves',)),
+#            ('Gowns', ('gowns',)),
+#            ('N95 Respirators', ('n95_respirators',)),
+#            ('Procedure Masks', ('procedure_masks',)),
+#            ('ICU Beds Percent', ('icu_beds_pct',)),
+#            ('Ventilators Percent', ('ventilators_pct',)),
+#        ],
+#    },
     {
         'filename': 'timeline.csv',
         'format': 'csv',
