@@ -58,6 +58,9 @@ window.BC19 = {
         tooltip: {
             linked: true,
         },
+        padding: {
+            right: 10,
+        },
     },
 };
 
@@ -643,12 +646,12 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: {
                 type: 'timeseries',
+                localtime: false,
                 label: {
                     position: 'outer-left',
                 },
                 tick: {
                     fit: false,
-                    autorotate: true,
                     format: '%B %d',
                 },
             },
@@ -682,6 +685,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: {
                 type: 'timeseries',
+                localtime: false,
                 label: {
                     position: 'outer-left',
                 },
@@ -721,6 +725,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: {
                 type: 'timeseries',
+                localtime: false,
                 label: {
                     position: 'outer-left',
                 },
@@ -767,6 +772,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: {
                 type: 'timeseries',
+                localtime: false,
                 label: {
                     position: 'outer-left',
                 },
@@ -819,6 +825,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: {
                 type: 'timeseries',
+                localtime: false,
                 label: {
                     position: 'outer-left',
                 },
@@ -852,6 +859,7 @@ BC19.showMoreGraphs = function() {
         axis: {
             x: {
                 type: 'timeseries',
+                localtime: false,
                 tick: {
                     fit: false,
                     format: '%B %d',
@@ -1001,7 +1009,7 @@ BC19.showMoreGraphs = function() {
 
 
 BC19.setDateRange = function(fromDate, toDate, fromResize) {
-    const domain = [fromDate, toDate];
+    const domain = [fromDate, moment(toDate).add(8, 'hour').toDate()];
 
     const newDateRange = {
         from: fromDate,
