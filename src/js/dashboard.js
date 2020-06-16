@@ -1105,6 +1105,8 @@ BC19.setupElements = function() {
         el.innerText = stateDayText;
     });
 
+    document.getElementById('page-spinner').remove();
+
     document.querySelector('.bc19-c-dashboard')
         .classList.remove('-is-loading');
 
