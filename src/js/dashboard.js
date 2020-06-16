@@ -871,6 +871,8 @@ BC19.showMoreGraphs = function() {
     const sectionEl = document.getElementById('more-graphs-section');
     sectionEl.classList.add('-is-open');
 
+    document.getElementById('more-graphs-expander').remove();
+
     BC19.setupBBGraph(Object.assign({}, commonOptions, {
         bindto: '#cases_by_region_timeline_graph',
         data: {
