@@ -610,6 +610,12 @@ BC19.setupByHospitalGraph = function(timeline) {
                 value: data.oroville_hospital,
                 relValue: data.oroville_hospital - prevData.oroville_hospital,
             },
+            {
+                data_id: 'orchard',
+                label: 'Orchard Hospital',
+                value: data.orchard_hospital,
+                relValue: data.orchard_hospital - prevData.orchard_hospital,
+            },
         ]);
 };
 
