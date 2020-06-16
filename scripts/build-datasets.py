@@ -65,43 +65,6 @@ class TableauLoader(object):
         length = int(data[:i])
         self.raw_bootstrap_payload2 = data[i + 1:length + i + 1]
 
-    def run_command(self, command, post_data):
-        response = self.session.post(
-            ('https://public.tableau.com/vizql/w/%s/v/%s/sessions/%s/'
-             'commands/%s'
-             % (self.owner, self.sheet_urlarg, self.session_id, command)),
-            files={
-                key: (None, value)
-                for key, value in post_data.items()
-            },
-            headers={
-                'Accept': 'text/javascript',
-                'Referer': self.referer,
-                'Origin': 'https://public.tableau.com',
-                'sec-fetch-dest': 'empty',
-                'sec-fetch-mode': 'cors',
-                'sec-fetch-site': 'same-origin',
-                'X-Requested-With': 'XMLHttpRequest',
-                'x-tsi-active-tab': self.sheet,
-                'x-tsi-supports-accepted': 'true',
-            },
-        )
-
-        return response.json()
-
-    def select(self, worksheet, object_ids):
-        return self.run_command(
-            'tabdoc/select',
-            {
-                'dashboard': self.sheet,
-                'worksheet': worksheet,
-                'selection': json.dumps({
-                    'objectIds': object_ids,
-                    'selectionType': 'tuples',
-                }),
-                'selectOptions': 'select-options-simple',
-            })
-
     def get_bootstrap_data_dicts(self, expected_counts={}):
         if self.bootstrap_payload2 is None:
             self.bootstrap_payload2 = json.loads(self.raw_bootstrap_payload2)
@@ -513,6 +476,97 @@ def build_state_resources_json(session, response, out_filename, **kwargs):
         })
 
 
+def build_hospital_cases_json(session, response, out_filename, **kwargs):
+    hospital_keys = {
+        'Enloe Medical Center - Esplanade Campus': 'enloe_hospital',
+        'Oroville Hospital': 'oroville_hospital',
+        'Orchard Hospital': 'orchard_hospital',
+    }
+
+    tableau_loader = TableauLoader(session=session,
+                                   owner='COVID-19PublicDashboard',
+                                   sheet='Covid-19 Hospitals',
+                                   orig_response=response)
+    tableau_loader.bootstrap({
+        'showParams': json.dumps({
+            'unknownParams': 'COUNTY=Butte',
+        }),
+        'stickySessionKey': json.dumps({
+            'workbookId': 5911876,
+        }),
+    })
+
+    data_dicts = tableau_loader.get_bootstrap_data_dicts()
+    date = datetime.strptime(
+        sorted(data_dicts['datetime'])[-1],
+        '%Y-%m-%d %H:%M:%S.%f')
+
+    pres_model_map = (
+        tableau_loader.bootstrap_payload2
+        ['secondaryInfo']
+        ['presModelMap']
+        ['vizData']
+        ['presModelHolder']
+        ['genPresModelMapPresModel']
+        ['presModelMap']
+        ['Hospital Map']
+        ['presModelHolder']
+        ['genVizDataPresModel']
+        ['paneColumnsData']
+    )
+
+    pane_columns = (
+        pres_model_map
+        ['paneColumnsList']
+        [1]
+        ['vizPaneColumns']
+    )
+
+    int_dicts = data_dicts['integer']
+    cstring_dicts = data_dicts['cstring']
+
+    # Find the columns we care about.
+    hospital_names = []
+    counts = []
+
+    for viz_col_data in pres_model_map['vizDataColumns']:
+        caption = viz_col_data.get('fieldCaption')
+        data_type = viz_col_data.get('dataType')
+
+        if caption == 'Hospital Name' and data_type == 'cstring':
+            col_index = viz_col_data['columnIndices'][0]
+
+            for i in pane_columns[col_index]['aliasIndices']:
+                hospital_names.append(cstring_dicts[i])
+        elif caption == 'AGG(Selector KPI)' and data_type == 'integer':
+            col_index = viz_col_data['columnIndices'][1]
+
+            for i in pane_columns[col_index]['aliasIndices']:
+                counts.append(int_dicts[i])
+
+        if hospital_names and counts:
+            break
+
+    if not hospital_names:
+        raise ParseError('Unable to find hospital names.')
+
+    if not counts:
+        raise ParseError('Unable to find hospital case counts.')
+
+    if len(hospital_names) != len(counts):
+        raise ParseError('Number of hospital names (%s) does not match '
+                         'number of case counts (%s).'
+                         % (len(hospital_names), len(counts)))
+
+    hospital_cases = {
+        hospital_keys.get(hospital_name, hospital_name): count
+        for hospital_name, count in zip(hospital_names, counts)
+    }
+    hospital_cases['date'] = date.strftime('%Y-%m-%d')
+
+    add_or_update_json_date_row(out_filename, hospital_cases)
+
+
 def parse_csv(info, response, out_filename, **kwargs):
     match = info.get('match')
 
@@ -611,6 +665,30 @@ FEEDS = [
             ('Procedure Masks', ('procedure_masks',)),
             ('ICU Beds Percent', ('icu_beds_pct',)),
             ('Ventilators Percent', ('ventilators_pct',)),
+        ],
+    },
+    {
+        'filename': 'hospital-cases.json',
+        'format': 'json',
+        'url': (
+            'https://public.tableau.com/views/COVID-19PublicDashboard/'
+            'Covid-19Hospitals?%3AshowVizHome=no'
+        ),
+        'parser': build_hospital_cases_json,
+    },
+    {
+        'filename': 'hospital-cases.csv',
+        'format': 'csv',
+        'local_source': {
+            'filename': 'hospital-cases.json',
+            'format': 'json',
+        },
+        'parser': convert_json_to_csv,
+        'key_map': [
+            ('Date', ('date',)),
+            ('Enloe Hospital', ('enloe_hospital',)),
+            ('Oroville Hospital', ('oroville_hospital',)),
+            ('Orchard Hospital', ('orchard_hospital',)),
         ],
     },
     {
