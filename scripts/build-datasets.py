@@ -418,25 +418,98 @@ def build_state_resources_json(session, response, out_filename, **kwargs):
     })
 
     data_dicts = tableau_loader.get_bootstrap_data_dicts()
-    date = datetime.strptime(data_dicts['datetime'][-1],
-                             '%Y-%m-%d %H:%M:%S')
-    county_data_ints = data_dicts['integer']
-    county_data_reals = data_dicts['real']
+
+    pres_model_map = (
+        tableau_loader.bootstrap_payload2
+        ['secondaryInfo']
+        ['presModelMap']
+        ['vizData']
+        ['presModelHolder']
+        ['genPresModelMapPresModel']
+        ['presModelMap']
+    )
+
+    def _get_data_value(name, field_caption, expected_data_type):
+        data_pres_model = (
+            pres_model_map
+            [name]
+            ['presModelHolder']
+            ['genVizDataPresModel']
+            ['paneColumnsData']
+        )
+        viz_cols_data = data_pres_model['vizDataColumns']
+
+        for viz_col_data in viz_cols_data:
+            if viz_col_data.get('fieldCaption') == field_caption:
+                col_index = viz_col_data['columnIndices'][0]
+                data_type = viz_col_data['dataType']
+                pane_index = viz_col_data['paneIndices'][0]
+                break
+        else:
+            raise ParseError('fieldCaption "%s" not found for "%s"'
+                             % (field_caption, name))
+
+        if data_type != expected_data_type:
+            raise ParseError('Unexpected data type "%s" found for "%s"'
+                             % (data_type, name))
+
+        data_index = (
+            data_pres_model
+            ['paneColumnsList']
+            [pane_index]
+            ['vizPaneColumns']
+            [col_index]
+            ['aliasIndices']
+            [0]
+        )
+
+        return data_dicts[data_type][data_index]
+
+    # NOTE: Ideally we'd look this up from "Last Updated Date", but I'm still
+    #       unsure how these map into a dataValues with a negative
+    #       aliasIndices. So while this isn't correct, it's sort of what
+    #       we've got right now.
+    last_updated = datetime.strptime(
+        sorted(data_dicts['datetime'])[-1],
+        '%Y-%m-%d %H:%M:%S')
+
+    beds = _get_data_value('Sheet 42',
+                           'SUM(Bed Reporting (Fixed))',
+                           'integer')
+    face_shields = _get_data_value('Face Shields Distributed',
+                                   'AGG(TableCalc Filled)',
+                                   'integer')
+    gloves = _get_data_value('Gloves Distributed',
+                             'AGG(TableCalc Filled)',
+                             'integer')
+    gowns = _get_data_value('Gowns Distributed',
+                            'AGG(TableCalc Filled)',
+                            'integer')
+    procedure_masks = _get_data_value('Proc Masks Distributed',
+                                      'AGG(TableCalc Filled)',
+                                      'integer')
+    n95_respirators = _get_data_value('N95 Distributed',
+                                      'AGG(TableCalc Filled)',
+                                      'integer')
+    icu_beds_pct = _get_data_value('ICU Beds Available BAN',
+                                   'AGG(ICU Availability)',
+                                   'real')
+    ventilators_pct = _get_data_value('Ventilators Available %',
+                                      'AGG(Ventilators Available %)',
+                                      'real')
 
     add_or_update_json_date_row(
         out_filename,
         {
-            'date': date.strftime('%Y-%m-%d'),
-            'beds': county_data_ints[-2],
-            'face_shields': county_data_ints[-6],
-            'gloves': county_data_ints[-5],
-            'gowns': county_data_ints[-7],
-            'procedure_masks': county_data_ints[-8],
-            'n95_respirators': county_data_ints[-9],
-            'icu_beds_pct': int(round(county_data_reals[-2], 2) *
-                                          100),
-            'ventilators_pct': int(round(county_data_reals[-1], 2) *
-                                             100),
+            'date': last_updated.strftime('%Y-%m-%d'),
+            'beds': beds,
+            'face_shields': face_shields,
+            'gloves': gloves,
+            'gowns': gowns,
+            'procedure_masks': procedure_masks,
+            'n95_respirators': n95_respirators,
+            'icu_beds_pct': int(round(icu_beds_pct, 2) * 100),
+            'ventilators_pct': int(round(ventilators_pct, 2) * 100),
         })
 
 
@@ -511,35 +584,35 @@ FEEDS = [
             ('Other Region Cases', ('regions', 'other')),
         ],
     },
-#    {
-#        'filename': 'state-resources.json',
-#        'format': 'json',
-#        'url': (
-#            'https://public.tableau.com/views/COVID-19CountyProfile3/'
-#            'CountyLevelCombined?%3AshowVizHome=no&County=Butte'
-#        ),
-#        'parser': build_state_resources_json,
-#    },
-#    {
-#        'filename': 'state-resources.csv',
-#        'format': 'csv',
-#        'local_source': {
-#            'filename': 'state-resources.json',
-#            'format': 'json',
-#        },
-#        'parser': convert_json_to_csv,
-#        'key_map': [
-#            ('Date', ('date',)),
-#            ('Beds', ('beds',)),
-#            ('Face Shields', ('face_shields',)),
-#            ('Gloves', ('gloves',)),
-#            ('Gowns', ('gowns',)),
-#            ('N95 Respirators', ('n95_respirators',)),
-#            ('Procedure Masks', ('procedure_masks',)),
-#            ('ICU Beds Percent', ('icu_beds_pct',)),
-#            ('Ventilators Percent', ('ventilators_pct',)),
-#        ],
-#    },
+    {
+        'filename': 'state-resources.json',
+        'format': 'json',
+        'url': (
+            'https://public.tableau.com/views/COVID-19CountyProfile3/'
+            'CountyLevelCombined?%3AshowVizHome=no&County=Butte'
+        ),
+        'parser': build_state_resources_json,
+    },
+    {
+        'filename': 'state-resources.csv',
+        'format': 'csv',
+        'local_source': {
+            'filename': 'state-resources.json',
+            'format': 'json',
+        },
+        'parser': convert_json_to_csv,
+        'key_map': [
+            ('Date', ('date',)),
+            ('Beds', ('beds',)),
+            ('Face Shields', ('face_shields',)),
+            ('Gloves', ('gloves',)),
+            ('Gowns', ('gowns',)),
+            ('N95 Respirators', ('n95_respirators',)),
+            ('Procedure Masks', ('procedure_masks',)),
+            ('ICU Beds Percent', ('icu_beds_pct',)),
+            ('Ventilators Percent', ('ventilators_pct',)),
+        ],
+    },
     {
         'filename': 'timeline.csv',
         'format': 'csv',
