@@ -1,6 +1,8 @@
 @color-red: red;
 @color-green: #26ab26;
 
+@note-color: #AA3333;
+
 @symbol-up-arrow: "▲ ";
 @symbol-down-arrow: "▼ ";
 
@@ -209,7 +211,7 @@ a:visited {
     }
 
     text {
-      fill: #AA3333;
+      fill: @note-color;
       font-size: 11px;
       background: white;
       stroke-width: 3;
@@ -340,6 +342,12 @@ a:visited {
   &__logo {
     float: left;
     margin-right: 1.5em;
+  }
+
+  &__note {
+    text-align: left;
+    color: @note-color;
+    margin: 1em 4em 3em 2em;
   }
 
   &__section {
@@ -527,6 +535,12 @@ a:visited {
     &__logo {
       width: 80px;
       height: 80px;
+    }
+
+    &__note {
+      margin-left: 0;
+      margin-right: 0;
+      text-align: justify;
     }
 
     &__section.-is-more-graphs.-is-open #more-graphs-subsection {
