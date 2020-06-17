@@ -146,14 +146,15 @@ BC19.processTimelineData = function(timeline) {
         graphNewDeaths.push(row.deaths.delta_total);
 
         graphTotalTests.push(viralTests.total);
-        graphNewTests.push(viralTests.delta_total);
-        graphTotalTestResults.push(viralTests.results);
-        graphPositiveResults.push(deltaConfirmedCases);
+        graphNewTests.push(viralTests.delta_total || 0);
+        graphTotalTestResults.push(viralTests.results || 0);
 
         if (viralTestResults !== null && deltaConfirmedCases !== null) {
             graphNegativeResults.push(viralTestResults - deltaConfirmedCases);
+            graphPositiveResults.push(deltaConfirmedCases);
         } else {
             graphNegativeResults.push(0);
+            graphPositiveResults.push(0);
         }
 
         graphCasesInChico.push(regions.chico.cases);
