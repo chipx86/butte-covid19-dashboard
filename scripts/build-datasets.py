@@ -569,6 +569,7 @@ def build_hospital_cases_json(session, response, out_filename, **kwargs):
 
 def parse_csv(info, response, out_filename, **kwargs):
     match = info.get('match')
+    matched_lines = set()
 
     with open(out_filename, 'wb') as out_fp:
         if match is None:
@@ -578,11 +579,15 @@ def parse_csv(info, response, out_filename, **kwargs):
 
             out_fp.write(lines[0])
 
-            for line in lines[1:]:
-                line = line
+            data_lines = lines[1:]
 
-                if match.match(line):
+            if info.get('sort'):
+                data_lines = sorted(data_lines)
+
+            for line in data_lines:
+                if line not in matched_lines and match.match(line):
                     out_fp.write(line)
+                    matched_lines.add(line)
 
 
 FEEDS = [
@@ -591,6 +596,7 @@ FEEDS = [
         'format': 'csv',
         'url': 'https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/cdph-skilled-nursing-facilities.csv',
         'match': re.compile(b'.*Butte,007'),
+        'sort': True,
     },
     {
         'filename': 'state-hospitals.csv',
