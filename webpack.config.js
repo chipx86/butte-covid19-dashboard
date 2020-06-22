@@ -44,7 +44,7 @@ const htmlLoaderAttributes = {
 };
 
 
-module.exports = {
+module.exports = (_, env) => ({
     context: src_dir,
     devServer: {
         contentBase: build_dir,
@@ -113,7 +113,7 @@ module.exports = {
     output: {
         path: path.resolve(build_dir),
         filename: 'js/[name].[contenthash:8].js',
-        publicPath: '/',
+        publicPath: (env.mode === 'production' ? 'https://bc19.live/' : '/'),
     },
     plugins: [
         new HtmlWebpackPlugin({
@@ -121,4 +121,4 @@ module.exports = {
             minify: false,
         }),
     ],
-};
+});
