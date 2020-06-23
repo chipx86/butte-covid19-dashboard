@@ -254,11 +254,14 @@ a:visited {
     "intro intro"
     "case-counters case-counters"
     "cases-breakdown case-graphs"
-    "more-graphs more-graphs"
+    "demographics-header demographics-header"
+    "demographics-graphs demographics-graphs"
     "viral-testing-info viral-testing-info"
     "viral-test-counters viral-test-counters"
     "population-test-counters population-test-counters"
     "viral-test-graphs viral-test-graphs"
+    "hospitalizations-header hospitalizations-header"
+    "hospitalizations-graphs hospitalizations-graphs"
     "footer footer";
 
   &.-is-loading {
@@ -288,7 +291,7 @@ a:visited {
     background: #ffeebc;
     border-top: 1px rgba(0, 0, 0, 0.4) solid;
     border-bottom: 1px rgba(0, 0, 0, 0.4) solid;
-    margin: 0;
+    margin: 2em 0 0 0;
     padding: 2em;
     text-align: center;
 
@@ -299,6 +302,7 @@ a:visited {
 
     &.-is-intro {
       grid-area: intro;
+      margin-top: 0;
       text-align: left;
       padding: 1em;
 
@@ -319,9 +323,16 @@ a:visited {
       }
     }
 
+    &.-is-demographics-header {
+      grid-area: demographics-header;
+    }
+
+    &.-is-hospitalizations-header {
+      grid-area: hospitalizations-header;
+    }
+
     &.-is-viral-testing-intro {
       grid-area: viral-testing-info;
-      margin-top: 2em;
     }
 
     h1 {
@@ -378,6 +389,14 @@ a:visited {
       padding-right: 1em;
     }
 
+    &.-is-demographics-graphs {
+      grid-area: demographics-graphs;
+    }
+
+    &.-is-hospitalizations-graphs {
+      grid-area: hospitalizations-graphs;
+    }
+
     &.-is-population-test-counters {
       grid-area: population-test-counters;
     }
@@ -388,22 +407,6 @@ a:visited {
 
     &.-is-viral-test-graphs {
       grid-area: viral-test-graphs;
-    }
-
-    &.-is-more-graphs {
-      grid-area: more-graphs;
-    }
-
-    &.-is-open {
-      #more-graphs-expander {
-        display: none;
-      }
-
-      #more-graphs-subsection {
-        display: grid;
-        grid-template-columns: 50% 50%;
-        align-items: end;
-      }
     }
   }
 }
@@ -443,23 +446,6 @@ a:visited {
 }
 
 
-#more-graphs-expander {
-  color: blue;
-  display: block;
-  font-size: 110%;
-  margin: 2em auto 0 auto;
-  padding: 1em;
-  text-align: center;
-}
-
-#more-graphs-subsection {
-  display: none;
-
-  .bc19-c-timeline-graph {
-    flex: 1 1 0;
-  }
-}
-
 #twitter-widget-0,
 .twitter-follow-button {
   color: blue;
@@ -486,11 +472,14 @@ a:visited {
       "case-counters"
       "cases-breakdown"
       "case-graphs"
-      "more-graphs"
+      "demographics-header"
+      "demographics-graphs"
       "viral-testing-info"
       "viral-test-counters"
       "population-test-counters"
       "viral-test-graphs"
+      "hospitalizations-header"
+      "hospitalizations-graphs"
       "footer";
 
       padding-bottom: 2em;
@@ -538,13 +527,9 @@ a:visited {
     }
 
     &__note {
-      margin-left: 0;
-      margin-right: 0;
+      margin-left: 1em;
+      margin-right: 1em;
       text-align: justify;
-    }
-
-    &__section.-is-more-graphs.-is-open #more-graphs-subsection {
-      grid-template-columns: 100%;
     }
   }
 
@@ -556,7 +541,12 @@ a:visited {
 
 @media only screen and (max-width: 600px) {
   .bc19-c-timeline-graph {
-    padding-left: 1em;
-    padding-right: 2em;
+    padding-left: 0;
+    padding-right: 0;
+
+    .bb {
+      padding-left: 0;
+      padding-right: 1em;
+    }
   }
 }

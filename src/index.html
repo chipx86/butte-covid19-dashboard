@@ -163,50 +163,35 @@
      <h3 class="bc19-c-timeline-graph__title">Deaths</h3>
      <div id="deaths_graph"></div>
     </figure>
-    <a id="more-graphs-expander" href="#all-charts">View More Graphs</a>
-
    </section>
 
-   <section class="bc19-c-dashboard__section -is-more-graphs"
-            id="more-graphs-section"
-            aria-label="More Graphs">
-    <div id="more-graphs-subsection">
-     <figure class="bc19-c-timeline-graph">
-      <h3 class="bc19-c-timeline-graph__title"
-          id="cases_by_region_timeline_graph_label">
-       Timeline of Cases By Region
-      </h3>
-      <div id="cases_by_region_timeline_graph"
-           aria-labelled-by="cases_by_region_timeline_graph_label"></div>
-     </figure>
+   <header class="bc19-c-dashboard__header -is-demographics-header"
+           aria-label="Demographics Header">
+    <h2>Demographics</h2>
+    <p>
+     Growth of the spread by age group and region, based on county data.
+    </p>
+   </header>
 
-     <figure class="bc19-c-timeline-graph">
-      <h3 class="bc19-c-timeline-graph__title"
-          id="cases_by_age_timeline_graph_label">
-       Timeline of Cases By Age
-      </h3>
-      <div id="cases_by_age_timeline_graph"
-           aria-labelled-by="cases_by_age_timeline_graph_label"></div>
-     </figure>
+   <section class="bc19-c-dashboard__section -is-demographics-graphs"
+            aria-label="Demographics graphs">
+    <figure class="bc19-c-timeline-graph">
+     <h3 class="bc19-c-timeline-graph__title"
+         id="cases_by_age_timeline_graph_label">
+      Cases By Age
+     </h3>
+     <div id="cases_by_age_timeline_graph"
+          aria-labelled-by="cases_by_age_timeline_graph_label"></div>
+    </figure>
 
-     <figure class="bc19-c-timeline-graph">
-      <h3 class="bc19-c-timeline-graph__title"
-          id="isolation_timeline_graph_label">
-       People In Isolation
-      </h3>
-      <div id="isolation_timeline_graph"
-           aria-labelled-by="isolation_timeline_graph_label"></div>
-     </figure>
-
-     <figure class="bc19-c-timeline-graph">
-      <h3 class="bc19-c-timeline-graph__title"
-          id="hospitalizations_icu_timeline_graph_label">
-       Total Hospitalizations vs. ICU
-      </h3>
-      <div id="hospitalizations_icu_timeline_graph"
-           aria-labelled-by="hospitalizations_icu_timeline_graph_label"></div>
-     </figure>
-    </div>
+    <figure class="bc19-c-timeline-graph">
+     <h3 class="bc19-c-timeline-graph__title"
+         id="cases_by_region_timeline_graph_label">
+      Cases By Region
+     </h3>
+     <div id="cases_by_region_timeline_graph"
+          aria-labelled-by="cases_by_region_timeline_graph_label"></div>
+    </figure>
    </section>
 
    <header class="bc19-c-dashboard__header -is-viral-testing-intro"
@@ -302,6 +287,54 @@
      </h4>
      <div id="test_results_graph"></div>
     </figure>
+   </section>
+
+   <header class="bc19-c-dashboard__header -is-hospitalizations-header"
+           aria-label="Hospitalizations and isolation info">
+    <h2>Hospitalizations, Isolation, Care</h2>
+    <p>
+     <strong>NOTE:</strong> Hospital/ICU information comes from the state,
+     and lags a day behind.
+    </p>
+   </header>
+
+   <section class="bc19-c-dashboard__section -is-hospitalizations-graphs"
+            aria-label="Hospitalizations and isolation graphs">
+     <figure class="bc19-c-timeline-graph">
+      <h3 class="bc19-c-timeline-graph__title"
+          id="hospitalizations_icu_timeline_graph_label">
+       Total Hospitalizations vs. ICU
+      </h3>
+      <h4 class="bc19-c-timeline-graph__subtitle">
+        Most early historical data is unavailable
+      </h4>
+      <div id="hospitalizations_icu_timeline_graph"
+           aria-labelled-by="hospitalizations_icu_timeline_graph_label"></div>
+     </figure>
+
+     <figure class="bc19-c-timeline-graph">
+      <h3 class="bc19-c-timeline-graph__title"
+          id="isolation_timeline_graph_label">
+       People In Isolation
+      </h3>
+      <h4 class="bc19-c-timeline-graph__subtitle">
+        Most early historical data is unavailable
+      </h4>
+      <div id="isolation_timeline_graph"
+           aria-labelled-by="isolation_timeline_graph_label"></div>
+     </figure>
+
+     <figure class="bc19-c-timeline-graph">
+      <h3 class="bc19-c-timeline-graph__title"
+          id="skilled_nursing_graph_label">
+       Skilled Nursing Facilities
+      </h3>
+      <h4 class="bc19-c-timeline-graph__subtitle">
+        Tracking 9 facilities
+      </h4>
+      <div id="skilled_nursing_graph"
+           aria-labelled-by="skilled_nursing_graph_label"></div>
+     </figure>
    </section>
 
    <footer class="bc19-c-dashboard__footer">

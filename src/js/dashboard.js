@@ -1,6 +1,25 @@
 window.BC19 = {
     COUNTY_POPULATION: 217769,
 
+    stepSizes: {
+        TOTAL_CASES: 10,
+        NEW_CASES: 5,
+        DEATHS: 2,
+        TOTAL_TESTS: 200,
+        DEMOGRAPHICS: 20,
+        HOSPITALIZATIONS: 2,
+        ISOLATION: 20,
+        SNF: 2,
+    },
+
+    graphSizes: {
+        VERY_TALL: 380,
+        STANDARD: 240,
+        MEDIUM: 200,
+        SMALL: 120,
+        VERY_SMALL: 120,
+    },
+
     colors: {
         cases: '#4783EF',
         new_cases: '#E86050',
@@ -26,6 +45,9 @@ window.BC19 = {
         age_18_49: '#E7463B',
         age_50_64: '#3BA859',
         age_65_plus: '#F9BD34',
+
+        current_patient_cases: '#AF83A7',
+        current_staff_cases: '#6FA367',
     },
 
     els: {
@@ -118,6 +140,11 @@ BC19.processTimelineData = function(timeline) {
     const graphHospitalizations = ['hospitalizations'];
     const graphICU = ['icu'];
 
+    const graphNursingCurPatientCases = ['current_patient_cases'];
+    const graphNursingCurStaffCases = ['current_staff_cases'];
+    const graphNursingTotalPatientDeaths = ['total_patient_deaths'];
+    const graphNursingTotalStaffDeaths = ['total_staff_deaths'];
+
     const graphNotes = [];
 
     let maxNewCases = 0;
@@ -139,6 +166,7 @@ BC19.processTimelineData = function(timeline) {
         const regions = row.regions;
         const ageRanges = row.age_ranges_in_years;
         const stateHospital = row.hospitalizations.state_data;
+        const snf = row.skilled_nursing_facilities;
 
         graphDates.push(row.date);
         graphTotalCases.push(confirmedCases.total);
@@ -172,6 +200,11 @@ BC19.processTimelineData = function(timeline) {
 
         graphHospitalizations.push(stateHospital.positive || 0);
         graphICU.push(stateHospital.icu_positive || 0);
+
+        graphNursingCurPatientCases.push(snf.current_patient_cases);
+        graphNursingCurStaffCases.push(snf.current_staff_cases);
+        graphNursingTotalPatientDeaths.push(snf.total_patient_deaths);
+        graphNursingTotalStaffDeaths.push(snf.total_staff_deaths);
 
         maxNewDeaths = Math.max(maxNewDeaths, row.deaths.delta_total);
 
@@ -256,6 +289,12 @@ BC19.processTimelineData = function(timeline) {
         hospitalizations: {
             total: graphHospitalizations,
             icu: graphICU,
+        },
+        snf: {
+            curPatientCases: graphNursingCurPatientCases,
+            curStaffCases: graphNursingCurStaffCases,
+            totalPatientDeaths: graphNursingTotalPatientDeaths,
+            totalStaffDeaths: graphNursingTotalStaffDeaths,
         },
     };
 
@@ -622,14 +661,26 @@ BC19.setupByHospitalGraph = function(timeline) {
 
 
 BC19.setupMainTimelineGraphs = function(timeline) {
-    const totalCaseStepCount = 10;
-    const newCaseStepCount = 2;
-    const deathsStepCount = 2;
+    const totalCaseStepCount = BC19.stepSizes.TOTAL_CASES;
+    const newCaseStepCount = BC19.stepSizes.NEW_CASES;
+    const deathsStepCount = BC19.stepSizes.DEATHS;
+
+    const axisX = {
+        type: 'timeseries',
+        localtime: false,
+        label: {
+            position: 'outer-left',
+        },
+        tick: {
+            fit: false,
+            format: '%B %d',
+        },
+    };
 
     BC19.setupBBGraph({
         bindto: '#total_cases_graph',
         size: {
-            height: 380,
+            height: BC19.graphSizes.VERY_TALL,
         },
         data: {
             x: 'date',
@@ -651,17 +702,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             },
         },
         axis: {
-            x: {
-                type: 'timeseries',
-                localtime: false,
-                label: {
-                    position: 'outer-left',
-                },
-                tick: {
-                    fit: false,
-                    format: '%B %d',
-                },
-            },
+            x: axisX,
             y: {
                 padding: 120,
                 max: Math.ceil(BC19.maxTotalCases / totalCaseStepCount) *
@@ -676,7 +717,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
     BC19.setupBBGraph({
         bindto: '#new_cases_graph',
         size: {
-            height: 200,
+            height: BC19.graphSizes.STANDARD,
         },
         data: {
             x: 'date',
@@ -690,18 +731,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             },
         },
         axis: {
-            x: {
-                type: 'timeseries',
-                localtime: false,
-                label: {
-                    position: 'outer-left',
-                },
-                tick: {
-                    fit: false,
-                    autorotate: true,
-                    format: '%B %d',
-                },
-            },
+            x: axisX,
             y: {
                 max: Math.ceil(BC19.maxNewCases / newCaseStepCount) *
                      newCaseStepCount,
@@ -715,6 +745,9 @@ BC19.setupMainTimelineGraphs = function(timeline) {
 
     BC19.setupBBGraph({
         bindto: '#deaths_graph',
+        size: {
+            height: BC19.graphSizes.SMALL,
+        },
         data: {
             x: 'date',
             colors: BC19.colors,
@@ -726,22 +759,8 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 new_deaths: 'bar',
             },
         },
-        size: {
-            height: 120,
-        },
         axis: {
-            x: {
-                type: 'timeseries',
-                localtime: false,
-                label: {
-                    position: 'outer-left',
-                },
-                tick: {
-                    fit: false,
-                    autorotate: true,
-                    format: '%B %d',
-                },
-            },
+            x: axisX,
             y: {
                 max: Math.ceil(BC19.maxNewDeaths / deathsStepCount) *
                      deathsStepCount,
@@ -754,173 +773,10 @@ BC19.setupMainTimelineGraphs = function(timeline) {
     });
 
     BC19.setupBBGraph({
-        bindto: '#cases_in_test_results_graph',
-        data: {
-            x: 'date',
-            colors: BC19.colors,
-            columns: [
-                BC19.graphData.dates,
-                BC19.graphData.viralTests.negativeResults,
-                BC19.graphData.viralTests.positiveResults,
-            ],
-            groups: [['neg_results', 'pos_results']],
-            names: {
-                neg_results: 'Negative Test Results',
-                pos_results: 'Positive Test Results',
-            },
-            stack: {
-                normalize: true,
-            },
-            types: {
-                neg_results: 'bar',
-                pos_results: 'bar',
-            },
-        },
-        axis: {
-            x: {
-                type: 'timeseries',
-                localtime: false,
-                label: {
-                    position: 'outer-left',
-                },
-                tick: {
-                    fit: false,
-                    autorotate: true,
-                    format: '%B %d',
-                },
-            },
-            y: {
-                tick: {
-                    stepSize: 25,
-                },
-            },
-        },
-        legend: {
-            show: true,
-        },
-        tooltip: {
-            linked: true,
-
-            format: {
-                value: (value, ratio, id) => {
-                    return value + ' (' + (ratio * 100).toFixed(1) + '%)';
-                },
-            },
-        },
-    });
-
-    BC19.setupBBGraph({
-        bindto: '#test_results_graph',
-        data: {
-            x: 'date',
-            colors: BC19.colors,
-            columns: [
-                BC19.graphData.dates,
-                BC19.graphData.viralTests.newTests,
-                BC19.graphData.viralTests.results,
-            ],
-            names: {
-                new_tests: 'New Viral Tests',
-                test_results: 'New Results',
-            },
-            types: {
-                total_tests: 'area-step',
-                test_results: 'bar',
-                new_tests: 'bar',
-            },
-        },
-        axis: {
-            x: {
-                type: 'timeseries',
-                localtime: false,
-                label: {
-                    position: 'outer-left',
-                },
-                tick: {
-                    fit: false,
-                    autorotate: true,
-                    format: '%B %d',
-                },
-            },
-            y: {
-                tick: {
-                    stepSize: 100,
-                },
-            },
-        },
-        legend: {
-            show: true,
-        },
-    });
-};
-
-
-BC19.showMoreGraphs = function() {
-    const commonOptions = {
-        legend: {
-            show: true,
-        },
-        size: {
-            height: 300,
-        },
-        axis: {
-            x: {
-                type: 'timeseries',
-                localtime: false,
-                tick: {
-                    fit: false,
-                    format: '%B %d',
-                },
-            },
-        },
-    };
-
-    const sectionEl = document.getElementById('more-graphs-section');
-    sectionEl.classList.add('-is-open');
-
-    document.getElementById('more-graphs-expander').remove();
-
-    BC19.setupBBGraph(Object.assign({}, commonOptions, {
-        bindto: '#cases_by_region_timeline_graph',
-        data: {
-            x: 'date',
-            colors: BC19.colors,
-            columns: [
-                BC19.graphData.dates,
-                BC19.graphData.regions.chico,
-                BC19.graphData.regions.oroville,
-                BC19.graphData.regions.gridley,
-                BC19.graphData.regions.other,
-            ],
-            names: {
-                chico: 'Chico',
-                oroville: 'Oroville',
-                gridley: 'Gridley',
-                other: 'Other',
-            },
-            order: null,
-            types: {
-                chico: 'bar',
-                oroville: 'bar',
-                gridley: 'bar',
-                other: 'bar',
-            },
-            groups: [
-                ['oroville', 'gridley', 'other', 'chico'],
-            ],
-        },
-        axis: {
-            y: {
-                tick: {
-                    stepSize: 10,
-                },
-            },
-            x: commonOptions.axis.x,
-        },
-    }));
-
-    BC19.setupBBGraph(Object.assign({}, commonOptions, {
         bindto: '#cases_by_age_timeline_graph',
+        size: {
+            height: BC19.graphSizes.MEDIUM,
+        },
         data: {
             x: 'date',
             colors: BC19.colors,
@@ -949,17 +805,189 @@ BC19.showMoreGraphs = function() {
             ],
         },
         axis: {
+            x: axisX,
             y: {
                 tick: {
-                    stepSize: 10,
+                    stepSize: BC19.stepSizes.DEMOGRAPHICS,
                 },
             },
-            x: commonOptions.axis.x,
         },
-    }));
+        legend: {
+            show: true,
+        },
+    });
 
-    BC19.setupBBGraph(Object.assign({}, commonOptions, {
+    BC19.setupBBGraph({
+        bindto: '#cases_by_region_timeline_graph',
+        size: {
+            height: BC19.graphSizes.STANDARD,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                BC19.graphData.dates,
+                BC19.graphData.regions.chico,
+                BC19.graphData.regions.oroville,
+                BC19.graphData.regions.gridley,
+                BC19.graphData.regions.other,
+            ],
+            names: {
+                chico: 'Chico',
+                oroville: 'Oroville',
+                gridley: 'Gridley',
+                other: 'Other',
+            },
+            order: null,
+            types: {
+                chico: 'bar',
+                oroville: 'bar',
+                gridley: 'bar',
+                other: 'bar',
+            },
+            groups: [
+                ['oroville', 'gridley', 'other', 'chico'],
+            ],
+        },
+        axis: {
+            x: axisX,
+            y: {
+                tick: {
+                    stepSize: BC19.stepSizes.DEMOGRAPHICS,
+                },
+            },
+        },
+        legend: {
+            show: true,
+        },
+    });
+
+    BC19.setupBBGraph({
+        bindto: '#cases_in_test_results_graph',
+        size: {
+            height: BC19.graphSizes.STANDARD,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                BC19.graphData.dates,
+                BC19.graphData.viralTests.negativeResults,
+                BC19.graphData.viralTests.positiveResults,
+            ],
+            groups: [['neg_results', 'pos_results']],
+            names: {
+                neg_results: 'Negative Test Results',
+                pos_results: 'Positive Test Results',
+            },
+            stack: {
+                normalize: true,
+            },
+            types: {
+                neg_results: 'bar',
+                pos_results: 'bar',
+            },
+        },
+        axis: {
+            x: axisX,
+            y: {
+                tick: {
+                    stepSize: 25,
+                },
+            },
+        },
+        legend: {
+            show: true,
+        },
+        tooltip: {
+            linked: true,
+
+            format: {
+                value: (value, ratio, id) => {
+                    return value + ' (' + (ratio * 100).toFixed(1) + '%)';
+                },
+            },
+        },
+    });
+
+    BC19.setupBBGraph({
+        bindto: '#test_results_graph',
+        size: {
+            height: BC19.graphSizes.STANDARD,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                BC19.graphData.dates,
+                BC19.graphData.viralTests.newTests,
+                BC19.graphData.viralTests.results,
+            ],
+            names: {
+                new_tests: 'New Viral Tests',
+                test_results: 'New Results',
+            },
+            types: {
+                test_results: 'bar',
+                new_tests: 'bar',
+            },
+        },
+        axis: {
+            x: axisX,
+            y: {
+                tick: {
+                    stepSize: BC19.stepSizes.TOTAL_TESTS,
+                },
+            },
+        },
+        legend: {
+            show: true,
+        },
+    });
+
+    BC19.setupBBGraph({
+        bindto: '#hospitalizations_icu_timeline_graph',
+        size: {
+            height: BC19.graphSizes.STANDARD,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                BC19.graphData.dates,
+                BC19.graphData.hospitalizations.total,
+                BC19.graphData.hospitalizations.icu,
+            ],
+            names: {
+                cases: 'Confirmed Cases',
+                hospitalizations: 'All Hospitalizations',
+                icu: 'Just In ICU',
+            },
+            order: null,
+            types: {
+                cases: 'area-step',
+                hospitalizations: 'area-step',
+                icu: 'area-step',
+            },
+        },
+        legend: {
+            show: true,
+        },
+        axis: {
+            x: axisX,
+            y: {
+                tick: {
+                    stepSize: BC19.stepSizes.HOSPITALIZATIONS,
+                },
+            },
+        },
+    });
+
+    BC19.setupBBGraph({
         bindto: '#isolation_timeline_graph',
+        size: {
+            height: BC19.graphSizes.STANDARD,
+        },
         data: {
             x: 'date',
             colors: BC19.colors,
@@ -981,39 +1009,66 @@ BC19.showMoreGraphs = function() {
                 released_from_isolation: 'area-step',
             },
         },
+        legend: {
+            show: true,
+        },
         axis: {
+            x: axisX,
             y: {
                 tick: {
-                    stepSize: 10,
+                    stepSize: BC19.stepSizes.ISOLATION,
                 },
             },
-            x: commonOptions.axis.x,
         },
-    }));
+    });
 
-    BC19.setupBBGraph(Object.assign({}, commonOptions, {
-        bindto: '#hospitalizations_icu_timeline_graph',
+    BC19.setupBBGraph({
+        bindto: '#skilled_nursing_graph',
+        size: {
+            height: BC19.graphSizes.MEDIUM,
+        },
         data: {
             x: 'date',
             colors: BC19.colors,
             columns: [
                 BC19.graphData.dates,
-                BC19.graphData.hospitalizations.total,
-                BC19.graphData.hospitalizations.icu,
+                BC19.graphData.snf.curPatientCases,
+                BC19.graphData.snf.curStaffCases,
+                /*
+                BC19.graphData.snf.totalPatientDeaths,
+                BC19.graphData.snf.totalStaffDeaths,
+                */
             ],
             names: {
-                cases: 'Confirmed Cases',
-                hospitalizations: 'All Hospitalizations',
-                icu: 'Just In ICU',
+                current_patient_cases: 'Current Patient Cases',
+                current_staff_cases: 'Current Staff Cases',
+                total_patient_deaths: 'Total Patient Deaths',
+                total_staff_deaths: 'Total Staff Deaths',
             },
             order: null,
             types: {
-                cases: 'area-step',
-                hospitalizations: 'area-step',
-                icu: 'area-step',
+                current_patient_cases: 'area-step',
+                current_staff_cases: 'area-step',
+                total_patient_deaths: 'step',
+                total_staff_deaths: 'step',
+            },
+            groups: [
+                ['current_patient_cases', 'current_staff_cases'],
+                //'total_patient_deaths', 'total_staff_deaths'],
+            ],
+        },
+        legend: {
+            show: true,
+        },
+        axis: {
+            x: axisX,
+            y: {
+                tick: {
+                    stepSize: BC19.stepSizes.SNF,
+                },
             },
         },
-    }));
+    });
 };
 
 
@@ -1076,10 +1131,6 @@ BC19.setupElements = function() {
             moment(dateRangeFromEl.value, 'YYYY-MM-DD').toDate(),
             moment(dateRangeThroughEl.value, 'YYYY-MM-DD').toDate());
     }
-
-    document.getElementById('more-graphs-expander').addEventListener(
-        'click',
-        () => BC19.showMoreGraphs());
 
     const dateSelectorEl = document.getElementById('date-selector');
     BC19.els.dateSelector = dateSelectorEl;
@@ -1154,10 +1205,6 @@ BC19.init = function() {
             BC19.setupByRegionGraph(timeline);
             BC19.setupByHospitalGraph(timeline);
             BC19.setupMainTimelineGraphs(timeline);
-
-            if (window.location.hash === '#all-charts') {
-                BC19.showMoreGraphs();
-            }
         })
         .catch(msg => {
             console.log(msg);
