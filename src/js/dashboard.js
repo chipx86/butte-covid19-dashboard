@@ -622,7 +622,7 @@ BC19.setupByHospitalGraph = function(timeline) {
 
 
 BC19.setupMainTimelineGraphs = function(timeline) {
-    const totalCaseStepCount = 5;
+    const totalCaseStepCount = 10;
     const newCaseStepCount = 2;
     const deathsStepCount = 2;
 
