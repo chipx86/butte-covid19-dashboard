@@ -355,6 +355,20 @@ def build_timeline_json(in_fp, out_filename, **kwargs):
 
                 add_nested_key(date_info, col_name, col_data)
 
+    # We've hit issues where we've encountered empty data for the last few
+    # days when pulling from the spreadsheet. That should not be happening.
+    # Look for this and bail if we have to.
+    found_cases = False
+
+    for row in timeline[-3:]:
+        if row['confirmed_cases']['total'] is not None:
+            found_cases = True
+            break
+
+    if not found_cases:
+        sys.stderr.write('Got an empty timeline dataset! Not writing.')
+        return False
+
     with open(out_filename, 'w') as fp:
         json.dump(
             {
@@ -730,7 +744,9 @@ def main():
 
         out_filename = os.path.join(out_dir, filename)
         parser = info.get('parser')
+        result = None
         up_to_date = False
+        skipped = False
 
         if parser is None and info['format'] == 'csv':
             parser = parse_csv
@@ -792,8 +808,12 @@ def main():
             sys.stderr.write('Invalid feed entry: %r\n' % info)
             continue
 
+        skipped = (result is False)
+
         if up_to_date:
             print('Up-to-date: %s' % out_filename)
+        elif skipped:
+            print('Skipped %s' % out_filename)
         else:
             print('Wrote %s' % out_filename)
 
