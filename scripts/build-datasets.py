@@ -237,7 +237,7 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
             'entity_id': '569b986d-bb02-48dc-ae00-15b58b58f712',
         },
         'released_from_isolation': {
-            'labels': ['released from isolation'],
+            'labels': ['released from isolation', 'recovered'],
             'entity_id': 'f335bb23-9900-4acf-854a-8214e532c1de',
         },
         'deaths': {
