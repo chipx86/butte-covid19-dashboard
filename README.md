@@ -33,6 +33,10 @@ BC19.live's data is compiled from the following sources:
 * [State Hospital Case Statistics - All Counties (CSV)](https://data.chhs.ca.gov/dataset/6882c390-b2d7-4b9a-aefa-2068cee63e47/resource/6cd8d424-dfaa-4bdd-9410-a3d656e1176e/download/covid19data.csv)
 * [Columbia University Projections](https://github.com/shaman-lab/COVID-19Projection)
 
+Additional datasets can be found on the [COVID-19
+Section](https://data.ca.gov/group/covid-19) of the [California Open Data
+Portal](https://data.ca.gov).
+
 
 Data Exports
 ------------
@@ -47,6 +51,6 @@ The following data is made available for others to use:
 * [Butte County Dashboard (CSV)](https://bc19.live/data/csv/butte-dashboard.csv)
 * [Butte County Dashboard (JSON)](https://bc19.live/data/json/butte-dashboard.json)
 * [State Skilled Nursing Facilities - Butte County Only (CSV)](https://bc19.live/data/csv/skilled-nursing-facilities.csv)
-* [State Hospital Case Statistics - Butte County Only (CSV)](https://bc19.live/data/csv/state-hospitals.csv)
+* [State Hospital Case Statistics - Butte County Only (CSV)](https://bc19.live/data/csv/state-hospitals-v2.csv)
 * [State Resources - Butte County Only (CSV)](https://bc19.live/data/csv/state-resources.csv)
 * [State Resources - Butte County Only (JSON)](https://bc19.live/data/json/state-resources.json)

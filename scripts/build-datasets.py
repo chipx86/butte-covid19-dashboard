@@ -613,10 +613,11 @@ FEEDS = [
         'sort': True,
     },
     {
-        'filename': 'state-hospitals.csv',
+        'filename': 'state-hospitals-v2.csv',
         'format': 'csv',
-        'url': 'https://data.chhs.ca.gov/dataset/6882c390-b2d7-4b9a-aefa-2068cee63e47/resource/6cd8d424-dfaa-4bdd-9410-a3d656e1176e/download/covid19data.csv',
-        'match': re.compile(b'^Butte,'),
+        'url': 'https://data.ca.gov/dataset/529ac907-6ba1-4cb7-9aae-8966fc96aeef/resource/42d33765-20fd-44b8-a978-b083b7542225/download/hospitals_by_county.csv',
+        'match': re.compile(b'^Butte,\d'),
+        'sort': True,
     },
     {
         'filename': 'columbia-projections-nochange.csv',
