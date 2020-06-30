@@ -20,6 +20,9 @@ made available.
 This dashboard lives at [https://bc19.live/](https://bc19.live/), and will be
 updated daily.
 
+See the [Frequently Asked Questions](https://www.notion.so/Frequently-Asked-Questions-98c9989c090c41a88f767830af845462)
+for more information.
+
 
 Sources
 -------

@@ -1155,13 +1155,6 @@ BC19.setupElements = function() {
     dateRangeThroughEl.max = throughDateValue;
     dateRangeThroughEl.addEventListener('change', onDateRangeChanged);
 
-
-    document.getElementById('case_updated_date').innerText =
-        BC19.formatMDate(BC19.parseMDate(BC19.latestCasesRow.date));
-
-    document.getElementById('hospital_updated_date').innerText =
-        BC19.formatMDate(BC19.parseMDate(BC19.latestStateDataRow.date));
-
     const bcdDayText = BC19.getDayText(BC19.latestCasesRow.date);
     const stateDayText = BC19.getDayText(BC19.latestStateDataRow.date);
 
