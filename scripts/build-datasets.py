@@ -523,7 +523,7 @@ def build_hospital_cases_json(session, response, out_filename, **kwargs):
         ['presModelHolder']
         ['genPresModelMapPresModel']
         ['presModelMap']
-        ['Hospital Map']
+        ['Map Patients']
         ['presModelHolder']
         ['genVizDataPresModel']
         ['paneColumnsData']
@@ -536,7 +536,7 @@ def build_hospital_cases_json(session, response, out_filename, **kwargs):
         ['vizPaneColumns']
     )
 
-    int_dicts = data_dicts['integer']
+    real_dicts = data_dicts['real']
     cstring_dicts = data_dicts['cstring']
 
     # Find the columns we care about.
@@ -552,11 +552,11 @@ def build_hospital_cases_json(session, response, out_filename, **kwargs):
 
             for i in pane_columns[col_index]['aliasIndices']:
                 hospital_names.append(cstring_dicts[i])
-        elif caption == 'AGG(Selector KPI)' and data_type == 'integer':
-            col_index = viz_col_data['columnIndices'][1]
+        elif caption == 'AGG(Selector KPI)' and data_type == 'real':
+            col_index = viz_col_data['columnIndices'][0]
 
             for i in pane_columns[col_index]['aliasIndices']:
-                counts.append(int_dicts[i])
+                counts.append(real_dicts[i])
 
         if hospital_names and counts:
             break
@@ -692,8 +692,8 @@ FEEDS = [
         'filename': 'hospital-cases.json',
         'format': 'json',
         'url': (
-            'https://public.tableau.com/views/COVID-19PublicDashboard/'
-            'Covid-19Hospitals?%3AshowVizHome=no'
+            'https://public.tableau.com/views/COVID-19HospitalsDashboard/'
+            'Hospitals?&:showVizHome=no'
         ),
         'parser': build_hospital_cases_json,
     },
