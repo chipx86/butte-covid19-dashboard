@@ -2,13 +2,13 @@ window.BC19 = {
     COUNTY_POPULATION: 217769,
 
     stepSizes: {
-        TOTAL_CASES: 10,
+        TOTAL_CASES: 20,
         NEW_CASES: 5,
         DEATHS: 2,
         TOTAL_TESTS: 200,
-        DEMOGRAPHICS: 20,
+        DEMOGRAPHICS: 40,
         HOSPITALIZATIONS: 2,
-        ISOLATION: 20,
+        ISOLATION: 40,
         SNF: 2,
         TEST_POSITIVITY_RATE: 0.5,
     },
