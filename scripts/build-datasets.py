@@ -930,6 +930,14 @@ FEEDS = [
 
 
 def main():
+    if len(sys.argv) > 1:
+        feeds_to_build = set(sys.argv[1:])
+    else:
+        feeds_to_build = set(
+            feed['filename']
+            for feed in FEEDS
+        )
+
     try:
         with open(CACHE_FILE, 'r') as fp:
             cache = json.load(fp)
@@ -938,6 +946,10 @@ def main():
 
     for info in FEEDS:
         filename = info['filename']
+
+        if filename not in feeds_to_build:
+            continue
+
         out_dir = os.path.join(DATA_DIR, info['format'])
 
         if not os.path.exists(out_dir):
