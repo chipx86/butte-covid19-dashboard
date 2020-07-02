@@ -376,13 +376,13 @@ BC19.setupBarGraph = function(graph, options, data) {
         .select(function(d) {
             this.appendChild(d3.create('label')
                 .attr('class', 'bc19-c-bar-graph__label')
-                .attr('for', 'by_age_graph_' + d.data_id)
+                .attr('for', 'bar_graph_' + d.data_id)
                 .text(d.label)
                 .node());
 
             this.appendChild(d3.create('div')
                 .attr('class', 'bc19-c-bar-graph__bar')
-                .attr('id', 'by_age_graph_' + d.data_id)
+                .attr('id', 'bar_graph_' + d.data_id)
                 .style('width', x(d.value) + '%')
                 .text(showPct
                       ? d.value + '  ' +
