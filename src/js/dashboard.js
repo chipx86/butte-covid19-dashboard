@@ -52,8 +52,8 @@ window.BC19 = {
         age_50_64: '#3BA859',
         age_65_plus: '#F9BD34',
 
-        current_patient_cases: '#AF83A7',
-        current_staff_cases: '#6FA367',
+        current_patient_cases: '#D0A9D9',
+        current_staff_cases: '#8FC3E7',
     },
 
     els: {
@@ -1128,8 +1128,8 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             },
             order: null,
             types: {
-                current_patient_cases: 'area-step',
-                current_staff_cases: 'area-step',
+                current_patient_cases: 'bar',
+                current_staff_cases: 'bar',
                 total_patient_deaths: 'step',
                 total_staff_deaths: 'step',
             },
