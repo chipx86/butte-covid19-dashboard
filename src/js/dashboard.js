@@ -89,6 +89,7 @@ window.BC19 = {
         padding: {
             right: 10,
         },
+        clipPath: false,
     },
 };
 
