@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import codecs
 import csv
 import json
 import os
@@ -582,48 +583,174 @@ def build_hospital_cases_json(session, response, out_filename, **kwargs):
 
 
 def parse_csv(info, response, out_filename, **kwargs):
-    match = info.get('match')
-    matched_lines = set()
+    csv_info = info.get('csv', {})
+    columns = csv_info['columns']
+    match = csv_info.get('match_row')
+    sort_by = csv_info.get('sort_by')
+    validator = csv_info.get('validator')
+    unique_col = csv_info.get('unique_col')
 
-    with open(out_filename, 'wb') as out_fp:
-        if match is None:
-            out_fp.write(response.content)
+    unique_found = set()
+    results = []
+
+    reader = csv.DictReader(codecs.iterdecode(response.iter_lines(), 'utf-8'),
+                            delimiter=',')
+
+    for row in reader:
+        if match is not None and not match(row):
+            continue
+
+        row_result = {}
+
+        for col_info in columns:
+            dest_name = col_info['name']
+            src_name = col_info.get('source_column', dest_name)
+            data_type = col_info.get('type')
+
+            try:
+                value = row[src_name]
+            except KeyError:
+                raise ParseError('Missing column in CSV file: %s' % src_name)
+
+            if data_type == 'date':
+                try:
+                    row_result[dest_name] = (
+                        datetime.strptime(value, col_info['format'])
+                        .strftime('%Y-%m-%d')
+                    )
+                except Exception:
+                    raise ParseError('Unable to parse date "%s" using format '
+                                     '"%s"'
+                                     % (value, col_info['format']))
+            else:
+                row_result[dest_name] = value
+
+        if unique_col is None:
+            results.append(row_result)
+        elif isinstance(unique_col, tuple):
+            unique_values = tuple(
+                row_result[_col]
+                for _col in unique_col
+            )
+
+            if unique_values not in unique_found:
+                # We haven't encountered this row before. Add it to the
+                # results.
+                results.append(row_result)
+                unique_found.add(unique_values)
         else:
-            lines = response.content.splitlines(True)
+            unique_value = row_result[unique_col]
 
-            out_fp.write(lines[0])
+            if unique_value not in unique_found:
+                # We haven't encountered this row before. Add it to the
+                # results.
+                results.append(row_result)
+                unique_found.add(unique_value)
 
-            data_lines = lines[1:]
+    # Some datasets are unordered or not in an expected order. If needed, sort.
+    if sort_by is not None:
+        results = sorted(results, key=lambda row: row[sort_by])
 
-            if info.get('sort'):
-                data_lines = sorted(data_lines)
+    # Validate that we have the data we expect. We don't want to be offset by
+    # a row or have garbage or something.
+    if validator is not None and not validator(results):
+        raise ParseError('Resulting CSV file did not pass validation!')
 
-            for line in data_lines:
-                if line not in matched_lines and match.match(line):
-                    out_fp.write(line)
-                    matched_lines.add(line)
+    with open(out_filename, 'w') as out_fp:
+        writer = csv.DictWriter(
+            out_fp,
+            fieldnames=[
+                col_info['name']
+                for col_info in columns
+            ])
+        writer.writeheader()
+
+        for row_result in results:
+            writer.writerow(row_result)
 
 
 FEEDS = [
     {
-        'filename': 'skilled-nursing-facilities.csv',
+        'filename': 'skilled-nursing-facilities-v2.csv',
         'format': 'csv',
         'url': 'https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/cdph-skilled-nursing-facilities.csv',
-        'match': re.compile(b'.*Butte,007'),
-        'sort': True,
+        'csv': {
+            'match_row': lambda row: row['county'] == 'Butte',
+            'validator': lambda results: results[0]['date'] == '2020-04-24',
+            'sort_by': 'date',
+            'unique_col': ('date', 'name'),
+            'columns': [
+                {
+                    'name': 'date',
+                    'type': 'date',
+                    'format': '%Y-%m-%d',
+                },
+                {'name': 'name'},
+                {'name': 'staff_active_cases'},
+                {'name': 'patients_active_cases'},
+                {'name': 'staff_confirmed_cases'},
+                {'name': 'patients_confirmed_cases'},
+                {'name': 'staff_confirmed_cases_note'},
+                {'name': 'patients_confirmed_cases_note'},
+                {'name': 'staff_deaths'},
+                {'name': 'patients_deaths'},
+                {'name': 'staff_deaths_note'},
+                {'name': 'patients_deaths_note'},
+            ],
+        },
     },
     {
-        'filename': 'state-hospitals-v2.csv',
+        'filename': 'state-hospitals-v3.csv',
         'format': 'csv',
         'url': 'https://data.ca.gov/dataset/529ac907-6ba1-4cb7-9aae-8966fc96aeef/resource/42d33765-20fd-44b8-a978-b083b7542225/download/hospitals_by_county.csv',
-        'match': re.compile(b'^Butte,\d'),
-        'sort': True,
+        'csv': {
+            'match_row': lambda row: row['county'] == 'Butte',
+            'validator': lambda results: results[0]['date'] == '2020-03-29',
+            'sort_by': 'date',
+            'unique_col': 'date',
+            'columns': [
+                {
+                    'name': 'date',
+                    'source_column': 'todays_date',
+                    'type': 'date',
+                    'format': '%Y-%m-%d',
+                },
+                {'name': 'hospitalized_covid_confirmed_patients'},
+                {'name': 'hospitalized_suspected_covid_patients'},
+                {'name': 'icu_covid_confirmed_patients'},
+                {'name': 'icu_suspected_covid_patients'},
+                {'name': 'all_hospital_beds'},
+                {'name': 'icu_available_beds'},
+            ],
+        },
     },
     {
         'filename': 'columbia-projections-nochange.csv',
         'format': 'csv',
         'url': 'https://raw.githubusercontent.com/shaman-lab/COVID-19Projection/master/Production/Projection_nochange.csv',
-        'match': re.compile(b'^Butte County CA'),
+        'csv': {
+            'match_row': lambda row: row['county'] == 'Butte County CA',
+            'sort_by': 'date',
+            'unique_col': 'date',
+            'columns': [
+                {
+                    'name': 'date',
+                    'source_column': 'Date',
+                    'type': 'date',
+                    'format': '%m/%d/%y',
+                },
+                {'name': 'report_2.5'},
+                {'name': 'report_25'},
+                {'name': 'report_50'},
+                {'name': 'report_75'},
+                {'name': 'report_97.5'},
+                {'name': 'total_2.5'},
+                {'name': 'total_25'},
+                {'name': 'total_50'},
+                {'name': 'total_75'},
+                {'name': 'total_97.5'},
+            ],
+        },
     },
     {
         'filename': 'butte-dashboard.json',
@@ -715,7 +842,80 @@ FEEDS = [
     {
         'filename': 'timeline.csv',
         'format': 'csv',
-        'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRwJpCeZj4tsxMXqrHFDjIis5Znv-nI0kQk9enEAJAbYzZUBHm7TELQe0wl2huOYEkdaWLyR8N9k_uq/pub?gid=856590862&single=true&output=csv'
+        'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRwJpCeZj4tsxMXqrHFDjIis5Znv-nI0kQk9enEAJAbYzZUBHm7TELQe0wl2huOYEkdaWLyR8N9k_uq/pub?gid=856590862&single=true&output=csv',
+        'csv': {
+            'validator': lambda results: (
+                len(results) > 0 and
+                results[0]['date'] == '2020-03-20' and
+                (results[-1]['confirmed_cases:total'] != '' or
+                 results[-2]['confirmed_cases:total'] != '' or
+                 results[-3]['confirmed_cases:total'] != '')
+            ),
+            'columns': [
+                {
+                    'name': 'date',
+                    'type': 'date',
+                    'format': '%Y-%m-%d',
+                },
+                {'name': 'confirmed_cases:total'},
+                {'name': 'confirmed_cases:delta_total'},
+                {'name': 'in_isolation:current'},
+                {'name': 'in_isolation:delta_current'},
+                {'name': 'in_isolation:total_released'},
+                {'name': 'in_isolation:delta_total_released'},
+                {'name': 'deaths:total'},
+                {'name': 'deaths:delta_total'},
+                {'name': 'viral_tests:total'},
+                {'name': 'viral_tests:delta_total'},
+                {'name': 'viral_tests:results'},
+                {'name': 'viral_tests:delta_results'},
+                {'name': 'viral_tests:pending'},
+                {'name': 'viral_tests:delta_pending'},
+                {'name': 'hospitalizations:county_data:hospitalized'},
+                {'name': 'hospitalizations:state_data:positive'},
+                {'name': 'hospitalizations:state_data:delta_positive'},
+                {'name': 'hospitalizations:state_data:suspected_positive'},
+                {'name': 'hospitalizations:state_data:delta_suspected_positive'},
+                {'name': 'hospitalizations:state_data:icu_positive'},
+                {'name': 'hospitalizations:state_data:delta_icu_positive'},
+                {'name': 'hospitalizations:state_data:icu_suspected'},
+                {'name': 'hospitalizations:state_data:delta_icu_suspected'},
+                {'name': 'hospitalizations:state_data:enloe_hospital'},
+                {'name': 'hospitalizations:state_data:delta_enloe_hospital'},
+                {'name': 'hospitalizations:state_data:oroville_hospital'},
+                {'name': 'hospitalizations:state_data:delta_oroville_hospital'},
+                {'name': 'hospitalizations:state_data:orchard_hospital'},
+                {'name': 'hospitalizations:state_data:delta_orchard_hospital'},
+                {'name': 'regions:chico:cases'},
+                {'name': 'regions:chico:delta_cases'},
+                {'name': 'regions:oroville:cases'},
+                {'name': 'regions:oroville:delta_cases'},
+                {'name': 'regions:gridley:cases'},
+                {'name': 'regions:gridley:delta_cases'},
+                {'name': 'regions:other:cases'},
+                {'name': 'regions:other:delta_cases'},
+                {'name': 'age_ranges_in_years:0-17'},
+                {'name': 'age_ranges_in_years:delta_0-17'},
+                {'name': 'age_ranges_in_years:18-49'},
+                {'name': 'age_ranges_in_years:delta_18-49'},
+                {'name': 'age_ranges_in_years:50-64'},
+                {'name': 'age_ranges_in_years:delta_50_64'},
+                {'name': 'age_ranges_in_years:65_plus'},
+                {'name': 'age_ranges_in_years:delta_65_plus'},
+                {'name': 'resources:state_data:icu_beds_pct'},
+                {'name': 'resources:state_data:ventilators_pct'},
+                {'name': 'resources:state_data:n95_respirators'},
+                {'name': 'resources:state_data:procedure_masks'},
+                {'name': 'resources:state_data:gowns'},
+                {'name': 'resources:state_data:face_shields'},
+                {'name': 'resources:state_data:gloves'},
+                {'name': 'note'},
+                {'name': 'skilled_nursing_facilities:current_patient_cases'},
+                {'name': 'skilled_nursing_facilities:current_staff_cases'},
+                {'name': 'skilled_nursing_facilities:total_patient_deaths'},
+                {'name': 'skilled_nursing_facilities:total_staff_deaths'},
+            ],
+        },
     },
     {
         'filename': 'timeline.json',
