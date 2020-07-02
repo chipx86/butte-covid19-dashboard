@@ -10,6 +10,11 @@ window.BC19 = {
         HOSPITALIZATIONS: 2,
         ISOLATION: 20,
         SNF: 2,
+        TEST_POSITIVITY_RATE: 0.5,
+    },
+
+    minDates: {
+        testPositivityRate: '2020-05-21',
     },
 
     graphSizes: {
@@ -29,6 +34,7 @@ window.BC19 = {
         pos_results: '#D85040',
         new_tests: '#C7DAFA',
         test_results: '#3BA859',
+        test_pos_rate: '#883333',
 
         in_isolation: '#DD0000',
         released_from_isolation: '#3BA859',
@@ -123,6 +129,7 @@ BC19.processTimelineData = function(timeline) {
     const graphTotalTestResults = ['test_results'];
     const graphNegativeResults = ['neg_results'];
     const graphPositiveResults = ['pos_results'];
+    const graphTestPositivityRate = ['test_pos_rate'];
 
     const graphCasesInChico = ['chico'];
     const graphCasesInGridley = ['gridley'];
@@ -153,6 +160,9 @@ BC19.processTimelineData = function(timeline) {
     let latestCasesRow;
     let latestStateDataRow;
     let latestPerHospitalDataRow;
+
+    const minTestPositivityRateDate = BC19.minDates.testPositivityRate;
+    let foundMinTestPositivityRateDate = false;
 
     for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
@@ -206,6 +216,20 @@ BC19.processTimelineData = function(timeline) {
         graphNursingTotalPatientDeaths.push(snf.total_patient_deaths);
         graphNursingTotalStaffDeaths.push(snf.total_staff_deaths);
 
+        if (!foundMinTestPositivityRateDate &&
+            row.date === minTestPositivityRateDate) {
+            foundMinTestPositivityRateDate = true;
+        }
+
+        if (foundMinTestPositivityRateDate &&
+            confirmedCases.total !== null &&
+            viralTests.total !== null) {
+            graphTestPositivityRate.push(confirmedCases.total /
+                                         viralTests.total * 100);
+        } else {
+            graphTestPositivityRate.push(null);
+        }
+
         maxNewDeaths = Math.max(maxNewDeaths, row.deaths.delta_total);
 
         if (deltaConfirmedCases && deltaConfirmedCases > maxNewCases) {
@@ -219,7 +243,7 @@ BC19.processTimelineData = function(timeline) {
             });
         }
 
-        if (row.confirmed_cases.total !== null) {
+        if (confirmedCases.total !== null) {
             latestCasesRow = row;
         }
 
@@ -269,6 +293,7 @@ BC19.processTimelineData = function(timeline) {
             newTests: graphNewTests,
             negativeResults: graphNegativeResults,
             positiveResults: graphPositiveResults,
+            testPositivityRate: graphTestPositivityRate,
         },
         regions: {
             chico: graphCasesInChico,
@@ -942,6 +967,62 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         },
         legend: {
             show: true,
+        },
+    });
+
+    const testPosRateGraph = BC19.setupBBGraph({
+        bindto: '#test_positivity_rate_graph',
+        size: {
+            height: BC19.graphSizes.STANDARD,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                BC19.graphData.dates,
+                BC19.graphData.viralTests.testPositivityRate,
+            ],
+            names: {
+                test_pos_rate: 'Test Positivity Rate',
+            },
+            types: {
+                test_pos_rate: 'area-spline',
+            },
+        },
+        axis: {
+            x: axisX,
+            y: {
+                tick: {
+                    stepSize: BC19.stepSizes.TEST_POSITIVITY_RATE,
+                    format: x => `${x.toFixed(1)}%`,
+                },
+            },
+        },
+        point: {
+            show: false,
+        },
+        tooltip: {
+            format: {
+                value: (value, ratio, id, index) => {
+                    const fmtValue = `${value.toFixed(2)}%`;
+
+                    if (index > 0) {
+                        const prevValue =
+                            testPosRateGraph.data(id)[0]
+                            .values[index - 1].value;
+                        const fmtRelValue =
+                            Math.abs(value - prevValue).toFixed(2) + '%';
+
+                        if (prevValue > value) {
+                            return `${fmtValue} (-${fmtRelValue})`;
+                        } else if (prevValue < value) {
+                            return `${fmtValue} (+${fmtRelValue})`;
+                        }
+                    }
+
+                    return fmtValue;
+                },
+            },
         },
     });
 
