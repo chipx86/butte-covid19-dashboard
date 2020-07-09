@@ -2,13 +2,13 @@ window.BC19 = {
     COUNTY_POPULATION: 217769,
 
     stepSizes: {
-        TOTAL_CASES: 20,
-        NEW_CASES: 5,
+        TOTAL_CASES: 40,
+        NEW_CASES: 10,
         DEATHS: 2,
         TOTAL_TESTS: 200,
-        DEMOGRAPHICS: 40,
+        DEMOGRAPHICS: 50,
         HOSPITALIZATIONS: 2,
-        ISOLATION: 40,
+        ISOLATION: 50,
         SNF: 2,
         TEST_POSITIVITY_RATE: 0.5,
     },
@@ -830,7 +830,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
     BC19.setupBBGraph({
         bindto: '#cases_by_age_timeline_graph',
         size: {
-            height: BC19.graphSizes.MEDIUM,
+            height: BC19.graphSizes.STANDARD,
         },
         data: {
             x: 'date',
