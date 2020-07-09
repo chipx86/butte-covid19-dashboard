@@ -336,7 +336,7 @@ def convert_json_to_csv(info, in_fp, out_filename, **kwargs):
             })
 
 
-def build_timeline_json(in_fp, out_filename, **kwargs):
+def build_timeline_json(info, in_fp, out_filename, **kwargs):
     timeline = []
     reader = csv.DictReader(in_fp, delimiter=',')
 
@@ -370,14 +370,24 @@ def build_timeline_json(in_fp, out_filename, **kwargs):
         sys.stderr.write('Got an empty timeline dataset! Not writing.')
         return False
 
+    payload = {
+        'dates': timeline,
+    }
+
     with open(out_filename, 'w') as fp:
-        json.dump(
-            {
-                'dates': timeline,
-            },
-            fp,
-            sort_keys=True,
-            indent=2)
+        json.dump(payload,
+                  fp,
+                  sort_keys=True,
+                  indent=2)
+
+    min_filename = os.path.join(os.path.dirname(out_filename),
+                                info['min_filename'])
+
+    with open(min_filename, 'w') as fp:
+        json.dump(payload,
+                  fp,
+                  sort_keys=True,
+                  separators=(',', ':'))
 
 
 def build_state_resources_json(session, response, out_filename, **kwargs):
@@ -919,6 +929,7 @@ FEEDS = [
     },
     {
         'filename': 'timeline.json',
+        'min_filename': 'timeline.min.json',
         'format': 'json',
         'local_source': {
             'filename': 'timeline.csv',
