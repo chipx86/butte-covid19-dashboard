@@ -106,7 +106,7 @@
     </figure>
 
     <figure class="bc19-c-counter -up-is-bad" id="hospitalized-counter">
-     <h3 class="bc19-c-counter__title">Hospitalized (State Data)</h3>
+     <h3 class="bc19-c-counter__title">Total Hospitalized</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
        <span class="bc19-c-counter__relative-value">0</span>
@@ -120,6 +120,16 @@
      <div class="bc19-c-counter__relative">
        <span class="bc19-c-counter__relative-value">0</span>
        <span class="bc19-o-state-update-day"></span>
+     </div>
+    </figure>
+
+    <figure class="bc19-c-counter -up-is-bad"
+            id="hospitalized-residents-counter">
+     <h3 class="bc19-c-counter__title">Residents Only</h3>
+     <div class="bc19-c-counter__value">0</div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       <span class="bc19-o-bcd-update-day"></span>
      </div>
     </figure>
    </section>
@@ -321,10 +331,23 @@
        Total Hospitalizations vs. ICU
       </h3>
       <h4 class="bc19-c-timeline-graph__subtitle">
-        Most early historical data is unavailable
+        Includes non-county residents &mdash;
+        most early historical data is unavailable
       </h4>
       <div id="hospitalizations_icu_timeline_graph"
            aria-labelled-by="hospitalizations_icu_timeline_graph_label"></div>
+     </figure>
+
+     <figure class="bc19-c-timeline-graph">
+      <h3 class="bc19-c-timeline-graph__title"
+          id="hospitalized_residents_timeline_graph_label">
+       Hospitalized Butte County Residents
+      </h3>
+      <h4 class="bc19-c-timeline-graph__subtitle">
+        Most early historical data is unavailable
+      </h4>
+      <div id="hospitalized_residents_timeline_graph"
+           aria-labelled-by="hospitalized_residents_timeline_graph_label"></div>
      </figure>
 
      <figure class="bc19-c-timeline-graph">

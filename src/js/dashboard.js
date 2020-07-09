@@ -17,6 +17,12 @@ window.BC19 = {
         testPositivityRate: '2020-05-21',
     },
 
+    maxValues: {
+        newCases: 0,
+        newDeaths: 0,
+        hospitalizations: 0,
+    },
+
     graphSizes: {
         VERY_TALL: 380,
         STANDARD: 240,
@@ -41,6 +47,7 @@ window.BC19 = {
 
         hospitalizations: '#C783EF',
         icu: '#87063B',
+        residents: '#0000FF',
 
         chico: '#4783EF',
         oroville: '#E7463B',
@@ -147,6 +154,7 @@ BC19.processTimelineData = function(timeline) {
 
     const graphHospitalizations = ['hospitalizations'];
     const graphICU = ['icu'];
+    const graphHospitalizedResidents = ['residents'];
 
     const graphNursingCurPatientCases = ['current_patient_cases'];
     const graphNursingCurStaffCases = ['current_staff_cases'];
@@ -157,6 +165,7 @@ BC19.processTimelineData = function(timeline) {
 
     let maxNewCases = 0;
     let maxNewDeaths = 0;
+    let maxHospitalizationsY = 0;
 
     let latestCasesRow;
     let latestStateDataRow;
@@ -176,6 +185,7 @@ BC19.processTimelineData = function(timeline) {
         const viralTestResults = viralTests.results;
         const regions = row.regions;
         const ageRanges = row.age_ranges_in_years;
+        const countyHospital = row.hospitalizations.county_data;
         const stateHospital = row.hospitalizations.state_data;
         const snf = row.skilled_nursing_facilities;
 
@@ -211,6 +221,11 @@ BC19.processTimelineData = function(timeline) {
 
         graphHospitalizations.push(stateHospital.positive || 0);
         graphICU.push(stateHospital.icu_positive || 0);
+        graphHospitalizedResidents.push(countyHospital.hospitalized || 0);
+
+        maxHospitalizationsY = Math.max(maxHospitalizationsY,
+                                        stateHospital.positive,
+                                        countyHospital.hospitalized);
 
         graphNursingCurPatientCases.push(snf.current_patient_cases);
         graphNursingCurStaffCases.push(snf.current_staff_cases);
@@ -278,6 +293,13 @@ BC19.processTimelineData = function(timeline) {
     BC19.lastMDate = BC19.parseMDate(timeline.dates[rows.length - 1].date);
     BC19.timeline = timeline;
 
+    BC19.maxValues = {
+        newCases: maxNewCases,
+        newDeaths: maxNewDeaths,
+        totalCases: latestCasesRow.confirmed_cases.total,
+        hospitalizations: maxHospitalizationsY,
+    };
+
     BC19.graphData = {
         dates: graphDates,
         notes: graphNotes,
@@ -315,6 +337,7 @@ BC19.processTimelineData = function(timeline) {
         hospitalizations: {
             total: graphHospitalizations,
             icu: graphICU,
+            residents: graphHospitalizedResidents,
         },
         snf: {
             curPatientCases: graphNursingCurPatientCases,
@@ -323,10 +346,6 @@ BC19.processTimelineData = function(timeline) {
             totalStaffDeaths: graphNursingTotalStaffDeaths,
         },
     };
-
-    BC19.maxNewCases = maxNewCases;
-    BC19.maxNewDeaths = maxNewDeaths;
-    BC19.maxTotalCases = latestCasesRow.confirmed_cases.total;
 };
 
 
@@ -491,6 +510,15 @@ BC19.setupCounters = function(timeline) {
             value: casesRow.in_isolation.current,
             relativeValues: [
                 dates[casesI - 1].in_isolation.current,
+            ],
+        });
+
+    BC19.setCounter(
+        document.getElementById('hospitalized-residents-counter'),
+        {
+            value: casesRow.hospitalizations.county_data.hospitalized,
+            relativeValues: [
+                dates[casesI - 1].hospitalizations.county_data.hospitalized,
             ],
         });
 
@@ -687,6 +715,7 @@ BC19.setupByHospitalGraph = function(timeline) {
 
 
 BC19.setupMainTimelineGraphs = function(timeline) {
+    const maxValues = BC19.maxValues;
     const totalCaseStepCount = BC19.stepSizes.TOTAL_CASES;
     const newCaseStepCount = BC19.stepSizes.NEW_CASES;
     const deathsStepCount = BC19.stepSizes.DEATHS;
@@ -759,7 +788,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: axisX,
             y: {
-                max: Math.ceil(BC19.maxNewCases / newCaseStepCount) *
+                max: Math.ceil(maxValues.newCases / newCaseStepCount) *
                      newCaseStepCount,
                 padding: 0,
                 tick: {
@@ -788,7 +817,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: axisX,
             y: {
-                max: Math.ceil(BC19.maxNewDeaths / deathsStepCount) *
+                max: Math.ceil(maxValues.newDeaths / deathsStepCount) *
                      deathsStepCount,
                 padding: 0,
                 tick: {
@@ -1041,7 +1070,6 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 BC19.graphData.hospitalizations.icu,
             ],
             names: {
-                cases: 'Confirmed Cases',
                 hospitalizations: 'All Hospitalizations',
                 icu: 'Just In ICU',
             },
@@ -1058,6 +1086,41 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: axisX,
             y: {
+                max: BC19.maxValues.hospitalizations,
+                tick: {
+                    stepSize: BC19.stepSizes.HOSPITALIZATIONS,
+                },
+            },
+        },
+    });
+
+    BC19.setupBBGraph({
+        bindto: '#hospitalized_residents_timeline_graph',
+        size: {
+            height: BC19.graphSizes.STANDARD,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                BC19.graphData.dates,
+                BC19.graphData.hospitalizations.residents,
+            ],
+            names: {
+                residents: 'County Residents',
+            },
+            order: null,
+            types: {
+                residents: 'area-step',
+            },
+        },
+        legend: {
+            show: false,
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: BC19.maxValues.hospitalizations,
                 tick: {
                     stepSize: BC19.stepSizes.HOSPITALIZATIONS,
                 },
