@@ -1321,7 +1321,7 @@ BC19.setupElements = function() {
 
 
 BC19.init = function() {
-    fetch(new Request('data/json/timeline.json'))
+    fetch(new Request('data/json/timeline.json?' + moment().format('x')))
         .then(response => {
             if (response && response.status === 200) {
                 try {
