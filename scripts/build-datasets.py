@@ -275,6 +275,8 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
     })
 
     try:
+        by_age = scraped_data['by_age']
+
         row_result = {
             'date': datestamp.strftime('%Y-%m-%d'),
             'confirmed_cases': scraped_data['confirmed_cases'],
@@ -291,10 +293,19 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
                 'current': scraped_data['hospitalized'],
             },
             'age_ranges_in_years': {
-                '0-17': scraped_data['by_age']['0-17 Years'],
-                '18-49': scraped_data['by_age']['18-49 Years'],
-                '50-64': scraped_data['by_age']['50-64 Years'],
-                '65_plus': scraped_data['by_age']['65+ Years'],
+                '0-17': by_age['0-17 Years'],
+                '18-24': by_age['18-24 Years'],
+                '25-34': by_age['25-34 Years'],
+                '35-44': by_age['35-44 Years'],
+                '45-54': by_age['45-54 Years'],
+                '55-64': by_age['55-64 Years'],
+                '65-74': by_age['65-74 Years'],
+                '75_plus': by_age['75+ Years'],
+
+                # Legacy
+                '18-49': None,
+                '50-64': None,
+                '65_plus': by_age['65-74 Years'] + by_age['75+ Years'],
             },
             'regions': {
                 region.lower(): value
@@ -769,7 +780,7 @@ FEEDS = [
         'parser': parse_butte_dashboard,
     },
     {
-        'filename': 'butte-dashboard.csv',
+        'filename': 'butte-dashboard-v2.csv',
         'format': 'csv',
         'local_source': {
             'filename': 'butte-dashboard.json',
@@ -787,6 +798,13 @@ FEEDS = [
             ('Daily Viral Test Results', ('viral_tests', 'results')),
             ('Currently Hospitalized', ('hospitalized', 'current')),
             ('Age 0-17 Years', ('age_ranges_in_years', '0-17')),
+            ('Age 18-24 Years', ('age_ranges_in_years', '18-24')),
+            ('Age 25-34 Years', ('age_ranges_in_years', '25-34')),
+            ('Age 35-44 Years', ('age_ranges_in_years', '35-44')),
+            ('Age 45-54 Years', ('age_ranges_in_years', '45-54')),
+            ('Age 55-64 Years', ('age_ranges_in_years', '55-64')),
+            ('Age 65-74 Years', ('age_ranges_in_years', '65-74')),
+            ('Age 75+ Years', ('age_ranges_in_years', '75_plus')),
             ('Age 18-49 Years', ('age_ranges_in_years', '18-49')),
             ('Age 50-64 Years', ('age_ranges_in_years', '50-64')),
             ('Age 65+ Years', ('age_ranges_in_years', '65_plus')),
@@ -906,6 +924,20 @@ FEEDS = [
                 {'name': 'regions:other:delta_cases'},
                 {'name': 'age_ranges_in_years:0-17'},
                 {'name': 'age_ranges_in_years:delta_0-17'},
+                {'name': 'age_ranges_in_years:18-24'},
+                {'name': 'age_ranges_in_years:delta_18-24'},
+                {'name': 'age_ranges_in_years:25-34'},
+                {'name': 'age_ranges_in_years:delta_25-34'},
+                {'name': 'age_ranges_in_years:35-44'},
+                {'name': 'age_ranges_in_years:delta_35-44'},
+                {'name': 'age_ranges_in_years:45-54'},
+                {'name': 'age_ranges_in_years:delta_45-54'},
+                {'name': 'age_ranges_in_years:55-64'},
+                {'name': 'age_ranges_in_years:delta_55-64'},
+                {'name': 'age_ranges_in_years:65-74'},
+                {'name': 'age_ranges_in_years:delta_65-74'},
+                {'name': 'age_ranges_in_years:75_plus'},
+                {'name': 'age_ranges_in_years:delta_75_plus'},
                 {'name': 'age_ranges_in_years:18-49'},
                 {'name': 'age_ranges_in_years:delta_18-49'},
                 {'name': 'age_ranges_in_years:50-64'},

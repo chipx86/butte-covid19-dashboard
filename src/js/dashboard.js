@@ -66,6 +66,37 @@ window.BC19 = {
     els: {
     },
 
+    ageRangeInfo: {
+        '0_17': {sourceKey: '0-17'},
+        '18_24': {sourceKey: '18-24'},
+        '25_34': {sourceKey: '25-34'},
+        '35_44': {sourceKey: '35-44'},
+        '45_54': {sourceKey: '45-54'},
+        '55_64': {sourceKey: '55-64'},
+        '65_74': {sourceKey: '65-74'},
+        '75_plus': {
+            text: '75+',
+            sourceKey: '75_plus',
+        },
+
+        // Legacy data, unpublished as of July 9, 2020.
+        '18-49': {
+            legacy: true,
+            sourceKey: '18-49',
+        },
+        '50-64': {
+            legacy: true,
+            sourceKey: '50-64',
+        },
+        '65_plus': {
+            legacy: true,
+            text: '65+',
+            sourceKey: '65_plus',
+        },
+    },
+    allAgeRanges: [],
+    visibleAgeRanges: [],
+
     graphs: [],
     graphsData: {},
     graphZoomGroups: {},
@@ -144,7 +175,17 @@ BC19.processTimelineData = function(timeline) {
     const graphCasesInOroville = ['oroville'];
     const graphCasesInOtherRegion = ['other'];
 
+    const ageRangeInfo = BC19.ageRangeInfo;
+    const ageRangeKeys = Object.keys(ageRangeInfo);
+    const graphCasesByAge = {};
     const graphCasesByAge0_17 = ['age_0_17'];
+    const graphCasesByAge18_24 = ['age_18_24'];
+    const graphCasesByAge25_34 = ['age_25_34'];
+    const graphCasesByAge35_44 = ['age_35_44'];
+    const graphCasesByAge45_54 = ['age_45_54'];
+    const graphCasesByAge55_64 = ['age_55_64'];
+    const graphCasesByAge65_74 = ['age_65_74'];
+    const graphCasesByAge75Plus = ['age_75_plus'];
     const graphCasesByAge18_49 = ['age_18_49'];
     const graphCasesByAge50_64 = ['age_50_64'];
     const graphCasesByAge65Plus = ['age_65_plus'];
@@ -173,6 +214,10 @@ BC19.processTimelineData = function(timeline) {
 
     const minTestPositivityRateDate = BC19.minDates.testPositivityRate;
     let foundMinTestPositivityRateDate = false;
+
+    ageRangeKeys.forEach(key => {
+        graphCasesByAge[key] = [`age_${key.replace('-', '_')}`];
+    });
 
     for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
@@ -211,10 +256,9 @@ BC19.processTimelineData = function(timeline) {
         graphCasesInGridley.push(regions.gridley.cases);
         graphCasesInOtherRegion.push(regions.other.cases);
 
-        graphCasesByAge0_17.push(ageRanges['0-17'])
-        graphCasesByAge18_49.push(ageRanges['18-49'])
-        graphCasesByAge50_64.push(ageRanges['50-64'])
-        graphCasesByAge65Plus.push(row.age_ranges_in_years['65_plus'])
+        ageRangeKeys.forEach(key => {
+            graphCasesByAge[key].push(ageRanges[ageRangeInfo[key].sourceKey]);
+        });
 
         graphInIsolation.push(row.in_isolation.current || 0);
         graphReleasedFromIsolation.push(row.in_isolation.total_released || 0);
@@ -293,6 +337,10 @@ BC19.processTimelineData = function(timeline) {
     BC19.lastMDate = BC19.parseMDate(timeline.dates[rows.length - 1].date);
     BC19.timeline = timeline;
 
+    BC19.allAgeRanges = ageRangeKeys;
+    BC19.visibleAgeRanges = ageRangeKeys.filter(
+        key => !BC19.ageRangeInfo[key].legacy);
+
     BC19.maxValues = {
         newCases: maxNewCases,
         newDeaths: maxNewDeaths,
@@ -324,12 +372,7 @@ BC19.processTimelineData = function(timeline) {
             gridley: graphCasesInGridley,
             other: graphCasesInOtherRegion,
         },
-        ageRanges: {
-            '0_17': graphCasesByAge0_17,
-            '18_49': graphCasesByAge18_49,
-            '50_64': graphCasesByAge50_64,
-            '65_plus': graphCasesByAge65Plus,
-        },
+        ageRanges: graphCasesByAge,
         isolation: {
             current: graphInIsolation,
             released: graphReleasedFromIsolation,
@@ -609,39 +652,29 @@ BC19.forEachGraphAsync = function(cb) {
 
 
 BC19.setupByAgeGraph = function(timeline) {
-    const ageRanges = BC19.latestCasesRow.age_ranges_in_years;
-    const prevIndex = BC19.latestCasesRow.i - 1;
-    const prevAgeRanges = timeline.dates[prevIndex].age_ranges_in_years;
+    /*
+     * XXX This is temporary while we're still dealing with the transition
+     *     to finer-segmented age ranges.
+     */
+    const hasPrev = (BC19.latestCasesRow.date != '2020-07-09');
 
     BC19.setupBarGraph(
         d3.select('#by_age_graph'),
         {},
-        [
-            {
-                data_id: '0_17',
-                label: '0-17',
-                value: ageRanges['0-17'],
-                relValue: ageRanges['0-17'] - prevAgeRanges['0-17'],
-            },
-            {
-                data_id: '18_49',
-                label: '18-49',
-                value: ageRanges['18-49'],
-                relValue: ageRanges['18-49'] - prevAgeRanges['18-49'],
-            },
-            {
-                data_id: '50_64',
-                label: '50-64',
-                value: ageRanges['50-64'],
-                relValue: ageRanges['50-64'] - prevAgeRanges['50-64'],
-            },
-            {
-                data_id: '65_plus',
-                label: '65+',
-                value: ageRanges['65_plus'],
-                relValue: ageRanges['65_plus'] - prevAgeRanges['65_plus'],
-            },
-        ]);
+        BC19.visibleAgeRanges.map(key => {
+            const ageRanges = BC19.graphData.ageRanges[key];
+            const ageRangeInfo = BC19.ageRangeInfo[key];
+            const i = ageRanges.length - 1;
+            const value = ageRanges[i];
+            const prevValue = ageRanges[i - 1];
+
+            return {
+                data_id: key,
+                label: ageRangeInfo.text || key.replace('_', '-'),
+                value: value,
+                relValue: value - (hasPrev ? ageRanges[i - 1] : value),
+            };
+        }));
 };
 
 
@@ -837,26 +870,51 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             colors: BC19.colors,
             columns: [
                 BC19.graphData.dates,
-                BC19.graphData.ageRanges['0_17'],
-                BC19.graphData.ageRanges['18_49'],
-                BC19.graphData.ageRanges['50_64'],
-                BC19.graphData.ageRanges['65_plus'],
-            ],
+            ].concat(Object.values(BC19.graphData.ageRanges)),
             names: {
                 age_0_17: '0-17 Years',
-                age_18_49: '18-49 Years',
-                age_50_64: '50-64 Years',
-                age_65_plus: '65+ Years',
+                age_18_24: '18-24',
+                age_25_34: '25-34',
+                age_35_44: '35-44',
+                age_45_54: '45-54',
+                age_55_64: '55-64',
+                age_65_74: '65-74',
+                age_75_plus: '75+',
+
+                age_18_49: '18-49',
+                age_50_64: '50-64',
+                age_65_plus: '65+',
             },
             order: null,
             types: {
                 age_0_17: 'bar',
+                age_18_24: 'bar',
+                age_25_34: 'bar',
+                age_35_44: 'bar',
+                age_45_54: 'bar',
+                age_55_64: 'bar',
+                age_65_74: 'bar',
+                age_75_plus: 'bar',
+
                 age_18_49: 'bar',
                 age_50_64: 'bar',
                 age_65_plus: 'bar',
             },
             groups: [
-                ['age_0_17', 'age_18_49', 'age_50_64', 'age_65_plus'],
+                [
+                    'age_0_17',
+                    'age_18_24',
+                    'age_25_34',
+                    'age_35_44',
+                    'age_45_54',
+                    'age_55_64',
+                    'age_65_74',
+                    'age_75_plus',
+
+                    'age_18_49',
+                    'age_50_64',
+                    'age_65_plus',
+                ],
             ],
         },
         axis: {
