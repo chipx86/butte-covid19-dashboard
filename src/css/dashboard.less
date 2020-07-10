@@ -432,6 +432,15 @@ a:visited {
   }
 }
 
+
+.bc19-o-flex-break {
+  display: none;
+  border: 0;
+  width: 0;
+  height: 0;
+}
+
+
 .bc19-o-spinner {
   background-image: data-uri('../images/spinner.svg');
   width: 200px;
@@ -450,6 +459,17 @@ a:visited {
 .twitter-follow-button {
   color: blue;
   text-decoration: none;
+}
+
+
+/*
+ * Tablet rules.
+ */
+@media only screen and (max-width: 1100px) {
+  .bc19-o-flex-break {
+    display: block;
+    width: 100%;
+  }
 }
 
 
@@ -536,6 +556,10 @@ a:visited {
   .bc19-c-timeline-graph {
     padding-left: 2em;
     padding-right: 3em;
+  }
+
+  .bc19-o-flex-break {
+    display: none;
   }
 }
 
