@@ -534,6 +534,7 @@ BC19.setupCounters = function(timeline) {
             relativeValues: [
                 dates[casesI - 1].confirmed_cases.total,
                 dates[casesI - 7].confirmed_cases.total,
+                dates[casesI - 14].confirmed_cases.total,
                 dates[casesI - 30].confirmed_cases.total,
             ],
         });
