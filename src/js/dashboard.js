@@ -1,5 +1,5 @@
 window.BC19 = {
-    COUNTY_POPULATION: 217769,
+    COUNTY_POPULATION: 219186,
 
     stepSizes: {
         TOTAL_CASES: 40,
