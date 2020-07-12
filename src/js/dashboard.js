@@ -10,11 +10,11 @@ window.BC19 = {
         HOSPITALIZATIONS: 2,
         ISOLATION: 50,
         SNF: 2,
-        TEST_POSITIVITY_RATE: 0.5,
+        TEST_POSITIVITY_RATE: 2,
     },
 
     minDates: {
-        testPositivityRate: '2020-05-21',
+        testPositivityRate: '2020-04-10',
     },
 
     maxValues: {
@@ -281,11 +281,17 @@ BC19.processTimelineData = function(timeline) {
             foundMinTestPositivityRateDate = true;
         }
 
+        const sevenDaysAgo = rows[i - 7];
+
         if (foundMinTestPositivityRateDate &&
             confirmedCases.total !== null &&
-            viralTests.total !== null) {
-            graphTestPositivityRate.push(confirmedCases.total /
-                                         viralTests.total * 100);
+            viralTests.total !== null &&
+            sevenDaysAgo.confirmed_cases.total !== null &&
+            sevenDaysAgo.viral_tests.total !== null) {
+            graphTestPositivityRate.push(
+                (confirmedCases.total - sevenDaysAgo.confirmed_cases.total) /
+                (viralTests.total - sevenDaysAgo.viral_tests.total) *
+                100.0);
         } else {
             graphTestPositivityRate.push(null);
         }
@@ -605,10 +611,9 @@ BC19.setupCounters = function(timeline) {
     BC19.setCounter(
         document.getElementById('positive-test-rate-counter'),
         {
-            value: curCasesTotal / totalTests * 100,
+            value: BC19.graphData.viralTests.testPositivityRate[casesI + 1],
             relativeValues: [
-                dates[casesI - 1].confirmed_cases.total /
-                dates[casesI - 1].viral_tests.total * 100,
+                BC19.graphData.viralTests.testPositivityRate[casesI],
             ],
             formatValue: value => value.toFixed(2) + '%',
             formatRelValues: [
@@ -753,6 +758,8 @@ BC19.setupMainTimelineGraphs = function(timeline) {
     const totalCaseStepCount = BC19.stepSizes.TOTAL_CASES;
     const newCaseStepCount = BC19.stepSizes.NEW_CASES;
     const deathsStepCount = BC19.stepSizes.DEATHS;
+    const casesRow = BC19.latestCasesRow;
+    const casesI = casesRow.i;
 
     const axisX = {
         type: 'timeseries',
@@ -1075,16 +1082,30 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 test_pos_rate: 'Test Positivity Rate',
             },
             types: {
-                test_pos_rate: 'area-spline',
+                test_pos_rate: 'area',
             },
         },
         axis: {
             x: axisX,
             y: {
+                max: Math.max(
+                    10,
+                    BC19.graphData.viralTests.testPositivityRate[casesI + 1]),
                 tick: {
                     stepSize: BC19.stepSizes.TEST_POSITIVITY_RATE,
                     format: x => `${x.toFixed(1)}%`,
                 },
+            },
+        },
+        grid: {
+            y: {
+                lines: [
+                    {
+                        value: 8,
+                        text: 'May qualify to be on a monitoring list at 8%',
+                        position: 'start',
+                    },
+                ],
             },
         },
         point: {
