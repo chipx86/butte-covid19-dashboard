@@ -1226,7 +1226,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         },
     });
 
-    BC19.setupBBGraph({
+    const snfGraph = BC19.setupBBGraph({
         bindto: '#skilled_nursing_graph',
         size: {
             height: BC19.graphSizes.MEDIUM,
@@ -1263,6 +1263,27 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         },
         legend: {
             show: true,
+        },
+        tooltip: {
+            format: {
+                value: (value, ratio, id, index) => {
+                    const fmtValue = `${value} or more`;
+
+                    if (index > 0) {
+                        const prevValue = snfGraph.data(id)[0]
+                            .values[index - 1].value;
+                        const fmtRelValue = Math.abs(value - prevValue);
+
+                        if (prevValue > value) {
+                            return `${fmtValue} (-${fmtRelValue})`;
+                        } else if (prevValue < value) {
+                            return `${fmtValue} (+${fmtRelValue})`;
+                        }
+                    }
+
+                    return fmtValue;
+                },
+            },
         },
         axis: {
             x: axisX,
