@@ -658,6 +658,7 @@ BC19.setupByAgeGraph = function(timeline) {
      *     to finer-segmented age ranges.
      */
     const hasPrev = (BC19.latestCasesRow.date != '2020-07-09');
+    const casesI = BC19.latestCasesRow.i + 1;
 
     BC19.setupBarGraph(
         d3.select('#by_age_graph'),
@@ -665,15 +666,14 @@ BC19.setupByAgeGraph = function(timeline) {
         BC19.visibleAgeRanges.map(key => {
             const ageRanges = BC19.graphData.ageRanges[key];
             const ageRangeInfo = BC19.ageRangeInfo[key];
-            const i = ageRanges.length - 1;
-            const value = ageRanges[i];
-            const prevValue = ageRanges[i - 1];
+            const value = ageRanges[casesI];
+            const prevValue = ageRanges[casesI - 1];
 
             return {
                 data_id: key,
                 label: ageRangeInfo.text || key.replace('_', '-'),
                 value: value,
-                relValue: value - (hasPrev ? ageRanges[i - 1] : value),
+                relValue: value - (hasPrev ? ageRanges[casesI - 1] : value),
             };
         }));
 };
