@@ -118,16 +118,15 @@ window.BC19 = {
         legend: {
             show: false,
         },
-        resize: {
-            auto: false,
-        },
         tooltip: {
             linked: true,
         },
         padding: {
             right: 10,
         },
-        clipPath: false,
+        svg: {
+            classname: 'bb-graph-svg',
+        },
     },
 };
 
@@ -422,9 +421,6 @@ BC19.setupBBGraph = function(options) {
                 return value;
             }.bind(this, graph));
     }
-
-    const svgEl = graph.element.querySelector('svg');
-    svgEl.style.width = '100%';
 
     return graph;
 };
@@ -1318,15 +1314,18 @@ BC19.setupMainTimelineGraphs = function(timeline) {
 };
 
 
-BC19.setDateRange = function(fromDate, toDate, fromResize) {
-    const domain = [fromDate, moment(toDate).add(8, 'hour').toDate()];
+BC19.setDateRange = function(fromDate, toDate) {
+    const domain = [
+        moment(fromDate).format('YYYY-MM-DD'),
+        moment(toDate).add(8, 'hour').format('YYYY-MM-DD'),
+    ];
 
     const newDateRange = {
         from: fromDate,
         to: toDate,
     };
 
-    if (newDateRange === BC19.dateRange && !fromResize) {
+    if (newDateRange === BC19.dateRange) {
         return;
     }
 
@@ -1334,7 +1333,7 @@ BC19.setDateRange = function(fromDate, toDate, fromResize) {
 
     const dateRangeThreshold = 5;
 
-    BC19.els.dateRangeFrom.value = moment(fromDate).format('YYYY-MM-DD');
+    BC19.els.dateRangeFrom.value = domain[0];
     BC19.els.dateRangeFrom.max =
         moment(toDate)
         .subtract(dateRangeThreshold, 'days')
@@ -1347,26 +1346,20 @@ BC19.setDateRange = function(fromDate, toDate, fromResize) {
         .format('YYYY-MM-DD');
 
     BC19.graphs.forEach(graph => {
-        if (fromResize) {
-            graph.flush(false, true);
-        }
+        graph.axis.range({
+            min: {
+                x: domain[0],
+            },
+            max: {
+                x: domain[1],
+            },
+        });
 
         /*
-         * Ideally we wouldn't reach into the internals of billboard.js, but
-         * the standard zoom support can't be manually-driven. It's always
-         * interactive once enabled, and that doesn't work for us. So we
-         * perform the same internal state updates it would.
+         * A simple flush() doesn't fix the grid lines, so reach into
+         * the internals.
          */
-        graph.internal.initZoom();
-        graph.internal.x.domain(domain);
-        graph.internal.zoomScale = graph.internal.x;
-        graph.internal.xAxis.scale(graph.internal.zoomScale);
-
-        graph.internal.redraw({
-            withTransition: true,
-            withY: false,
-            withDimension: false,
-        });
+        graph.internal.resizeFunction();
     });
 };
 
@@ -1416,8 +1409,6 @@ BC19.setupElements = function() {
 
     document.querySelector('.bc19-c-dashboard')
         .classList.remove('-is-loading');
-
-    window.addEventListener('resize', () => _onWindowResize());
 }
 
 
@@ -1479,15 +1470,4 @@ function _onDateSelectorChanged(value) {
 
     BC19.setDateRange(moment.max(fromMDate, BC19.firstMDate).toDate(),
                       moment.max(toMDate, BC19.lastMDate).toDate());
-}
-
-
-function _onWindowResize() {
-    if (BC19.dateRange) {
-        BC19.setDateRange(BC19.dateRange.from,
-                          BC19.dateRange.to,
-                          true);
-    } else {
-        BC19.forEachGraphAsync(graph => graph.flush(false, true));
-    }
 }
