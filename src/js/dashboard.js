@@ -128,6 +128,8 @@ window.BC19 = {
             classname: 'bb-graph-svg',
         },
     },
+
+    defaultTimelineDomain: null,
 };
 
 
@@ -345,6 +347,11 @@ BC19.processTimelineData = function(timeline) {
     BC19.allAgeRanges = ageRangeKeys;
     BC19.visibleAgeRanges = ageRangeKeys.filter(
         key => !BC19.ageRangeInfo[key].legacy);
+
+    BC19.defaultTimelineDomain = [
+        moment(BC19.lastMDate).subtract(90, 'days').format('YYYY-MM-DD'),
+        BC19.lastMDate.format('YYYY-MM-DD'),
+    ];
 
     BC19.maxValues = {
         newCases: maxNewCases,
@@ -767,6 +774,8 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             fit: false,
             format: '%B %d',
         },
+        min: BC19.defaultTimelineDomain[0],
+        max: BC19.defaultTimelineDomain[1],
     };
 
     BC19.setupBBGraph({
