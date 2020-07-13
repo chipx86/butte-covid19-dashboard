@@ -472,6 +472,10 @@ def build_state_resources_json(session, response, out_filename, **kwargs):
         sorted(data_dicts['datetime'])[-1],
         '%Y-%m-%d %H:%M:%S')
 
+    if last_updated > datetime.now():
+        # This isn't today's date. Skip it.
+        return False
+
     beds = _get_data_value('Sheet 42',
                            'SUM(Bed Reporting (Fixed))',
                            'integer')
@@ -536,6 +540,10 @@ def build_hospital_cases_json(session, response, out_filename, **kwargs):
     date = datetime.strptime(
         sorted(data_dicts['datetime'])[-1],
         '%Y-%m-%d %H:%M:%S.%f')
+
+    if date > datetime.now():
+        # This isn't today's date. Skip it.
+        return False
 
     pres_model_map = (
         tableau_loader.bootstrap_payload2
