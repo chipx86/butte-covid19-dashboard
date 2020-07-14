@@ -563,6 +563,9 @@ BC19.setupCounters = function(timeline) {
             value: casesRow.in_isolation.current,
             relativeValues: [
                 dates[casesI - 1].in_isolation.current,
+                dates[casesI - 7].in_isolation.current,
+                dates[casesI - 14].in_isolation.current,
+                dates[casesI - 30].in_isolation.current,
             ],
         });
 
