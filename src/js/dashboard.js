@@ -49,14 +49,14 @@ window.BC19 = {
         icu: '#87063B',
         residents: '#0000FF',
 
-        chico: '#4783EF',
-        oroville: '#E7463B',
-        gridley: '#3BA859',
+        chico: '#3773DF',
+        oroville: '#F7767B',
+        gridley: '#6BD079',
         other: '#F9BD34',
 
-        age_0_17: '#4783EF',
-        age_18_49: '#E7463B',
-        age_50_64: '#3BA859',
+        age_0_17: '#3773DF',
+        age_18_49: '#F7767B',
+        age_50_64: '#6BD079',
         age_65_plus: '#F9BD34',
 
         current_patient_cases: '#D0A9D9',
