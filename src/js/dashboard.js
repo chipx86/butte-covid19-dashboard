@@ -99,8 +99,6 @@ window.BC19 = {
 
     graphs: [],
     graphsData: {},
-    graphZoomGroups: {},
-    zoomingGraphs: {},
     latestCasesRow: null,
     latestStateDataRow: null,
     latestPerHospitalDataRow: null,
@@ -792,22 +790,13 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             columns: [
                 BC19.graphData.dates,
                 BC19.graphData.cases.totalCases,
-                BC19.graphData.isolation.current,
             ],
             names: {
                 cases: 'Total Cases',
-                in_isolation: 'In Isolation',
             },
             types: {
                 cases: 'bar',
-                in_isolation: 'bar',
             },
-            groups: [
-                ['cases', 'in_isolation'],
-            ],
-        },
-        legend: {
-            show: true,
         },
         grid: {
             x: {
