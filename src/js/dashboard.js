@@ -161,6 +161,7 @@ BC19.processTimelineData = function(timeline) {
     const graphTotalCases = ['cases'];
     const graphNewCases = ['new_cases'];
     const graphNewDeaths = ['new_deaths'];
+    const graphTwoWeekNewCaseRate = ['new_case_rate'];
 
     const graphTotalTests = ['total_tests'];
     const graphNewTests = ['new_tests'];
@@ -232,11 +233,34 @@ BC19.processTimelineData = function(timeline) {
         const countyHospital = row.hospitalizations.county_data;
         const stateHospital = row.hospitalizations.state_data;
         const snf = row.skilled_nursing_facilities;
+        const twoWeeksAgo = rows[i - 14];
+        const sevenDaysAgo = rows[i - 7];
 
         graphDates.push(row.date);
         graphTotalCases.push(confirmedCases.total);
         graphNewCases.push(deltaConfirmedCases);
         graphNewDeaths.push(row.deaths.delta_total);
+
+        // Account for the state-documented 3 day lag in case rates.
+        const twoWeekCaseRateI1 = i - 14;
+        let twoWeekCaseRate = null;
+
+        if (twoWeekCaseRateI1 >= 0) {
+            const twoWeekCaseRateRow1 = rows[twoWeekCaseRateI1];
+            const twoWeekCaseRateRow2 = rows[i];
+            const twoWeekCaseRateTotal1 =
+                twoWeekCaseRateRow1.confirmed_cases.total;
+            const twoWeekCaseRateTotal2 =
+                twoWeekCaseRateRow2.confirmed_cases.total;
+
+            if (twoWeekCaseRateTotal1 !== null &&
+                twoWeekCaseRateTotal2 !== null) {
+                twoWeekCaseRate = twoWeekCaseRateTotal2 -
+                                  twoWeekCaseRateTotal1;
+            }
+        }
+
+        graphTwoWeekNewCaseRate.push(twoWeekCaseRate);
 
         graphTotalTests.push(viralTests.total);
         graphNewTests.push(viralTests.delta_total || 0);
@@ -279,8 +303,6 @@ BC19.processTimelineData = function(timeline) {
             row.date === minTestPositivityRateDate) {
             foundMinTestPositivityRateDate = true;
         }
-
-        const sevenDaysAgo = rows[i - 7];
 
         if (foundMinTestPositivityRateDate &&
             confirmedCases.total !== null &&
@@ -367,6 +389,7 @@ BC19.processTimelineData = function(timeline) {
         cases: {
             totalCases: graphTotalCases,
             newCases: graphNewCases,
+            twoWeekNewCaseRate: graphTwoWeekNewCaseRate,
         },
         viralTests: {
             total: graphTotalTests,
@@ -848,6 +871,82 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         },
     });
 
+    const per1KPop = BC19.COUNTY_POPULATION / 1000;
+    const per1KPopRound = Math.round(per1KPop);
+
+    BC19.setupBBGraph({
+        bindto: '#two_week_new_case_rate_graph',
+        size: {
+            height: BC19.graphSizes.STANDARD,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                BC19.graphData.dates,
+                BC19.graphData.cases.twoWeekNewCaseRate,
+            ],
+            names: {
+                new_case_rate: 'New Cases Past 14 Days',
+            },
+            types: {
+                new_case_rate: 'area',
+            },
+        },
+        grid: {
+            x: {
+                lines: [
+                    {
+                        /*
+                         * 3 day state calculation lag +
+                         * 1 day state reporting lag +
+                         * 1 day data export lag
+                         */
+                        value: moment().subtract(5, 'days')
+                            .format('YYYY-MM-DD'),
+                        text: 'Rough value considered by state',
+                        position: 'end',
+                    },
+                ],
+            },
+            y: {
+                lines: [
+                    {
+                        value: per1KPopRound,
+                        text: 'May qualify to be on a monitoring list at ~' +
+                              per1KPopRound + ' cases',
+                        position: 'start',
+                    },
+                ],
+            },
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: Math.max(
+                    per1KPopRound + 20,
+                    BC19.graphData.cases.twoWeekNewCaseRate[casesI + 1]),
+                padding: 0,
+                tick: {
+                    stepSize: totalCaseStepCount,
+                },
+            },
+        },
+        point: {
+            show: false,
+        },
+        tooltip: {
+            linked: true,
+
+            format: {
+                value: (value, ratio, id) => {
+                    const per1K = Math.round(value / per1KPop * 100);
+                    return `${value} (~${per1K} per 100K people)`;
+                },
+            },
+        },
+    });
+
     BC19.setupBBGraph({
         bindto: '#deaths_graph',
         size: {
@@ -1088,7 +1187,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 BC19.graphData.viralTests.testPositivityRate,
             ],
             names: {
-                test_pos_rate: 'Test Positivity Rate',
+                test_pos_rate: '7-Day Test Positivity Rate',
             },
             types: {
                 test_pos_rate: 'area',
@@ -1107,6 +1206,19 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             },
         },
         grid: {
+            x: {
+                lines: [
+                    {
+                        /*
+                         * 7 day state calculation lag
+                         */
+                        value: moment().subtract(7, 'days')
+                            .format('YYYY-MM-DD'),
+                        text: 'Rough value considered by state',
+                        position: 'end',
+                    },
+                ],
+            },
             y: {
                 lines: [
                     {
