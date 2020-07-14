@@ -32,7 +32,7 @@ window.BC19 = {
     },
 
     colors: {
-        cases: '#4783EF',
+        cases: '#57A3FF',
         new_cases: '#E86050',
         new_deaths: '#981000',
 
