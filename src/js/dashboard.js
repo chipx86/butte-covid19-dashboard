@@ -789,13 +789,25 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         data: {
             x: 'date',
             colors: BC19.colors,
-            columns: [BC19.graphData.dates, BC19.graphData.cases.totalCases],
+            columns: [
+                BC19.graphData.dates,
+                BC19.graphData.cases.totalCases,
+                BC19.graphData.isolation.current,
+            ],
             names: {
                 cases: 'Total Cases',
+                in_isolation: 'In Isolation',
             },
             types: {
                 cases: 'bar',
+                in_isolation: 'bar',
             },
+            groups: [
+                ['cases', 'in_isolation'],
+            ],
+        },
+        legend: {
+            show: true,
         },
         grid: {
             x: {
