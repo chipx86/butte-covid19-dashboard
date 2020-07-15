@@ -987,7 +987,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 BC19.graphData.dates,
             ].concat(Object.values(BC19.graphData.ageRanges)),
             names: {
-                age_0_17: '0-17 Years',
+                age_0_17: '0-17',
                 age_18_24: '18-24',
                 age_25_34: '25-34',
                 age_35_44: '35-44',
@@ -996,9 +996,9 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 age_65_74: '65-74',
                 age_75_plus: '75+',
 
-                age_18_49: '18-49',
-                age_50_64: '50-64',
-                age_65_plus: '65+',
+                age_18_49: '18-49 (Historical)',
+                age_50_64: '50-64 (Historical)',
+                age_65_plus: '65+ (Historical)',
             },
             order: null,
             types: {
