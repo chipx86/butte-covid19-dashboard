@@ -899,13 +899,12 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                     {
                         /*
                          * 3 day state calculation lag +
-                         * 1 day state reporting lag +
-                         * 1 day data export lag
+                         * 1 day state reporting lag+
                          */
-                        value: moment().subtract(5, 'days')
+                        value: moment().subtract(4, 'days')
                             .format('YYYY-MM-DD'),
                         text: 'Rough value considered by state',
-                        position: 'end',
+                        position: 'start',
                     },
                 ],
             },
@@ -1215,7 +1214,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                         value: moment().subtract(7, 'days')
                             .format('YYYY-MM-DD'),
                         text: 'Rough value considered by state',
-                        position: 'end',
+                        position: 'start',
                     },
                 ],
             },
