@@ -169,19 +169,31 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
         entity = get_entity(entity_id)
         blocks = entity['props']['content']['blocks']
 
+        value = None
+
         if blocks[0]['text'].lower() in expected_labels:
             value = blocks[1]['text']
-        elif blocks[1]['text'].lower() in expected_labels:
+        elif len(blocks) > 1 and blocks[1]['text'].lower() in expected_labels:
             value = blocks[0]['text']
         else:
-            found_labels = [
-                block['text'].lower()
-                for block in blocks
-            ]
+            # They probably broke the labels/values again. Let's try to
+            # find the label *in* the value.
+            for label in expected_labels:
+                for i in (0, 1):
+                    if len(blocks) >= i and label in blocks[0]['text'].lower():
+                        value = \
+                            blocks[0]['text'].lower().split(label)[0].strip()
 
-            raise ParseError('Expected one of label %r to be one of %r for '
-                             'entity %s'
-                             % (found_labels, expected_labels, entity_id))
+            if value is None:
+                found_labels = [
+                    block['text'].lower()
+                    for block in blocks
+                ]
+
+                raise ParseError(
+                    'Expected one of label %r to be one of %r for '
+                    'entity %s'
+                    % (found_labels, expected_labels, entity_id))
 
         try:
             return int(value)
