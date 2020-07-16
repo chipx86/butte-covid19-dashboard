@@ -1209,9 +1209,10 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 lines: [
                     {
                         /*
-                         * 7 day state calculation lag
+                         * 7 *previous* day state calculation lag +
+                         * 1 day reporting lag
                          */
-                        value: moment().subtract(7, 'days')
+                        value: moment().subtract(9, 'days')
                             .format('YYYY-MM-DD'),
                         text: 'Rough value considered by state',
                         position: 'start',
