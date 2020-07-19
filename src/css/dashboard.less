@@ -150,6 +150,7 @@ a:visited {
 
   &__relative {
     color: #777;
+    font-size: 95%;
     line-height: 1.5em;
     vertical-align: bottom;
     white-space: nowrap;
@@ -171,6 +172,7 @@ a:visited {
   }
 
   &__relative-value {
+    margin-right: 0.2em;
     font-weight: bold;
 
     &::before {
@@ -509,6 +511,10 @@ a:visited {
 
       padding-bottom: 2em;
 
+    &__footer {
+      padding-bottom: 2em;
+    }
+
     &__header {
       &.-is-intro {
         padding: 2em;
@@ -582,5 +588,19 @@ a:visited {
       padding-left: 0;
       padding-right: 0;
     }
+  }
+}
+
+@media only screen and (max-width: 350px) {
+  .bc19-c-counter {
+    margin: 1em;
+  }
+
+  .bc19-c-counter__value {
+    font-size: 450%;
+  }
+
+  .bc19-c-counter__relative {
+    font-size: 90%;
   }
 }
