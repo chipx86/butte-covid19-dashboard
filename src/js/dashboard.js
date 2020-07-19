@@ -1,16 +1,12 @@
 window.BC19 = {
     COUNTY_POPULATION: 219186,
 
-    stepSizes: {
-        TOTAL_CASES: 40,
-        NEW_CASES: 10,
-        DEATHS: 2,
-        TOTAL_TESTS: 200,
-        DEMOGRAPHICS: 50,
-        HOSPITALIZATIONS: 2,
-        ISOLATION: 50,
-        SNF: 2,
-        TEST_POSITIVITY_RATE: 2,
+    tickCounts: {
+        VERY_TALL: 15,
+        STANDARD: 10,
+        MEDIUM: 9,
+        SMALL: 5,
+        VERY_SMALL: 5,
     },
 
     minDates: {
@@ -18,9 +14,11 @@ window.BC19 = {
     },
 
     maxValues: {
+        hospitalizations: 0,
         newCases: 0,
         newDeaths: 0,
-        hospitalizations: 0,
+        totalCases: 0,
+        tests: 0,
     },
 
     graphSizes: {
@@ -207,6 +205,8 @@ BC19.processTimelineData = function(timeline) {
     let maxNewCases = 0;
     let maxNewDeaths = 0;
     let maxHospitalizationsY = 0;
+    let maxCurrentSNFCases = 0;
+    let maxViralTests = 0;
 
     let latestCasesRow;
     let latestStateDataRow;
@@ -317,10 +317,25 @@ BC19.processTimelineData = function(timeline) {
             graphTestPositivityRate.push(null);
         }
 
+        if (snf.current_patient_cases !== null &&
+            snf.current_staff_cases !== null) {
+            maxCurrentSNFCases = Math.max(
+                maxCurrentSNFCases,
+                (snf.current_patient_cases + snf.current_staff_cases));
+        }
+
         maxNewDeaths = Math.max(maxNewDeaths, row.deaths.delta_total);
 
         if (deltaConfirmedCases && deltaConfirmedCases > maxNewCases) {
             maxNewCases = confirmedCases.delta_total;
+        }
+
+        if (viralTests.total !== null) {
+            maxViralTests = Math.max(maxViralTests, viralTests.delta_total);
+        }
+
+        if (viralTestResults != null) {
+            maxViralTests = Math.max(maxViralTests, viralTestResults);
         }
 
         if (row.note) {
@@ -378,6 +393,8 @@ BC19.processTimelineData = function(timeline) {
         newDeaths: maxNewDeaths,
         totalCases: latestCasesRow.confirmed_cases.total,
         hospitalizations: maxHospitalizationsY,
+        snf: maxCurrentSNFCases,
+        viralTests: maxViralTests,
     };
 
     BC19.graphData = {
@@ -422,6 +439,34 @@ BC19.processTimelineData = function(timeline) {
             totalStaffDeaths: graphNursingTotalStaffDeaths,
         },
     };
+};
+
+
+BC19.getStepSize = function(maxValue, numTicks) {
+    let nearest = 2;
+
+    if (maxValue > 10000) {
+        nearest = 1000;
+    } else if (maxValue > 1000) {
+        nearest = 100;
+    } else if (maxValue > 500) {
+        nearest = 50;
+    } else if (maxValue > 100) {
+        nearest = 25;
+    } else if (maxValue > 50) {
+        nearest = 10;
+    } else if (maxValue > 20) {
+        nearest = 5;
+    }
+
+    return Math.ceil((maxValue / numTicks + 1) / nearest) * nearest;
+};
+
+
+BC19.getMaxY = function(maxValue, numTicks) {
+    const stepSize = BC19.getStepSize(maxValue, numTicks);
+
+    return Math.ceil((maxValue / stepSize)) * stepSize;
 };
 
 
@@ -781,10 +826,10 @@ BC19.setupByHospitalGraph = function(timeline) {
 
 
 BC19.setupMainTimelineGraphs = function(timeline) {
+    const graphData = BC19.graphData;
     const maxValues = BC19.maxValues;
-    const totalCaseStepCount = BC19.stepSizes.TOTAL_CASES;
-    const newCaseStepCount = BC19.stepSizes.NEW_CASES;
-    const deathsStepCount = BC19.stepSizes.DEATHS;
+    const tickCounts = BC19.tickCounts;
+    const isolationData = graphData.isolation;
     const casesRow = BC19.latestCasesRow;
     const casesI = casesRow.i;
 
@@ -811,8 +856,8 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             x: 'date',
             colors: BC19.colors,
             columns: [
-                BC19.graphData.dates,
-                BC19.graphData.cases.totalCases,
+                graphData.dates,
+                graphData.cases.totalCases,
             ],
             names: {
                 cases: 'Total Cases',
@@ -823,7 +868,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         },
         grid: {
             x: {
-                lines: BC19.graphData.notes,
+                lines: graphData.notes,
             },
             y: {
                 show: true,
@@ -832,11 +877,12 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: axisX,
             y: {
-                padding: 120,
-                max: Math.ceil(BC19.maxTotalCases / totalCaseStepCount) *
-                     totalCaseStepCount,
+                max: BC19.getMaxY(maxValues.totalCases, tickCounts.VERY_TALL),
+                padding: 0,
                 tick: {
-                    stepSize: totalCaseStepCount,
+                    stepSize: BC19.getStepSize(
+                        maxValues.totalCases,
+                        tickCounts.VERY_TALL),
                 },
             },
         },
@@ -850,7 +896,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         data: {
             x: 'date',
             colors: BC19.colors,
-            columns: [BC19.graphData.dates, BC19.graphData.cases.newCases],
+            columns: [graphData.dates, graphData.cases.newCases],
             names: {
                 new_cases: 'New Cases',
             },
@@ -861,11 +907,11 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: axisX,
             y: {
-                max: Math.ceil(maxValues.newCases / newCaseStepCount) *
-                     newCaseStepCount,
+                max: BC19.getMaxY(maxValues.newCases, tickCounts.STANDARD),
                 padding: 0,
                 tick: {
-                    stepSize: newCaseStepCount,
+                    stepSize: BC19.getStepSize(maxValues.newCases,
+                                               tickCounts.STANDARD),
                 },
             },
         },
@@ -873,6 +919,8 @@ BC19.setupMainTimelineGraphs = function(timeline) {
 
     const per1KPop = BC19.COUNTY_POPULATION / 1000;
     const per1KPopRound = Math.round(per1KPop);
+    const latest2WeekCaseRate =
+        graphData.cases.twoWeekNewCaseRate[casesI + 1];
 
     BC19.setupBBGraph({
         bindto: '#two_week_new_case_rate_graph',
@@ -883,8 +931,8 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             x: 'date',
             colors: BC19.colors,
             columns: [
-                BC19.graphData.dates,
-                BC19.graphData.cases.twoWeekNewCaseRate,
+                graphData.dates,
+                graphData.cases.twoWeekNewCaseRate,
             ],
             names: {
                 new_case_rate: 'New Cases Past 14 Days',
@@ -909,6 +957,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 ],
             },
             y: {
+                show: true,
                 lines: [
                     {
                         value: per1KPopRound,
@@ -922,12 +971,13 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: axisX,
             y: {
-                max: Math.max(
-                    per1KPopRound + 20,
-                    BC19.graphData.cases.twoWeekNewCaseRate[casesI + 1]),
+                max: BC19.getMaxY(Math.max(per1KPopRound + 20,
+                                           latest2WeekCaseRate),
+                                  tickCounts.STANDARD),
                 padding: 0,
                 tick: {
-                    stepSize: totalCaseStepCount,
+                    stepSize: BC19.getStepSize(latest2WeekCaseRate,
+                                               tickCounts.STANDARD),
                 },
             },
         },
@@ -954,7 +1004,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         data: {
             x: 'date',
             colors: BC19.colors,
-            columns: [BC19.graphData.dates, BC19.graphData.deaths.newDeaths],
+            columns: [graphData.dates, graphData.deaths.newDeaths],
             names: {
                 new_deaths: 'Deaths',
             },
@@ -965,11 +1015,11 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: axisX,
             y: {
-                max: Math.ceil(maxValues.newDeaths / deathsStepCount) *
-                     deathsStepCount,
+                max: BC19.getMaxY(maxValues.newDeaths, tickCounts.SMALL),
                 padding: 0,
                 tick: {
-                    stepSize: deathsStepCount,
+                    stepSize: BC19.getStepSize(maxValues.newDeaths,
+                                               tickCounts.SMALL),
                 },
             },
         },
@@ -984,8 +1034,8 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             x: 'date',
             colors: BC19.colors,
             columns: [
-                BC19.graphData.dates,
-            ].concat(Object.values(BC19.graphData.ageRanges)),
+                graphData.dates,
+            ].concat(Object.values(graphData.ageRanges)),
             names: {
                 age_0_17: '0-17',
                 age_18_24: '18-24',
@@ -1035,8 +1085,11 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: axisX,
             y: {
+                max: BC19.getMaxY(maxValues.totalCases, tickCounts.STANDARD),
+                padding: 0,
                 tick: {
-                    stepSize: BC19.stepSizes.DEMOGRAPHICS,
+                    stepSize: BC19.getStepSize(maxValues.totalCases,
+                                               tickCounts.STANDARD),
                 },
             },
         },
@@ -1054,11 +1107,11 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             x: 'date',
             colors: BC19.colors,
             columns: [
-                BC19.graphData.dates,
-                BC19.graphData.regions.chico,
-                BC19.graphData.regions.oroville,
-                BC19.graphData.regions.gridley,
-                BC19.graphData.regions.other,
+                graphData.dates,
+                graphData.regions.chico,
+                graphData.regions.oroville,
+                graphData.regions.gridley,
+                graphData.regions.other,
             ],
             names: {
                 chico: 'Chico',
@@ -1080,8 +1133,11 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: axisX,
             y: {
+                max: BC19.getMaxY(maxValues.totalCases, tickCounts.STANDARD),
+                padding: 0,
                 tick: {
-                    stepSize: BC19.stepSizes.DEMOGRAPHICS,
+                    stepSize: BC19.getStepSize(maxValues.totalCases,
+                                               tickCounts.STANDARD),
                 },
             },
         },
@@ -1099,9 +1155,9 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             x: 'date',
             colors: BC19.colors,
             columns: [
-                BC19.graphData.dates,
-                BC19.graphData.viralTests.negativeResults,
-                BC19.graphData.viralTests.positiveResults,
+                graphData.dates,
+                graphData.viralTests.negativeResults,
+                graphData.viralTests.positiveResults,
             ],
             groups: [['neg_results', 'pos_results']],
             names: {
@@ -1147,9 +1203,9 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             x: 'date',
             colors: BC19.colors,
             columns: [
-                BC19.graphData.dates,
-                BC19.graphData.viralTests.newTests,
-                BC19.graphData.viralTests.results,
+                graphData.dates,
+                graphData.viralTests.newTests,
+                graphData.viralTests.results,
             ],
             names: {
                 new_tests: 'New Viral Tests',
@@ -1163,8 +1219,11 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: axisX,
             y: {
+                max: BC19.getMaxY(maxValues.viralTests, tickCounts.STANDARD),
+                padding: 0,
                 tick: {
-                    stepSize: BC19.stepSizes.TOTAL_TESTS,
+                    stepSize: BC19.getStepSize(maxValues.viralTests,
+                                               tickCounts.STANDARD),
                 },
             },
         },
@@ -1172,6 +1231,9 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             show: true,
         },
     });
+
+    const latestTestPositivityRate =
+        graphData.viralTests.testPositivityRate[casesI + 1];
 
     const testPosRateGraph = BC19.setupBBGraph({
         bindto: '#test_positivity_rate_graph',
@@ -1182,8 +1244,8 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             x: 'date',
             colors: BC19.colors,
             columns: [
-                BC19.graphData.dates,
-                BC19.graphData.viralTests.testPositivityRate,
+                graphData.dates,
+                graphData.viralTests.testPositivityRate,
             ],
             names: {
                 test_pos_rate: '7-Day Test Positivity Rate',
@@ -1195,12 +1257,13 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: axisX,
             y: {
-                max: Math.max(
-                    10,
-                    BC19.graphData.viralTests.testPositivityRate[casesI + 1]),
+                max: BC19.getMaxY(latestTestPositivityRate,
+                                  tickCounts.STANDARD),
+                padding: 0,
                 tick: {
-                    stepSize: BC19.stepSizes.TEST_POSITIVITY_RATE,
                     format: x => `${x.toFixed(1)}%`,
+                    stepSize: BC19.getStepSize(latestTestPositivityRate,
+                                               tickCounts.STANDARD),
                 },
             },
         },
@@ -1220,6 +1283,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 ],
             },
             y: {
+                show: true,
                 lines: [
                     {
                         value: 8,
@@ -1266,9 +1330,9 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             x: 'date',
             colors: BC19.colors,
             columns: [
-                BC19.graphData.dates,
-                BC19.graphData.hospitalizations.total,
-                BC19.graphData.hospitalizations.icu,
+                graphData.dates,
+                graphData.hospitalizations.total,
+                graphData.hospitalizations.icu,
             ],
             names: {
                 hospitalizations: 'All Hospitalizations',
@@ -1287,9 +1351,12 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: axisX,
             y: {
-                max: BC19.maxValues.hospitalizations,
+                max: BC19.getMaxY(maxValues.hospitalizations,
+                                  tickCounts.STANDARD),
+                padding: 0,
                 tick: {
-                    stepSize: BC19.stepSizes.HOSPITALIZATIONS,
+                    stepSize: BC19.getStepSize(maxValues.hospitalizations,
+                                               tickCounts.STANDARD),
                 },
             },
         },
@@ -1304,8 +1371,8 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             x: 'date',
             colors: BC19.colors,
             columns: [
-                BC19.graphData.dates,
-                BC19.graphData.hospitalizations.residents,
+                graphData.dates,
+                graphData.hospitalizations.residents,
             ],
             names: {
                 residents: 'County Residents',
@@ -1321,14 +1388,21 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: axisX,
             y: {
-                max: BC19.maxValues.hospitalizations,
+                max: BC19.getMaxY(maxValues.hospitalizations,
+                                  tickCounts.STANDARD),
+                padding: 0,
                 tick: {
-                    stepSize: BC19.stepSizes.HOSPITALIZATIONS,
+                    stepSize: BC19.getStepSize(maxValues.hospitalizations,
+                                               tickCounts.STANDARD),
                 },
             },
         },
     });
 
+    const maxIsolationValue =
+        Math.max(isolationData.current[casesI + 1],
+                 isolationData.released[casesI + 1],
+                 graphData.cases.totalCases[casesI + 1]);
     BC19.setupBBGraph({
         bindto: '#isolation_timeline_graph',
         size: {
@@ -1338,10 +1412,10 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             x: 'date',
             colors: BC19.colors,
             columns: [
-                BC19.graphData.dates,
-                BC19.graphData.cases.totalCases,
-                BC19.graphData.isolation.current,
-                BC19.graphData.isolation.released,
+                graphData.dates,
+                graphData.cases.totalCases,
+                isolationData.current,
+                isolationData.released,
             ],
             names: {
                 cases: 'Confirmed Cases',
@@ -1361,8 +1435,11 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: axisX,
             y: {
+                max: BC19.getMaxY(maxIsolationValue, tickCounts.STANDARD),
+                padding: 0,
                 tick: {
-                    stepSize: BC19.stepSizes.ISOLATION,
+                    stepSize: BC19.getStepSize(maxIsolationValue,
+                                               tickCounts.STANDARD),
                 },
             },
         },
@@ -1377,12 +1454,12 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             x: 'date',
             colors: BC19.colors,
             columns: [
-                BC19.graphData.dates,
-                BC19.graphData.snf.curPatientCases,
-                BC19.graphData.snf.curStaffCases,
+                graphData.dates,
+                graphData.snf.curPatientCases,
+                graphData.snf.curStaffCases,
                 /*
-                BC19.graphData.snf.totalPatientDeaths,
-                BC19.graphData.snf.totalStaffDeaths,
+                graphData.snf.totalPatientDeaths,
+                graphData.snf.totalStaffDeaths,
                 */
             ],
             names: {
@@ -1430,8 +1507,11 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: axisX,
             y: {
+                max: BC19.getMaxY(maxValues.snf, tickCounts.MEDIUM),
+                padding: 0,
                 tick: {
-                    stepSize: BC19.stepSizes.SNF,
+                    stepSize: BC19.getStepSize(maxValues.snf,
+                                               tickCounts.MEDIUM),
                 },
             },
         },
