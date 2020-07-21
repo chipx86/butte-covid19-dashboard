@@ -171,9 +171,12 @@ BC19.processTimelineData = function(timeline) {
     const graphPositiveResults = ['pos_results'];
     const graphTestPositivityRate = ['test_pos_rate'];
 
+    const graphCasesInBiggsGridley = ['biggs_gridley'];
     const graphCasesInChico = ['chico'];
+    const graphCasesInDurham = ['durham'];
     const graphCasesInGridley = ['gridley'];
     const graphCasesInOroville = ['oroville'];
+    const graphCasesInRidge = ['ridge'];
     const graphCasesInOtherRegion = ['other'];
 
     const ageRangeInfo = BC19.ageRangeInfo;
@@ -281,8 +284,11 @@ BC19.processTimelineData = function(timeline) {
             graphPositiveResults.push(0);
         }
 
+        graphCasesInBiggsGridley.push(regions.biggs_gridley.cases);
         graphCasesInChico.push(regions.chico.cases);
+        graphCasesInDurham.push(regions.durham.cases);
         graphCasesInOroville.push(regions.oroville.cases);
+        graphCasesInRidge.push(regions.ridge.cases);
         graphCasesInGridley.push(regions.gridley.cases);
         graphCasesInOtherRegion.push(regions.other.cases);
 
@@ -449,9 +455,12 @@ BC19.processTimelineData = function(timeline) {
             testPositivityRate: graphTestPositivityRate,
         },
         regions: {
+            biggsGridley: graphCasesInBiggsGridley,
             chico: graphCasesInChico,
-            oroville: graphCasesInOroville,
+            durham: graphCasesInDurham,
             gridley: graphCasesInGridley,
+            oroville: graphCasesInOroville,
+            ridge: graphCasesInRidge,
             other: graphCasesInOtherRegion,
         },
         ageRanges: graphCasesByAge,
@@ -800,10 +809,23 @@ BC19.setupByRegionGraph = function(timeline) {
         {},
         [
             {
+                data_id: 'biggs_gridley',
+                label: 'Biggs, Gridley',
+                value: regions.biggs_gridley.cases,
+                relValue: regions.biggs_gridley.cases -
+                          prevRegions.biggs_gridley.cases,
+            },
+            {
                 data_id: 'chico',
                 label: 'Chico',
                 value: regions.chico.cases,
                 relValue: regions.chico.cases - prevRegions.chico.cases,
+            },
+            {
+                data_id: 'durham',
+                label: 'Durham',
+                value: regions.durham.cases,
+                relValue: regions.durham.cases - prevRegions.durham.cases,
             },
             {
                 data_id: 'oroville',
@@ -812,10 +834,10 @@ BC19.setupByRegionGraph = function(timeline) {
                 relValue: regions.oroville.cases - prevRegions.oroville.cases,
             },
             {
-                data_id: 'gridley',
-                label: 'Gridley',
-                value: regions.gridley.cases,
-                relValue: regions.gridley.cases - prevRegions.gridley.cases,
+                data_id: 'ridge',
+                label: 'Paradise, Magalia...',
+                value: regions.ridge.cases,
+                relValue: regions.ridge.cases - prevRegions.ridge.cases,
             },
             {
                 data_id: 'other',
@@ -1145,23 +1167,27 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 graphData.regions.chico,
                 graphData.regions.oroville,
                 graphData.regions.gridley,
+                graphData.regions.biggsGridley,
+                graphData.regions.durham,
+                graphData.regions.ridge,
                 graphData.regions.other,
             ],
             names: {
+                biggs_gridley: 'Biggs/Gridley',
                 chico: 'Chico',
+                durham: 'Durham',
+                gridley: 'Gridley (Historical)',
                 oroville: 'Oroville',
-                gridley: 'Gridley',
                 other: 'Other',
+                ridge: 'Paradise/Magalia/Ridge Communities',
             },
             order: null,
-            types: {
-                chico: 'bar',
-                oroville: 'bar',
-                gridley: 'bar',
-                other: 'bar',
-            },
+            type: 'bar',
             groups: [
-                ['oroville', 'gridley', 'other', 'chico'],
+                [
+                    'oroville', 'gridley', 'biggs_gridley', 'other', 'chico',
+                    'durham', 'ridge',
+                ],
             ],
         },
         axis: {
