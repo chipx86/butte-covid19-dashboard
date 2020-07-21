@@ -17,6 +17,7 @@ window.BC19 = {
         hospitalizations: 0,
         newCases: 0,
         newDeaths: 0,
+        newSNFDeaths: 0,
         totalCases: 0,
         tests: 0,
     },
@@ -59,6 +60,8 @@ window.BC19 = {
 
         current_patient_cases: '#D0A9D9',
         current_staff_cases: '#8FC3E7',
+        new_patient_deaths: '#981000',
+        new_staff_deaths: '#F88000',
     },
 
     els: {
@@ -199,6 +202,8 @@ BC19.processTimelineData = function(timeline) {
     const graphNursingCurStaffCases = ['current_staff_cases'];
     const graphNursingTotalPatientDeaths = ['total_patient_deaths'];
     const graphNursingTotalStaffDeaths = ['total_staff_deaths'];
+    const graphNursingNewPatientDeaths = ['new_patient_deaths'];
+    const graphNursingNewStaffDeaths = ['new_staff_deaths'];
 
     const graphNotes = [];
 
@@ -206,6 +211,7 @@ BC19.processTimelineData = function(timeline) {
     let maxNewDeaths = 0;
     let maxHospitalizationsY = 0;
     let maxCurrentSNFCases = 0;
+    let maxNewSNFDeaths = 0;
     let maxViralTests = 0;
 
     let latestCasesRow;
@@ -233,6 +239,7 @@ BC19.processTimelineData = function(timeline) {
         const countyHospital = row.hospitalizations.county_data;
         const stateHospital = row.hospitalizations.state_data;
         const snf = row.skilled_nursing_facilities;
+        const prevDay = rows[i - 1];
         const twoWeeksAgo = rows[i - 14];
         const sevenDaysAgo = rows[i - 7];
 
@@ -298,6 +305,30 @@ BC19.processTimelineData = function(timeline) {
         graphNursingCurStaffCases.push(snf.current_staff_cases);
         graphNursingTotalPatientDeaths.push(snf.total_patient_deaths);
         graphNursingTotalStaffDeaths.push(snf.total_staff_deaths);
+
+        let newSNFPatientDeaths;
+        let newSNFStaffDeaths;
+
+        if (i > 0 &&
+            snf.total_patient_deaths !== null &&
+            snf.total_staff_deaths !== null) {
+            const prevSNF = prevDay.skilled_nursing_facilities;
+            newSNFPatientDeaths =
+                snf.total_patient_deaths - (prevSNF.total_patient_deaths || 0);
+            newSNFStaffDeaths =
+                snf.total_staff_deaths - (prevSNF.total_staff_deaths || 0);
+        } else {
+            newSNFPatientDeaths = snf.total_patient_deaths;
+            newSNFStaffDeaths = snf.total_staff_deaths;
+        }
+
+        graphNursingNewPatientDeaths.push(newSNFPatientDeaths);
+        graphNursingNewStaffDeaths.push(newSNFStaffDeaths);
+
+        if (newSNFStaffDeaths !== null && newSNFStaffDeaths !== null) {
+            maxNewSNFDeaths = Math.max(maxNewSNFDeaths,
+                                       newSNFPatientDeaths + newSNFStaffDeaths);
+        }
 
         if (!foundMinTestPositivityRateDate &&
             row.date === minTestPositivityRateDate) {
@@ -394,6 +425,7 @@ BC19.processTimelineData = function(timeline) {
         totalCases: latestCasesRow.confirmed_cases.total,
         hospitalizations: maxHospitalizationsY,
         snf: maxCurrentSNFCases,
+        newSNFDeaths: maxNewSNFDeaths,
         viralTests: maxViralTests,
     };
 
@@ -437,6 +469,8 @@ BC19.processTimelineData = function(timeline) {
             curStaffCases: graphNursingCurStaffCases,
             totalPatientDeaths: graphNursingTotalPatientDeaths,
             totalStaffDeaths: graphNursingTotalStaffDeaths,
+            newPatientDeaths: graphNursingNewPatientDeaths,
+            newStaffDeaths: graphNursingNewStaffDeaths,
         },
     };
 };
@@ -1457,10 +1491,6 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 graphData.dates,
                 graphData.snf.curPatientCases,
                 graphData.snf.curStaffCases,
-                /*
-                graphData.snf.totalPatientDeaths,
-                graphData.snf.totalStaffDeaths,
-                */
             ],
             names: {
                 current_patient_cases: 'Current Patient Cases',
@@ -1477,7 +1507,6 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             },
             groups: [
                 ['current_patient_cases', 'current_staff_cases'],
-                //'total_patient_deaths', 'total_staff_deaths'],
             ],
         },
         legend: {
@@ -1512,6 +1541,69 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 tick: {
                     stepSize: BC19.getStepSize(maxValues.snf,
                                                tickCounts.MEDIUM),
+                },
+            },
+        },
+    });
+
+    const snfDeathsGraph = BC19.setupBBGraph({
+        bindto: '#skilled_nursing_deaths_graph',
+        size: {
+            height: BC19.graphSizes.SMALL,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                graphData.dates,
+                graphData.snf.newPatientDeaths,
+                graphData.snf.newStaffDeaths,
+            ],
+            names: {
+                new_patient_deaths: 'New Patient Deaths',
+                new_staff_deaths: 'New Staff Deaths',
+            },
+            order: null,
+            types: {
+                new_patient_deaths: 'bar',
+                new_staff_deaths: 'bar',
+            },
+            groups: [
+                ['new_patient_deaths', 'new_staff_deaths'],
+            ],
+        },
+        legend: {
+            show: true,
+        },
+        tooltip: {
+            format: {
+                value: (value, ratio, id, index) => {
+                    const fmtValue = `${value} or more`;
+
+                    if (index > 0) {
+                        const prevValue = snfDeathsGraph.data(id)[0]
+                            .values[index - 1].value;
+                        const fmtRelValue = Math.abs(value - prevValue);
+
+                        if (prevValue > value) {
+                            return `${fmtValue} (-${fmtRelValue})`;
+                        } else if (prevValue < value) {
+                            return `${fmtValue} (+${fmtRelValue})`;
+                        }
+                    }
+
+                    return fmtValue;
+                },
+            },
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: BC19.getMaxY(maxValues.newSNFDeaths, tickCounts.SMALL),
+                padding: 0,
+                tick: {
+                    stepSize: BC19.getStepSize(maxValues.newSNFDeaths,
+                                               tickCounts.SMALL),
                 },
             },
         },
