@@ -288,6 +288,7 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
 
     try:
         by_age = scraped_data['by_age']
+        by_region = scraped_data['by_region']
 
         row_result = {
             'date': datestamp.strftime('%Y-%m-%d'),
@@ -320,8 +321,15 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
                 '65_plus': by_age['65-74 Years'] + by_age['75+ Years'],
             },
             'regions': {
-                region.lower(): value
-                for region, value in scraped_data['by_region'].items()
+                'biggs_gridley': by_region['Biggs/Gridley'],
+                'chico': by_region['Chico'],
+                'durham': by_region['Durham'],
+                'oroville': by_region['Oroville'],
+                'other': by_region['Other'],
+                'ridge': by_region['Ridge Communities'],
+
+                # Legacy
+                'gridley': None,
             },
         }
     except Exception as e:
@@ -800,7 +808,7 @@ FEEDS = [
         'parser': parse_butte_dashboard,
     },
     {
-        'filename': 'butte-dashboard-v2.csv',
+        'filename': 'butte-dashboard-v3.csv',
         'format': 'csv',
         'local_source': {
             'filename': 'butte-dashboard.json',
@@ -828,10 +836,13 @@ FEEDS = [
             ('Age 18-49 Years', ('age_ranges_in_years', '18-49')),
             ('Age 50-64 Years', ('age_ranges_in_years', '50-64')),
             ('Age 65+ Years', ('age_ranges_in_years', '65_plus')),
+            ('Biggs/Gridley Cases', ('regions', 'biggs_gridley')),
             ('Chico Cases', ('regions', 'chico')),
-            ('Gridley Cases', ('regions', 'gridley')),
+            ('Durham Cases', ('regions', 'durham')),
             ('Oroville Cases', ('regions', 'oroville')),
+            ('Ridge Community Cases', ('regions', 'ridge')),
             ('Other Region Cases', ('regions', 'other')),
+            ('Gridley Cases (Historical)', ('regions', 'gridley')),
         ],
     },
     {

@@ -51,7 +51,7 @@ The following data is made available for others to use:
 * [BC19.live Timeline Data (Google Sheets)](https://docs.google.com/spreadsheets/d/1cDD-vcOT6mZIgv4S3yflAyqUx9w-BbQ_vv9_bkk00lg/edit?usp=sharing)
 * [Per-Hospital Case Counts (CSV)](https://bc19.live/data/csv/hospital-cases.csv)
 * [Per-Hospital Case Counts (JSON)](https://bc19.live/data/json/hospital-cases.json)
-* [Butte County Dashboard (CSV)](https://bc19.live/data/csv/butte-dashboard.csv)
+* [Butte County Dashboard (CSV)](https://bc19.live/data/csv/butte-dashboard-v3.csv)
 * [Butte County Dashboard (JSON)](https://bc19.live/data/json/butte-dashboard.json)
 * [State Skilled Nursing Facilities - Butte County Only (CSV)](https://bc19.live/data/csv/skilled-nursing-facilities-v2.csv)
 * [State Hospital Case Statistics - Butte County Only (CSV)](https://bc19.live/data/csv/state-hospitals-v3.csv)
