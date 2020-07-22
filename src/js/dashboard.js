@@ -804,6 +804,14 @@ BC19.setupByRegionGraph = function(timeline) {
     const prevIndex = BC19.latestCasesRow.i - 1;
     const prevRegions = timeline.dates[prevIndex].regions;
 
+    function normRelValue(cases, prevCases, hideNegative) {
+        if (prevCases === null || (hideNegative && cases < prevCases)) {
+            return 0;
+        }
+
+        return cases - prevCases;
+    }
+
     BC19.setupBarGraph(
         d3.select('#by_region_graph'),
         {},
@@ -812,38 +820,44 @@ BC19.setupByRegionGraph = function(timeline) {
                 data_id: 'biggs_gridley',
                 label: 'Biggs, Gridley',
                 value: regions.biggs_gridley.cases,
-                relValue: regions.biggs_gridley.cases -
-                          prevRegions.biggs_gridley.cases,
+                relValue: normRelValue(regions.biggs_gridley.cases,
+                                       prevRegions.biggs_gridley.cases),
             },
             {
                 data_id: 'chico',
                 label: 'Chico',
                 value: regions.chico.cases,
-                relValue: regions.chico.cases - prevRegions.chico.cases,
+                relValue: normRelValue(regions.chico.cases,
+                                       prevRegions.chico.cases),
             },
             {
                 data_id: 'durham',
                 label: 'Durham',
                 value: regions.durham.cases,
-                relValue: regions.durham.cases - prevRegions.durham.cases,
+                relValue: normRelValue(regions.durham.cases,
+                                       prevRegions.durham.cases),
             },
             {
                 data_id: 'oroville',
                 label: 'Oroville',
                 value: regions.oroville.cases,
-                relValue: regions.oroville.cases - prevRegions.oroville.cases,
+                relValue: normRelValue(regions.oroville.cases,
+                                       prevRegions.oroville.cases),
             },
             {
                 data_id: 'ridge',
                 label: 'Paradise, Magalia...',
                 value: regions.ridge.cases,
-                relValue: regions.ridge.cases - prevRegions.ridge.cases,
+                relValue: normRelValue(regions.ridge.cases,
+                                       prevRegions.ridge.cases),
             },
             {
                 data_id: 'other',
                 label: 'Other',
                 value: regions.other.cases,
-                relValue: regions.other.cases - prevRegions.other.cases,
+                relValue: normRelValue(regions.other.cases,
+                                       prevRegions.other.cases,
+                                       true),
             },
         ]);
 };
