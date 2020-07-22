@@ -51,6 +51,7 @@ window.BC19 = {
         chico: '#3773DF',
         oroville: '#F7767B',
         gridley: '#6BD079',
+        biggs_gridley: '#6BD079',
         other: '#F9BD34',
 
         age_0_17: '#3773DF',
