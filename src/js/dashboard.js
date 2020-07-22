@@ -277,7 +277,7 @@ BC19.processTimelineData = function(timeline) {
         graphNewTests.push(viralTests.delta_total || 0);
         graphTotalTestResults.push(viralTests.results || 0);
 
-        if (viralTestResults !== null && deltaConfirmedCases !== null) {
+        if (viralTestResults && deltaConfirmedCases !== null) {
             graphNegativeResults.push(viralTestResults - deltaConfirmedCases);
             graphPositiveResults.push(deltaConfirmedCases);
         } else {
