@@ -776,7 +776,7 @@ FEEDS = [
     {
         'filename': 'columbia-projections-nochange.csv',
         'format': 'csv',
-        'url': 'https://raw.githubusercontent.com/shaman-lab/COVID-19Projection/master/Production/Projection_nochange.csv',
+        'url': 'https://raw.githubusercontent.com/shaman-lab/COVID-19Projection/master/LatestProjections/Projection_nochange.csv',
         'csv': {
             'match_row': lambda row: row['county'] == 'Butte County CA',
             'sort_by': 'date',
