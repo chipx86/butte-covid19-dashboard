@@ -517,9 +517,16 @@ def build_state_resources_json(session, response, out_filename, **kwargs):
     icu_beds_pct = _get_data_value('ICU Beds Available BAN',
                                    'AGG(ICU Availability)',
                                    'real')
-    ventilators_pct = _get_data_value('Ventilators Available %',
-                                      'AGG(Ventilators Available %)',
-                                      'real')
+
+    try:
+        ventilators_pct = _get_data_value('Ventilators Available %',
+                                          'AGG(Ventilators Available %)',
+                                          'real')
+    except ParseError:
+        ventilators_pct = _get_data_value(
+            'Ventilators Available %',
+            'AGG(Ventilators Available %_tempfix)',
+            'real')
 
     add_or_update_json_date_row(
         out_filename,
