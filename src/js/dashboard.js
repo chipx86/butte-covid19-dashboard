@@ -18,8 +18,10 @@ window.BC19 = {
         newCases: 0,
         newDeaths: 0,
         newSNFDeaths: 0,
+        sevenDayPosRate: 0,
         totalCases: 0,
         tests: 0,
+        twoWeekPosRate: 0,
     },
 
     graphSizes: {
@@ -216,6 +218,8 @@ BC19.processTimelineData = function(timeline) {
     let maxHospitalizationsY = 0;
     let maxCurrentSNFCases = 0;
     let maxNewSNFDeaths = 0;
+    let maxTwoWeekCaseRate = 0;
+    let maxSevenDayPosRate = 0;
     let maxViralTests = 0;
 
     let latestCasesRow;
@@ -268,6 +272,8 @@ BC19.processTimelineData = function(timeline) {
                 twoWeekCaseRateTotal2 !== null) {
                 twoWeekCaseRate = twoWeekCaseRateTotal2 -
                                   twoWeekCaseRateTotal1;
+                maxTwoWeekCaseRate = Math.max(maxTwoWeekCaseRate,
+                                              twoWeekCaseRate);
             }
         }
 
@@ -347,10 +353,14 @@ BC19.processTimelineData = function(timeline) {
             viralTests.total !== null &&
             sevenDaysAgo.confirmed_cases.total !== null &&
             sevenDaysAgo.viral_tests.total !== null) {
-            graphTestPositivityRate.push(
+            const posRate =
                 (confirmedCases.total - sevenDaysAgo.confirmed_cases.total) /
                 (viralTests.total - sevenDaysAgo.viral_tests.total) *
-                100.0);
+                100.0;
+
+            graphTestPositivityRate.push(posRate);
+
+            maxSevenDayPosRate = Math.max(maxSevenDayPosRate, posRate);
         } else {
             graphTestPositivityRate.push(null);
         }
@@ -433,6 +443,8 @@ BC19.processTimelineData = function(timeline) {
         hospitalizations: maxHospitalizationsY,
         snf: maxCurrentSNFCases,
         newSNFDeaths: maxNewSNFDeaths,
+        sevenDayPosRate: maxSevenDayPosRate,
+        twoWeekCaseRate: maxTwoWeekCaseRate,
         viralTests: maxViralTests,
     };
 
@@ -990,8 +1002,6 @@ BC19.setupMainTimelineGraphs = function(timeline) {
 
     const per1KPop = BC19.COUNTY_POPULATION / 1000;
     const per1KPopRound = Math.round(per1KPop);
-    const latest2WeekCaseRate =
-        graphData.cases.twoWeekNewCaseRate[casesI + 1];
 
     BC19.setupBBGraph({
         bindto: '#two_week_new_case_rate_graph',
@@ -1043,11 +1053,11 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             x: axisX,
             y: {
                 max: BC19.getMaxY(Math.max(per1KPopRound + 20,
-                                           latest2WeekCaseRate),
+                                           maxValues.twoWeekCaseRate),
                                   tickCounts.STANDARD),
                 padding: 0,
                 tick: {
-                    stepSize: BC19.getStepSize(latest2WeekCaseRate,
+                    stepSize: BC19.getStepSize(maxValues.twoWeekCaseRate,
                                                tickCounts.STANDARD),
                 },
             },
@@ -1307,9 +1317,6 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         },
     });
 
-    const latestTestPositivityRate =
-        graphData.viralTests.testPositivityRate[casesI + 1];
-
     const testPosRateGraph = BC19.setupBBGraph({
         bindto: '#test_positivity_rate_graph',
         size: {
@@ -1332,12 +1339,12 @@ BC19.setupMainTimelineGraphs = function(timeline) {
         axis: {
             x: axisX,
             y: {
-                max: BC19.getMaxY(latestTestPositivityRate,
+                max: BC19.getMaxY(maxValues.sevenDayPosRate,
                                   tickCounts.STANDARD),
                 padding: 0,
                 tick: {
                     format: x => `${x.toFixed(1)}%`,
-                    stepSize: BC19.getStepSize(latestTestPositivityRate,
+                    stepSize: BC19.getStepSize(maxValues.sevenDayPosRate,
                                                tickCounts.STANDARD),
                 },
             },
