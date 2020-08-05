@@ -20,6 +20,7 @@ window.BC19 = {
         newSNFDeaths: 0,
         sevenDayPosRate: 0,
         totalCases: 0,
+        totalDeaths: 0,
         tests: 0,
         twoWeekPosRate: 0,
     },
@@ -35,6 +36,8 @@ window.BC19 = {
     colors: {
         cases: '#57A3FF',
         new_cases: '#E86050',
+
+        total_deaths: '#A81010',
         new_deaths: '#981000',
 
         neg_results: '#A8D6F1',
@@ -164,6 +167,7 @@ BC19.processTimelineData = function(timeline) {
 
     const graphTotalCases = ['cases'];
     const graphNewCases = ['new_cases'];
+    const graphTotalDeaths = ['total_deaths'];
     const graphNewDeaths = ['new_deaths'];
     const graphTwoWeekNewCaseRate = ['new_case_rate'];
 
@@ -254,6 +258,7 @@ BC19.processTimelineData = function(timeline) {
         graphDates.push(row.date);
         graphTotalCases.push(confirmedCases.total);
         graphNewCases.push(deltaConfirmedCases);
+        graphTotalDeaths.push(row.deaths.total);
         graphNewDeaths.push(row.deaths.delta_total);
 
         // Account for the state-documented 3 day lag in case rates.
@@ -440,6 +445,7 @@ BC19.processTimelineData = function(timeline) {
         newCases: maxNewCases,
         newDeaths: maxNewDeaths,
         totalCases: latestCasesRow.confirmed_cases.total,
+        totalDeaths: latestCasesRow.deaths.total,
         hospitalizations: maxHospitalizationsY,
         snf: maxCurrentSNFCases,
         newSNFDeaths: maxNewSNFDeaths,
@@ -452,6 +458,7 @@ BC19.processTimelineData = function(timeline) {
         dates: graphDates,
         notes: graphNotes,
         deaths: {
+            totalDeaths: graphTotalDeaths,
             newDeaths: graphNewDeaths,
         },
         cases: {
@@ -1078,7 +1085,40 @@ BC19.setupMainTimelineGraphs = function(timeline) {
     });
 
     BC19.setupBBGraph({
-        bindto: '#deaths_graph',
+        bindto: '#total_deaths_graph',
+        size: {
+            height: BC19.graphSizes.SMALL,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                BC19.graphData.dates,
+                BC19.graphData.deaths.totalDeaths,
+            ],
+            names: {
+                total_deaths: 'Total Deaths',
+            },
+            types: {
+                total_deaths: 'bar',
+            },
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: BC19.getMaxY(maxValues.totalDeaths,
+                                  tickCounts.SMALL),
+                padding: 0,
+                tick: {
+                    stepSize: BC19.getStepSize(maxValues.totalDeaths,
+                                               tickCounts.SMALL),
+                },
+            },
+        },
+    });
+
+    BC19.setupBBGraph({
+        bindto: '#new_deaths_graph',
         size: {
             height: BC19.graphSizes.SMALL,
         },
@@ -1087,7 +1127,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             colors: BC19.colors,
             columns: [graphData.dates, graphData.deaths.newDeaths],
             names: {
-                new_deaths: 'Deaths',
+                new_deaths: 'New Deaths',
             },
             types: {
                 new_deaths: 'bar',
