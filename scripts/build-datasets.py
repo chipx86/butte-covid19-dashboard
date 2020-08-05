@@ -113,6 +113,25 @@ def add_nested_key(d, full_key, value):
     d[keys[-1]] = value
 
 
+def parse_int(value, allow_blank=False):
+    if allow_blank and value == '':
+        return value
+
+    if isinstance(value, int):
+        return value
+
+    value = value.replace(',', '')
+
+    return int(value or 0)
+
+
+def parse_pct(value):
+    if value == '':
+        return value
+
+    return int(value.replace('%', ''))
+
+
 def add_or_update_json_date_row(filename, row_data, date_field='date'):
     date_key = row_data[date_field]
 
@@ -645,23 +664,35 @@ def parse_csv(info, response, out_filename, **kwargs):
     sort_by = csv_info.get('sort_by')
     validator = csv_info.get('validator')
     unique_col = csv_info.get('unique_col')
+    skip_rows = csv_info.get('skip_rows', 0)
+    default_type = csv_info.get('default_type')
+    end_if = csv_info.get('end_if')
 
     unique_found = set()
     results = []
 
-    reader = csv.DictReader(codecs.iterdecode(response.iter_lines(), 'utf-8'),
+    lines = response.iter_lines()
+
+    for i in range(skip_rows):
+        next(lines)
+
+    reader = csv.DictReader(codecs.iterdecode(lines, 'utf-8'),
                             delimiter=',')
+    prev_row = None
 
     for row in reader:
         if match is not None and not match(row):
             continue
+
+        if end_if is not None and end_if(row):
+            break
 
         row_result = {}
 
         for col_info in columns:
             dest_name = col_info['name']
             src_name = col_info.get('source_column', dest_name)
-            data_type = col_info.get('type')
+            data_type = col_info.get('type', default_type)
 
             try:
                 value = row[src_name]
@@ -670,7 +701,7 @@ def parse_csv(info, response, out_filename, **kwargs):
 
             if data_type == 'date':
                 try:
-                    row_result[dest_name] = (
+                    value = (
                         datetime.strptime(value, col_info['format'])
                         .strftime('%Y-%m-%d')
                     )
@@ -678,8 +709,41 @@ def parse_csv(info, response, out_filename, **kwargs):
                     raise ParseError('Unable to parse date "%s" using format '
                                      '"%s"'
                                      % (value, col_info['format']))
-            else:
-                row_result[dest_name] = value
+            elif data_type == 'delta':
+                delta_from = col_info['delta_from']
+
+                if (row[delta_from] == '' or
+                    prev_row is None or
+                    prev_row[delta_from] == ''):
+                    value = ''
+                else:
+                    try:
+                        value = parse_int(value)
+                    except ValueError:
+                        raise ParseError(
+                            'Expected %r to be an integer or empty string.'
+                            % value)
+            elif data_type == 'int_or_blank':
+                try:
+                    value = parse_int(value, allow_blank=True)
+                except ValueError:
+                    raise ParseError(
+                        'Expected %r to be an integer or empty string.'
+                        % value)
+            elif data_type == 'int':
+                try:
+                    value = parse_int(value)
+                except ValueError:
+                    raise ParseError('Expected %r to be an integer.'
+                                     % value)
+            elif data_type == 'pct':
+                try:
+                    value = parse_pct(value)
+                except ValueError:
+                    raise ParseError('Expected %r to be a percentage.'
+                                     % value)
+
+            row_result[dest_name] = value
 
         if unique_col is None:
             results.append(row_result)
@@ -702,6 +766,8 @@ def parse_csv(info, response, out_filename, **kwargs):
                 # results.
                 results.append(row_result)
                 unique_found.add(unique_value)
+
+        prev_row = row
 
     # Some datasets are unordered or not in an expected order. If needed, sort.
     if sort_by is not None:
@@ -908,8 +974,9 @@ FEEDS = [
     {
         'filename': 'timeline.csv',
         'format': 'csv',
-        'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRwJpCeZj4tsxMXqrHFDjIis5Znv-nI0kQk9enEAJAbYzZUBHm7TELQe0wl2huOYEkdaWLyR8N9k_uq/pub?gid=856590862&single=true&output=csv',
+        'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRwJpCeZj4tsxMXqrHFDjIis5Znv-nI0kQk9enEAJAbYzZUBHm7TELQe0wl2huOYEkdaWLyR8N9k_uq/pub?gid=169564738&single=true&output=csv',
         'csv': {
+            'end_if': lambda row: (row['confirmed_cases:total'] == ''),
             'validator': lambda results: (
                 len(results) > 0 and
                 results[0]['date'] == '2020-03-20' and
@@ -917,85 +984,224 @@ FEEDS = [
                  results[-2]['confirmed_cases:total'] != '' or
                  results[-3]['confirmed_cases:total'] != '')
             ),
+            'skip_rows': 4,
+            'default_type': 'int_or_blank',
             'columns': [
                 {
                     'name': 'date',
                     'type': 'date',
-                    'format': '%Y-%m-%d',
+                    'format': '%a, %b %d, %Y',
                 },
                 {'name': 'confirmed_cases:total'},
-                {'name': 'confirmed_cases:delta_total'},
+                {
+                    'name': 'confirmed_cases:delta_total',
+                    'type': 'delta',
+                    'delta_from': 'confirmed_cases:total',
+                },
                 {'name': 'in_isolation:current'},
-                {'name': 'in_isolation:delta_current'},
+                {
+                    'name': 'in_isolation:delta_current',
+                    'type': 'delta',
+                    'delta_from': 'in_isolation:current',
+                },
                 {'name': 'in_isolation:total_released'},
-                {'name': 'in_isolation:delta_total_released'},
+                {
+                    'name': 'in_isolation:delta_total_released',
+                    'type': 'delta',
+                    'delta_from': 'in_isolation:total_released',
+                },
                 {'name': 'deaths:total'},
-                {'name': 'deaths:delta_total'},
+                {
+                    'name': 'deaths:delta_total',
+                    'type': 'delta',
+                    'delta_from': 'deaths:total',
+                },
                 {'name': 'viral_tests:total'},
-                {'name': 'viral_tests:delta_total'},
+                {
+                    'name': 'viral_tests:delta_total',
+                    'type': 'delta',
+                    'delta_from': 'viral_tests:total',
+                },
                 {'name': 'viral_tests:results'},
-                {'name': 'viral_tests:delta_results'},
+                {
+                    'name': 'viral_tests:delta_results',
+                    'type': 'delta',
+                    'delta_from': 'viral_tests:results',
+                },
                 {'name': 'viral_tests:pending'},
-                {'name': 'viral_tests:delta_pending'},
+                {
+                    'name': 'viral_tests:delta_pending',
+                    'type': 'delta',
+                    'delta_from': 'viral_tests:pending',
+                },
                 {'name': 'hospitalizations:county_data:hospitalized'},
                 {'name': 'hospitalizations:state_data:positive'},
-                {'name': 'hospitalizations:state_data:delta_positive'},
+                {
+                    'name': 'hospitalizations:state_data:delta_positive',
+                    'type': 'delta',
+                    'delta_from': 'hospitalizations:state_data:positive',
+                },
                 {'name': 'hospitalizations:state_data:suspected_positive'},
-                {'name': 'hospitalizations:state_data:delta_suspected_positive'},
+                {
+                    'name': 'hospitalizations:state_data:delta_suspected_positive',
+                    'type': 'delta',
+                    'delta_from': 'hospitalizations:state_data:suspected_positive',
+                },
                 {'name': 'hospitalizations:state_data:icu_positive'},
-                {'name': 'hospitalizations:state_data:delta_icu_positive'},
+                {
+                    'name': 'hospitalizations:state_data:delta_icu_positive',
+                    'type': 'delta',
+                    'delta_from': 'hospitalizations:state_data:icu_positive',
+                },
                 {'name': 'hospitalizations:state_data:icu_suspected'},
-                {'name': 'hospitalizations:state_data:delta_icu_suspected'},
+                {
+                    'name': 'hospitalizations:state_data:delta_icu_suspected',
+                    'type': 'delta',
+                    'delta_from': 'hospitalizations:state_data:icu_suspected',
+                },
                 {'name': 'hospitalizations:state_data:enloe_hospital'},
-                {'name': 'hospitalizations:state_data:delta_enloe_hospital'},
+                {
+                    'name': 'hospitalizations:state_data:delta_enloe_hospital',
+                    'type': 'delta',
+                    'delta_from': 'hospitalizations:state_data:enloe_hospital',
+                },
                 {'name': 'hospitalizations:state_data:oroville_hospital'},
-                {'name': 'hospitalizations:state_data:delta_oroville_hospital'},
+                {
+                    'name': 'hospitalizations:state_data:delta_oroville_hospital',
+                    'type': 'delta',
+                    'delta_from': 'hospitalizations:state_data:oroville_hospital',
+                },
                 {'name': 'hospitalizations:state_data:orchard_hospital'},
-                {'name': 'hospitalizations:state_data:delta_orchard_hospital'},
+                {
+                    'name': 'hospitalizations:state_data:delta_orchard_hospital',
+                    'type': 'delta',
+                    'delta_from': 'hospitalizations:state_data:orchard_hospital',
+                },
                 {'name': 'regions:biggs_gridley:cases'},
-                {'name': 'regions:biggs_gridley:delta_cases'},
+                {
+                    'name': 'regions:biggs_gridley:delta_cases',
+                    'type': 'delta',
+                    'delta_from': 'regions:biggs_gridley:cases',
+                },
                 {'name': 'regions:chico:cases'},
-                {'name': 'regions:chico:delta_cases'},
+                {
+                    'name': 'regions:chico:delta_cases',
+                    'type': 'delta',
+                    'delta_from': 'regions:chico:cases',
+                },
                 {'name': 'regions:durham:cases'},
-                {'name': 'regions:durham:delta_cases'},
+                {
+                    'name': 'regions:durham:delta_cases',
+                    'type': 'delta',
+                    'delta_from': 'regions:durham:cases',
+                },
                 {'name': 'regions:gridley:cases'},
-                {'name': 'regions:gridley:delta_cases'},
+                {
+                    'name': 'regions:gridley:delta_cases',
+                    'type': 'delta',
+                    'delta_from': 'regions:gridley:cases',
+                },
                 {'name': 'regions:oroville:cases'},
-                {'name': 'regions:oroville:delta_cases'},
+                {
+                    'name': 'regions:oroville:delta_cases',
+                    'type': 'delta',
+                    'delta_from': 'regions:oroville:cases',
+                },
                 {'name': 'regions:ridge:cases'},
-                {'name': 'regions:ridge:delta_cases'},
+                {
+                    'name': 'regions:ridge:delta_cases',
+                    'type': 'delta',
+                    'delta_from': 'regions:ridge:cases',
+                },
                 {'name': 'regions:other:cases'},
-                {'name': 'regions:other:delta_cases'},
+                {
+                    'name': 'regions:other:delta_cases',
+                    'type': 'delta',
+                    'delta_from': 'regions:other:cases',
+                },
                 {'name': 'age_ranges_in_years:0-17'},
-                {'name': 'age_ranges_in_years:delta_0-17'},
+                {
+                    'name': 'age_ranges_in_years:delta_0-17',
+                    'type': 'delta',
+                    'delta_from': 'age_ranges_in_years:0-17',
+                },
                 {'name': 'age_ranges_in_years:18-24'},
-                {'name': 'age_ranges_in_years:delta_18-24'},
+                {
+                    'name': 'age_ranges_in_years:delta_18-24',
+                    'type': 'delta',
+                    'delta_from': 'age_ranges_in_years:18-24',
+                },
                 {'name': 'age_ranges_in_years:25-34'},
-                {'name': 'age_ranges_in_years:delta_25-34'},
+                {
+                    'name': 'age_ranges_in_years:delta_25-34',
+                    'type': 'delta',
+                    'delta_from': 'age_ranges_in_years:25-34',
+                },
                 {'name': 'age_ranges_in_years:35-44'},
-                {'name': 'age_ranges_in_years:delta_35-44'},
+                {
+                    'name': 'age_ranges_in_years:delta_35-44',
+                    'type': 'delta',
+                    'delta_from': 'age_ranges_in_years:35-44',
+                },
                 {'name': 'age_ranges_in_years:45-54'},
-                {'name': 'age_ranges_in_years:delta_45-54'},
+                {
+                    'name': 'age_ranges_in_years:delta_45-54',
+                    'type': 'delta',
+                    'delta_from': 'age_ranges_in_years:45-54',
+                },
                 {'name': 'age_ranges_in_years:55-64'},
-                {'name': 'age_ranges_in_years:delta_55-64'},
+                {
+                    'name': 'age_ranges_in_years:delta_55-64',
+                    'type': 'delta',
+                    'delta_from': 'age_ranges_in_years:55-64',
+                },
                 {'name': 'age_ranges_in_years:65-74'},
-                {'name': 'age_ranges_in_years:delta_65-74'},
+                {
+                    'name': 'age_ranges_in_years:delta_65-74',
+                    'type': 'delta',
+                    'delta_from': 'age_ranges_in_years:65-74',
+                },
                 {'name': 'age_ranges_in_years:75_plus'},
-                {'name': 'age_ranges_in_years:delta_75_plus'},
+                {
+                    'name': 'age_ranges_in_years:delta_75_plus',
+                    'type': 'delta',
+                    'delta_from': 'age_ranges_in_years:75_plus',
+                },
                 {'name': 'age_ranges_in_years:18-49'},
-                {'name': 'age_ranges_in_years:delta_18-49'},
+                {
+                    'name': 'age_ranges_in_years:delta_18-49',
+                    'type': 'delta',
+                    'delta_from': 'age_ranges_in_years:18-49',
+                },
                 {'name': 'age_ranges_in_years:50-64'},
-                {'name': 'age_ranges_in_years:delta_50_64'},
+                {
+                    'name': 'age_ranges_in_years:delta_50_64',
+                    'type': 'delta',
+                    'delta_from': 'age_ranges_in_years:50-64',
+                },
                 {'name': 'age_ranges_in_years:65_plus'},
-                {'name': 'age_ranges_in_years:delta_65_plus'},
-                {'name': 'resources:state_data:icu_beds_pct'},
-                {'name': 'resources:state_data:ventilators_pct'},
+                {
+                    'name': 'age_ranges_in_years:delta_65_plus',
+                    'type': 'delta',
+                    'delta_from': 'age_ranges_in_years:65_plus',
+                },
+                {
+                    'name': 'resources:state_data:icu_beds_pct',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'resources:state_data:ventilators_pct',
+                    'type': 'pct',
+                },
                 {'name': 'resources:state_data:n95_respirators'},
                 {'name': 'resources:state_data:procedure_masks'},
                 {'name': 'resources:state_data:gowns'},
                 {'name': 'resources:state_data:face_shields'},
                 {'name': 'resources:state_data:gloves'},
-                {'name': 'note'},
+                {
+                    'name': 'note',
+                    'type': 'string',
+                },
                 {'name': 'skilled_nursing_facilities:current_patient_cases'},
                 {'name': 'skilled_nursing_facilities:current_staff_cases'},
                 {'name': 'skilled_nursing_facilities:total_patient_deaths'},
