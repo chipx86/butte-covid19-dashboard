@@ -15,6 +15,9 @@ window.BC19 = {
 
     maxValues: {
         hospitalizations: 0,
+        jailInmateCurCases: 0,
+        jailInmatePopulation: 0,
+        jailStaffTotalCases: 0,
         newCases: 0,
         newDeaths: 0,
         newSNFDeaths: 0,
@@ -68,10 +71,13 @@ window.BC19 = {
         current_staff_cases: '#8FC3E7',
         new_patient_deaths: '#981000',
         new_staff_deaths: '#F88000',
+
+        jail_inmate_cur_cases: '#333333',
+        jail_inmate_pop: '#999999',
+        jail_staff_total_cases: '#2222FF',
     },
 
-    els: {
-    },
+    els: {},
 
     ageRangeInfo: {
         '0_17': {sourceKey: '0-17'},
@@ -215,8 +221,18 @@ BC19.processTimelineData = function(timeline) {
     const graphNursingNewPatientDeaths = ['new_patient_deaths'];
     const graphNursingNewStaffDeaths = ['new_staff_deaths'];
 
+    const graphJailPop = ['jail_inmate_pop'];
+    const graphJailInmateTests = ['jail_inmate_tests'];
+    const graphJailInmatePosResults = ['jail_inmate_pos_results'];
+    const graphJailInmateCurCases = ['jail_inmate_cur_cases'];
+    const graphJailStaffTests = ['jail_staff_tests'];
+    const graphJailStaffTotalCases = ['jail_staff_total_cases'];
+
     const graphNotes = [];
 
+    let maxJailInmateCurCases = 0;
+    let maxJailInmatePopulation = 0;
+    let maxJailStaffTotalCases = 0;
     let maxNewCases = 0;
     let maxNewDeaths = 0;
     let maxHospitalizationsY = 0;
@@ -229,6 +245,7 @@ BC19.processTimelineData = function(timeline) {
     let latestCasesRow;
     let latestStateDataRow;
     let latestPerHospitalDataRow;
+    let latestJailRow;
 
     const minTestPositivityRateDate = BC19.minDates.testPositivityRate;
     let foundMinTestPositivityRateDate = false;
@@ -387,7 +404,7 @@ BC19.processTimelineData = function(timeline) {
             maxViralTests = Math.max(maxViralTests, viralTests.delta_total);
         }
 
-        if (viralTestResults != null) {
+        if (viralTestResults !== null) {
             maxViralTests = Math.max(maxViralTests, viralTestResults);
         }
 
@@ -396,6 +413,31 @@ BC19.processTimelineData = function(timeline) {
                 value: row.date,
                 text: row.note,
             });
+        }
+
+        const jailInmateCurCases = row.county_jail.inmates.current_cases;
+        const jailInmatePopulation = row.county_jail.inmates.population
+        const jailStaffTotalCases = row.county_jail.staff.total_positive;
+        graphJailPop.push(jailInmatePopulation);
+        graphJailInmateTests.push(row.county_jail.inmates.total_tests);
+        graphJailInmatePosResults.push(row.county_jail.inmates.total_positive);
+        graphJailInmateCurCases.push(jailInmateCurCases);
+        graphJailStaffTests.push(row.county_jail.staff.total_tests);
+        graphJailStaffTotalCases.push(jailStaffTotalCases);
+
+        if (jailInmateCurCases !== null) {
+            maxJailInmateCurCases = Math.max(maxJailInmateCurCases,
+                                             jailInmateCurCases);
+        }
+
+        if (jailInmatePopulation !== null) {
+            maxJailInmatePopulation = Math.max(maxJailInmatePopulation,
+                                               jailInmatePopulation);
+        }
+
+        if (jailStaffTotalCases !== null) {
+            maxJailStaffTotalCases = Math.max(maxJailStaffTotalCases,
+                                              jailStaffTotalCases);
         }
 
         if (confirmedCases.total !== null) {
@@ -411,6 +453,10 @@ BC19.processTimelineData = function(timeline) {
         if (stateData.enloe_hospital !== null) {
             latestPerHospitalDataRow = row;
         }
+
+        if (row.county_jail.inmates.population !== null) {
+            latestJailRow = row;
+        }
     }
 
     if (latestCasesRow === null) {
@@ -425,8 +471,15 @@ BC19.processTimelineData = function(timeline) {
             "found! Please report this :)");
     }
 
+    if (latestJailRow === null) {
+        throw new Error(
+            "Oh no! The latest COVID-19 jail data couldn't be " +
+            "found! Please report this :)");
+    }
+
     BC19.latestCasesRow = latestCasesRow;
     BC19.latestStateDataRow = latestStateDataRow;
+    BC19.latestJailRow = latestJailRow;
     BC19.latestPerHospitalDataRow = latestPerHospitalDataRow;
     BC19.firstMDate = BC19.parseMDate(timeline.dates[0].date);
     BC19.lastMDate = BC19.parseMDate(timeline.dates[rows.length - 1].date);
@@ -442,6 +495,9 @@ BC19.processTimelineData = function(timeline) {
     ];
 
     BC19.maxValues = {
+        jailInmateCurCases: maxJailInmateCurCases,
+        jailInmatePopulation: maxJailInmatePopulation,
+        jailStaffTotalCases: maxJailStaffTotalCases,
         newCases: maxNewCases,
         newDeaths: maxNewDeaths,
         totalCases: latestCasesRow.confirmed_cases.total,
@@ -465,6 +521,14 @@ BC19.processTimelineData = function(timeline) {
             totalCases: graphTotalCases,
             newCases: graphNewCases,
             twoWeekNewCaseRate: graphTwoWeekNewCaseRate,
+        },
+        jail: {
+            inmatePopulation: graphJailPop,
+            inmateTests: graphJailInmateTests,
+            inmatePosResults: graphJailInmatePosResults,
+            inmateCurCases: graphJailInmateCurCases,
+            staffTests: graphJailStaffTests,
+            staffTotalCases: graphJailStaffTotalCases,
         },
         viralTests: {
             total: graphTotalTests,
@@ -659,8 +723,10 @@ BC19.setupCounters = function(timeline) {
     const dates = timeline.dates;
     const casesRow = BC19.latestCasesRow;
     const hospitalsRow = BC19.latestStateDataRow;
+    const jailRow = BC19.latestJailRow;
     const casesI = casesRow.i;
     const hospitalsI = hospitalsRow.i;
+    const jailI = jailRow.i;
 
     const curCasesTotal = casesRow.confirmed_cases.total;
     const totalTests = casesRow.viral_tests.total;
@@ -776,6 +842,69 @@ BC19.setupCounters = function(timeline) {
         {
             value: (totalTests / BC19.COUNTY_POPULATION * 100).toFixed(2),
             formatValue: value => '> ' + (100 - value) + '%',
+        });
+
+
+    BC19.setCounter(
+        document.getElementById('jail-inmate-pop-counter'),
+        {
+            value: BC19.graphData.jail.inmatePopulation[jailI + 1],
+            relativeValues: [
+                BC19.graphData.jail.inmatePopulation[jailI],
+            ],
+        });
+
+    BC19.setCounter(
+        document.getElementById('jail-inmate-total-tests'),
+        {
+            value: BC19.graphData.jail.inmateTests[jailI + 1],
+            relativeValues: [
+                BC19.graphData.jail.inmateTests[jailI],
+            ],
+        });
+
+    BC19.setCounter(
+        document.getElementById('jail-inmate-cur-cases'),
+        {
+            value: BC19.graphData.jail.inmateCurCases[jailI + 1],
+            relativeValues: [
+                BC19.graphData.jail.inmateCurCases[jailI],
+            ],
+        });
+
+    BC19.setCounter(
+        document.getElementById('jail-inmate-pos-rate'),
+        {
+            value: (BC19.graphData.jail.inmateCurCases[jailI + 1] /
+                    BC19.graphData.jail.inmatePopulation[jailI + 1]) * 100,
+            relativeValues: [
+                BC19.graphData.jail.inmateCurCases[jailI] /
+                BC19.graphData.jail.inmatePopulation[jailI] * 100,
+            ],
+            formatValue: value => value.toFixed(2) + '%',
+            formatRelValues: [
+                (value, relValue) => {
+                    return Math.abs(value - relValue).toFixed(2) + '%';
+                },
+            ],
+        });
+
+    BC19.setCounter(
+        document.getElementById('jail-staff-total-tests'),
+        {
+            value: BC19.graphData.jail.staffTests[jailI + 1],
+            relativeValues: [
+                BC19.graphData.jail.staffTests[jailI],
+            ],
+        });
+
+    BC19.setCounter(
+        document.getElementById('jail-staff-total-cases'),
+        {
+            value: BC19.graphData.jail.staffTotalCases[jailI + 1],
+            relativeValues: [
+                BC19.graphData.jail.staffTotalCases[jailI],
+            ],
         });
 
     document.getElementById('pop-tested-pct-counter-people').innerText =
@@ -1696,6 +1825,78 @@ BC19.setupMainTimelineGraphs = function(timeline) {
             },
         },
     });
+
+    const maxInmateCasesValue = Math.max(maxValues.jailInmateCurCases,
+                                         maxValues.jailInmatePopulation);
+    BC19.setupBBGraph({
+        bindto: '#jail_inmates_cur_cases_timeline_graph',
+        size: {
+            height: BC19.graphSizes.STANDARD,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                graphData.dates,
+                graphData.jail.inmatePopulation,
+                graphData.jail.inmateCurCases,
+            ],
+            order: null,
+            names: {
+                jail_inmate_cur_cases: 'Current Inmate Cases',
+                jail_inmate_pop: 'Inmate Population',
+            },
+            types: {
+                jail_inmate_cur_cases: 'area-step',
+                jail_inmate_pop: 'area-step',
+            },
+        },
+        legend: {
+            show: true,
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: BC19.getMaxY(maxInmateCasesValue, tickCounts.STANDARD),
+                padding: 0,
+                tick: {
+                    stepSize: BC19.getStepSize(maxInmateCasesValue,
+                                               tickCounts.STANDARD),
+                },
+            },
+        },
+    });
+
+    BC19.setupBBGraph({
+        bindto: '#jail_staff_total_cases_timeline_graph',
+        size: {
+            height: BC19.graphSizes.SMALL,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                graphData.dates,
+                graphData.jail.staffTotalCases,
+            ],
+            names: {
+                jail_staff_total_cases: 'Total Staff Cases',
+            },
+            type: 'area-step',
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: BC19.getMaxY(maxValues.jailStaffTotalCases,
+                                  tickCounts.SMALL),
+                padding: 0,
+                tick: {
+                    stepSize: BC19.getStepSize(maxValues.jailStaffTotalCases,
+                                               tickCounts.SMALL),
+                },
+            },
+        },
+    });
 };
 
 
@@ -1781,6 +1982,7 @@ BC19.setupElements = function() {
 
     const bcdDayText = BC19.getDayText(BC19.latestCasesRow.date);
     const stateDayText = BC19.getDayText(BC19.latestStateDataRow.date);
+    const jailDayText = BC19.getDayText(BC19.latestJailRow.date);
 
     document.querySelectorAll('.bc19-o-bcd-update-day').forEach(el => {
         el.innerText = bcdDayText;
@@ -1788,6 +1990,10 @@ BC19.setupElements = function() {
 
     document.querySelectorAll('.bc19-o-state-update-day').forEach(el => {
         el.innerText = stateDayText;
+    });
+
+    document.querySelectorAll('.bc19-o-jail-update-day').forEach(el => {
+        el.innerText = jailDayText;
     });
 
     document.getElementById('page-spinner').remove();

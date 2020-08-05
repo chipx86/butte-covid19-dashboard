@@ -444,6 +444,98 @@
      </figure>
    </section>
 
+   <header class="bc19-c-dashboard__header -is-jail-header"
+           aria-label="County jail info">
+    <h2>Butte County Jail</h2>
+    <p>
+    <strong>Source:</strong>
+     <a href="https://www.buttecounty.net/sheriffcoroner/Covid-19">Butte County Jail COVID-19 Page</a>
+    </p>
+   </header>
+
+   <section class="bc19-c-dashboard__section -is-jail-graphs"
+            aria-label="County jail graphs">
+    <figure class="bc19-c-counter -up-is-bad" id="jail-inmate-pop-counter">
+     <h3 class="bc19-c-counter__title">Inmate Population</h3>
+     <div class="bc19-c-counter__value">0</div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       <span class="bc19-o-jail-update-day"></span>
+     </div>
+    </figure>
+
+    <figure class="bc19-c-counter" id="jail-inmate-total-tests">
+     <h3 class="bc19-c-counter__title">Total Inmate Tests</h3>
+     <div class="bc19-c-counter__value">0</div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       <span class="bc19-o-jail-update-day"></span>
+     </div>
+    </figure>
+
+    <figure class="bc19-c-counter -up-is-bad" id="jail-inmate-cur-cases">
+     <h3 class="bc19-c-counter__title">Current Inmate Cases</h3>
+     <div class="bc19-c-counter__value">0</div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       <span class="bc19-o-jail-update-day"></span>
+     </div>
+    </figure>
+
+    <figure class="bc19-c-counter -up-is-bad" id="jail-inmate-pos-rate">
+     <h3 class="bc19-c-counter__title">% of Inmates Positive</h3>
+     <div class="bc19-c-counter__value">0</div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       <span class="bc19-o-jail-update-day"></span>
+     </div>
+    </figure>
+
+    <figure class="bc19-c-counter" id="jail-staff-total-tests">
+     <h3 class="bc19-c-counter__title">Total Staff Tests</h3>
+     <div class="bc19-c-counter__value">0</div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       <span class="bc19-o-jail-update-day"></span>
+     </div>
+    </figure>
+
+    <figure class="bc19-c-counter -up-is-bad" id="jail-staff-total-cases">
+     <h3 class="bc19-c-counter__title">Total Staff Cases</h3>
+     <div class="bc19-c-counter__value">0</div>
+     <div class="bc19-c-counter__relative">
+       <span class="bc19-c-counter__relative-value">0</span>
+       <span class="bc19-o-jail-update-day"></span>
+     </div>
+    </figure>
+
+    <figure class="bc19-c-timeline-graph">
+     <h3 class="bc19-c-timeline-graph__title"
+         id="jail_inmates_cur_cases_timeline_graph_label">
+      Current Inmate Cases
+     </h3>
+     <h4 class="bc19-c-timeline-graph__subtitle">
+       Only current cases are available. Unlike staff numbers, total cases
+       are not provided by the county
+     </h4>
+     <div id="jail_inmates_cur_cases_timeline_graph"
+          aria-labelled-by="jail_inmates_cur_cases_timeline_graph_label"></div>
+    </figure>
+
+    <figure class="bc19-c-timeline-graph">
+     <h3 class="bc19-c-timeline-graph__title"
+         id="jail_staff_total_cases_timeline_graph_label">
+      Total Staff Cases
+     </h3>
+     <h4 class="bc19-c-timeline-graph__subtitle">
+       Only total cases are available. Unlike inmate numbers, current
+       cases are not provided by the county
+     </h4>
+     <div id="jail_staff_total_cases_timeline_graph"
+          aria-labelled-by="jail_staff_total_cases_timeline_graph_label"></div>
+    </figure>
+   </section>
+
    <footer class="bc19-c-dashboard__footer">
     <nav>
      <a href="#" class="bc19-c-dashboard__back-to-top">🔼 Back to Top</a>
