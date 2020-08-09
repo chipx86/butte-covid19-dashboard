@@ -1271,13 +1271,18 @@ FEEDS = [
 
 
 def main():
-    if len(sys.argv) > 1:
-        feeds_to_build = set(sys.argv[1:])
-    else:
-        feeds_to_build = set(
+    if '--not-timeline' in sys.argv:
+        feeds_to_build = {
             feed['filename']
             for feed in FEEDS
-        )
+        } - {'timeline.csv', 'timeline.json'}
+    elif len(sys.argv) > 1:
+        feeds_to_build = set(sys.argv[1:])
+    else:
+        feeds_to_build = {
+            feed['filename']
+            for feed in FEEDS
+        }
 
     try:
         with open(CACHE_FILE, 'r') as fp:
