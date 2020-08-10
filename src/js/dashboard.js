@@ -1998,8 +1998,21 @@ BC19.setupElements = function() {
 
     document.getElementById('page-spinner').remove();
 
-    document.querySelector('.bc19-c-dashboard')
-        .classList.remove('-is-loading');
+    const dashboardEl = document.querySelector('.bc19-c-dashboard');
+    dashboardEl.classList.remove('-is-loading');
+
+    const noticeEl = document.querySelector('.bc19-c-dashboard__notice');
+
+    if (noticeEl) {
+        function _updateSizeForNotice() {
+            const rect = noticeEl.getBoundingClientRect();
+
+            dashboardEl.style.marginTop = `${rect.height}px`;
+        }
+
+        window.addEventListener('resize', _updateSizeForNotice);
+        _updateSizeForNotice();
+    }
 }
 
 

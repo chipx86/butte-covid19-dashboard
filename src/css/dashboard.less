@@ -258,6 +258,7 @@ a:visited {
   grid-template-rows: auto;
   grid-template-columns: 20em auto;
   grid-template-areas:
+    "notice notice"
     "intro intro"
     "case-counters case-counters"
     "cases-breakdown case-graphs"
@@ -372,6 +373,19 @@ a:visited {
     text-align: left;
     color: @note-color;
     margin: 1em 4em 3em 2em;
+  }
+
+  &__notice {
+    background: #FFB6B6;
+    border-bottom: 1px #664444 solid;
+    grid-area: notice;
+    margin: 0;
+    padding: 1em;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
   }
 
   &__section {
@@ -509,6 +523,7 @@ a:visited {
     margin: 0;
     grid-template-columns: auto;
     grid-template-areas:
+      "notice"
       "intro"
       "case-counters"
       "cases-breakdown"
