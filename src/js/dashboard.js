@@ -112,9 +112,9 @@ window.BC19 = {
 
     graphs: [],
     graphsData: {},
-    latestCasesRow: null,
-    latestStateDataRow: null,
-    latestPerHospitalDataRow: null,
+
+    latestRows: {},
+
     commonTimelineOptions: {
         bar: {
             radius: {
@@ -164,6 +164,15 @@ BC19.getDayText = function(date) {
     } else {
         return moment(date).format('dddd');
     }
+};
+
+
+BC19.normRelValue = function(value, prevValue, hideNegative) {
+    if (prevValue === null || (hideNegative && value < prevValue)) {
+        return 0;
+    }
+
+    return value - prevValue;
 };
 
 
@@ -242,10 +251,16 @@ BC19.processTimelineData = function(timeline) {
     let maxSevenDayPosRate = 0;
     let maxViralTests = 0;
 
+    let latestAgeDataRow;
     let latestCasesRow;
-    let latestStateDataRow;
-    let latestPerHospitalDataRow;
+    let latestCountyHospitalDataRow;
+    let latestDeathsRow;
+    let latestIsolationDataRow;
     let latestJailRow;
+    let latestPerHospitalDataRow;
+    let latestRegionDataRow;
+    let latestStateHospitalsRow;
+    let latestTestPosDataRow;
 
     const minTestPositivityRateDate = BC19.minDates.testPositivityRate;
     let foundMinTestPositivityRateDate = false;
@@ -258,6 +273,7 @@ BC19.processTimelineData = function(timeline) {
         const row = rows[i];
 
         row.i = i;
+        graphDates.push(row.date);
 
         const confirmedCases = row.confirmed_cases;
         const deltaConfirmedCases = Math.max(confirmedCases.delta_total, 0);
@@ -272,13 +288,32 @@ BC19.processTimelineData = function(timeline) {
         const twoWeeksAgo = rows[i - 14];
         const sevenDaysAgo = rows[i - 7];
 
-        graphDates.push(row.date);
+
+        /* Confirmed Csses */
         graphTotalCases.push(confirmedCases.total);
         graphNewCases.push(deltaConfirmedCases);
+
+        if (confirmedCases.total !== null) {
+            latestCasesRow = row;
+        }
+
+
+        /* Deaths */
         graphTotalDeaths.push(row.deaths.total);
         graphNewDeaths.push(row.deaths.delta_total);
 
-        // Account for the state-documented 3 day lag in case rates.
+        maxNewDeaths = Math.max(maxNewDeaths, row.deaths.delta_total);
+
+        if (deltaConfirmedCases && deltaConfirmedCases > maxNewCases) {
+            maxNewCases = confirmedCases.delta_total;
+        }
+
+        if (row.deaths.total !== null) {
+            latestDeathsRow = row;
+        }
+
+
+        /* 14-Day New Case Rate */
         const twoWeekCaseRateI1 = i - 14;
         let twoWeekCaseRate = null;
 
@@ -301,9 +336,11 @@ BC19.processTimelineData = function(timeline) {
 
         graphTwoWeekNewCaseRate.push(twoWeekCaseRate);
 
+
+        /* Testing Data */
         graphTotalTests.push(viralTests.total);
-        graphNewTests.push(viralTests.delta_total || 0);
-        graphTotalTestResults.push(viralTests.results || 0);
+        graphNewTests.push(viralTests.delta_total);
+        graphTotalTestResults.push(viralTests.results);
 
         if (viralTestResults && deltaConfirmedCases !== null) {
             graphNegativeResults.push(viralTestResults - deltaConfirmedCases);
@@ -313,6 +350,16 @@ BC19.processTimelineData = function(timeline) {
             graphPositiveResults.push(0);
         }
 
+        if (viralTests.total !== null) {
+            maxViralTests = Math.max(maxViralTests, viralTests.delta_total);
+        }
+
+        if (viralTestResults !== null) {
+            maxViralTests = Math.max(maxViralTests, viralTestResults);
+        }
+
+
+        /* Cases By Region */
         graphCasesInBiggsGridley.push(regions.biggs_gridley.cases);
         graphCasesInChico.push(regions.chico.cases);
         graphCasesInDurham.push(regions.durham.cases);
@@ -321,21 +368,60 @@ BC19.processTimelineData = function(timeline) {
         graphCasesInGridley.push(regions.gridley.cases);
         graphCasesInOtherRegion.push(regions.other.cases);
 
+        if (regions.chico.cases !== null) {
+            latestRegionDataRow = row;
+        }
+
+
+        /* Cases By Age Group */
+        let foundAge = false;
+
         ageRangeKeys.forEach(key => {
-            graphCasesByAge[key].push(ageRanges[ageRangeInfo[key].sourceKey]);
+            const age = ageRanges[ageRangeInfo[key].sourceKey];
+            graphCasesByAge[key].push(age);
+
+            if (age !== null) {
+                foundAge = true;
+            }
         });
 
-        graphInIsolation.push(row.in_isolation.current || 0);
-        graphReleasedFromIsolation.push(row.in_isolation.total_released || 0);
+        if (foundAge) {
+            latestAgeDataRow = row;
+        }
 
-        graphHospitalizations.push(stateHospital.positive || 0);
-        graphICU.push(stateHospital.icu_positive || 0);
-        graphHospitalizedResidents.push(countyHospital.hospitalized || 0);
+
+        /* People In Isolation */
+        graphInIsolation.push(row.in_isolation.current);
+        graphReleasedFromIsolation.push(row.in_isolation.total_released);
+
+        if (row.in_isolation.current !== null) {
+            latestIsolationDataRow = row;
+        }
+
+
+        /* Hospitalizations */
+        graphHospitalizations.push(stateHospital.positive);
+        graphICU.push(stateHospital.icu_positive);
+        graphHospitalizedResidents.push(countyHospital.hospitalized);
 
         maxHospitalizationsY = Math.max(maxHospitalizationsY,
                                         stateHospital.positive,
                                         countyHospital.hospitalized);
 
+        if (countyHospital.hospitalized !== null) {
+            latestCountyHospitalDataRow = row;
+        }
+
+        if (stateHospital.positive !== null) {
+            latestStateHospitalsRow = row;
+        }
+
+        if (stateHospital.enloe_hospital !== null) {
+            latestPerHospitalDataRow = row;
+        }
+
+
+        /* Skilled Nursing Facilities */
         graphNursingCurPatientCases.push(snf.current_patient_cases);
         graphNursingCurStaffCases.push(snf.current_staff_cases);
         graphNursingTotalPatientDeaths.push(snf.total_patient_deaths);
@@ -365,6 +451,15 @@ BC19.processTimelineData = function(timeline) {
                                        newSNFPatientDeaths + newSNFStaffDeaths);
         }
 
+        if (snf.current_patient_cases !== null &&
+            snf.current_staff_cases !== null) {
+            maxCurrentSNFCases = Math.max(
+                maxCurrentSNFCases,
+                (snf.current_patient_cases + snf.current_staff_cases));
+        }
+
+
+        /* 7-Day Test Positivity Rate */
         if (!foundMinTestPositivityRateDate &&
             row.date === minTestPositivityRateDate) {
             foundMinTestPositivityRateDate = true;
@@ -374,7 +469,8 @@ BC19.processTimelineData = function(timeline) {
             confirmedCases.total !== null &&
             viralTests.total !== null &&
             sevenDaysAgo.confirmed_cases.total !== null &&
-            sevenDaysAgo.viral_tests.total !== null) {
+            sevenDaysAgo.viral_tests.total !== null &&
+            graphTestPositivityRate[i + 1] !== null) {
             const posRate =
                 (confirmedCases.total - sevenDaysAgo.confirmed_cases.total) /
                 (viralTests.total - sevenDaysAgo.viral_tests.total) *
@@ -383,31 +479,13 @@ BC19.processTimelineData = function(timeline) {
             graphTestPositivityRate.push(posRate);
 
             maxSevenDayPosRate = Math.max(maxSevenDayPosRate, posRate);
+            latestTestPosDataRow = row;
         } else {
             graphTestPositivityRate.push(null);
         }
 
-        if (snf.current_patient_cases !== null &&
-            snf.current_staff_cases !== null) {
-            maxCurrentSNFCases = Math.max(
-                maxCurrentSNFCases,
-                (snf.current_patient_cases + snf.current_staff_cases));
-        }
 
-        maxNewDeaths = Math.max(maxNewDeaths, row.deaths.delta_total);
-
-        if (deltaConfirmedCases && deltaConfirmedCases > maxNewCases) {
-            maxNewCases = confirmedCases.delta_total;
-        }
-
-        if (viralTests.total !== null) {
-            maxViralTests = Math.max(maxViralTests, viralTests.delta_total);
-        }
-
-        if (viralTestResults !== null) {
-            maxViralTests = Math.max(maxViralTests, viralTestResults);
-        }
-
+        /* Notable Event */
         if (row.note) {
             graphNotes.push({
                 value: row.date,
@@ -415,6 +493,8 @@ BC19.processTimelineData = function(timeline) {
             });
         }
 
+
+        /* County Jail */
         const jailInmateCurCases = row.county_jail.inmates.current_cases;
         const jailInmatePopulation = row.county_jail.inmates.population
         const jailStaffTotalCases = row.county_jail.staff.total_positive;
@@ -440,20 +520,6 @@ BC19.processTimelineData = function(timeline) {
                                               jailStaffTotalCases);
         }
 
-        if (confirmedCases.total !== null) {
-            latestCasesRow = row;
-        }
-
-        const stateData = row.hospitalizations.state_data;
-
-        if (stateData.positive !== null) {
-            latestStateDataRow = row;
-        }
-
-        if (stateData.enloe_hospital !== null) {
-            latestPerHospitalDataRow = row;
-        }
-
         if (row.county_jail.inmates.population !== null) {
             latestJailRow = row;
         }
@@ -465,7 +531,7 @@ BC19.processTimelineData = function(timeline) {
             "found! Please report this :)");
     }
 
-    if (latestStateDataRow === null) {
+    if (latestStateHospitalsRow === null) {
         throw new Error(
             "Oh no! The latest COVID-19 hospitals data couldn't be " +
             "found! Please report this :)");
@@ -477,10 +543,20 @@ BC19.processTimelineData = function(timeline) {
             "found! Please report this :)");
     }
 
-    BC19.latestCasesRow = latestCasesRow;
-    BC19.latestStateDataRow = latestStateDataRow;
-    BC19.latestJailRow = latestJailRow;
-    BC19.latestPerHospitalDataRow = latestPerHospitalDataRow;
+    BC19.latestRows = {
+        ages: latestAgeDataRow,
+        cases: latestCasesRow,
+        countyHospitals: latestCountyHospitalDataRow,
+        deaths: latestDeathsRow,
+        jail: latestJailRow,
+        isolation: latestIsolationDataRow,
+        perHospital: latestPerHospitalDataRow,
+        regions: latestRegionDataRow,
+        stateHospitals: latestStateHospitalsRow,
+        testPosRate: latestTestPosDataRow,
+        tests: latestTestPosDataRow,
+    };
+
     BC19.firstMDate = BC19.parseMDate(timeline.dates[0].date);
     BC19.lastMDate = BC19.parseMDate(timeline.dates[rows.length - 1].date);
     BC19.timeline = timeline;
@@ -678,7 +754,8 @@ BC19.setupBarGraph = function(graph, options, data) {
 };
 
 
-BC19.setCounter = function(el, options) {
+BC19.setCounter = function(elID, options) {
+    const el = document.getElementById(elID);
     const value = options.value;
     const formatValue = options.formatValue || function(value) {
         return value.toLocaleString();
@@ -719,102 +796,107 @@ BC19.setCounter = function(el, options) {
 };
 
 
+BC19.setCounterFromRows = function(elID, options) {
+    const latestRow = options.latestRow;
+    const rowI = latestRow.i;
+    const deltaDays = options.deltaDays;
+    const getValue = options.getValue;
+    const dates = BC19.timeline.dates;
+    const relativeValues = [];
+
+    deltaDays.forEach(numDays => {
+        relativeValues.push(getValue(dates[rowI - numDays]));
+    });
+
+    BC19.setCounter(elID, {
+        value: getValue(latestRow),
+        relativeValues: relativeValues,
+    });
+};
+
+
 BC19.setupCounters = function(timeline) {
-    const dates = timeline.dates;
-    const casesRow = BC19.latestCasesRow;
-    const hospitalsRow = BC19.latestStateDataRow;
-    const jailRow = BC19.latestJailRow;
-    const casesI = casesRow.i;
-    const hospitalsI = hospitalsRow.i;
+    const casesRow = BC19.latestRows.cases;
+    const isolationRow = BC19.latestRows.isolation;
+    const stateHospitalsRow = BC19.latestRows.stateHospitals;
+    const jailRow = BC19.latestRows.jail;
+    const testsRow = BC19.latestRows.tests;
+    const testPosRateRow = BC19.latestRows.testPosRate;
     const jailI = jailRow.i;
+    const testPosRateI = testPosRateRow.i;
+    const totalTests = testsRow.viral_tests.total;
 
-    const curCasesTotal = casesRow.confirmed_cases.total;
-    const totalTests = casesRow.viral_tests.total;
-
-    BC19.setCounter(
-        document.getElementById('total-cases-counter'),
+    BC19.setCounterFromRows(
+        'total-cases-counter',
         {
-            value: curCasesTotal,
-            relativeValues: [
-                dates[casesI - 1].confirmed_cases.total,
-                dates[casesI - 7].confirmed_cases.total,
-                dates[casesI - 14].confirmed_cases.total,
-                dates[casesI - 30].confirmed_cases.total,
-            ],
+            latestRow: casesRow,
+            getValue: row => row.confirmed_cases.total,
+            deltaDays: [1, 7, 14, 30],
+        });
+
+    BC19.setCounterFromRows(
+        'deaths-counter',
+        {
+            latestRow: casesRow,
+            getValue: row => row.deaths.total,
+            deltaDays: [1],
+        });
+
+    BC19.setCounterFromRows(
+        'in-isolation-counter',
+        {
+            latestRow: isolationRow,
+            getValue: row => row.in_isolation.current,
+            deltaDays: [1, 7, 14, 30],
+        });
+
+    BC19.setCounterFromRows(
+        'hospitalized-residents-counter',
+        {
+            latestRow: BC19.latestRows.countyHospitals,
+            getValue: row => row.hospitalizations.county_data.hospitalized,
+            deltaDays: [1],
+        });
+
+    BC19.setCounterFromRows(
+        'hospitalized-counter',
+        {
+            latestRow: stateHospitalsRow,
+            getValue: row => row.hospitalizations.state_data.positive,
+            deltaDays: [1],
+        });
+
+    BC19.setCounterFromRows(
+        'icu-counter',
+        {
+            latestRow: stateHospitalsRow,
+            getValue: row => row.hospitalizations.state_data.icu_positive,
+            deltaDays: [1],
+        });
+
+    BC19.setCounterFromRows(
+        'total-tests-counter',
+        {
+            latestRow: testsRow,
+            getValue: row => row.viral_tests.total,
+            deltaDays: [1],
+        });
+
+    BC19.setCounterFromRows(
+        'positive-test-results-counter',
+        {
+            latestRow: casesRow,
+            getValue: row => row.confirmed_cases.total,
+            deltaDays: [1],
         });
 
     BC19.setCounter(
-        document.getElementById('deaths-counter'),
+        'positive-test-rate-counter',
         {
-            value: casesRow.deaths.total,
+            value: BC19.graphData.viralTests.testPositivityRate
+                [testPosRateI + 1],
             relativeValues: [
-                dates[casesI - 1].deaths.total,
-            ],
-        });
-
-    BC19.setCounter(
-        document.getElementById('in-isolation-counter'),
-        {
-            value: casesRow.in_isolation.current,
-            relativeValues: [
-                dates[casesI - 1].in_isolation.current,
-                dates[casesI - 7].in_isolation.current,
-                dates[casesI - 14].in_isolation.current,
-                dates[casesI - 30].in_isolation.current,
-            ],
-        });
-
-    BC19.setCounter(
-        document.getElementById('hospitalized-residents-counter'),
-        {
-            value: casesRow.hospitalizations.county_data.hospitalized,
-            relativeValues: [
-                dates[casesI - 1].hospitalizations.county_data.hospitalized,
-            ],
-        });
-
-    BC19.setCounter(
-        document.getElementById('hospitalized-counter'),
-        {
-            value: hospitalsRow.hospitalizations.state_data.positive,
-            relativeValues: [
-                dates[hospitalsI - 1].hospitalizations.state_data.positive,
-            ],
-        });
-
-    BC19.setCounter(
-        document.getElementById('icu-counter'),
-        {
-            value: hospitalsRow.hospitalizations.state_data.icu_positive,
-            relativeValues: [
-                dates[hospitalsI - 1].hospitalizations.state_data.icu_positive,
-            ],
-        });
-
-    BC19.setCounter(
-        document.getElementById('total-tests-counter'),
-        {
-            value: totalTests,
-            relativeValues: [
-                dates[casesI - 1].viral_tests.total,
-            ],
-        });
-
-    BC19.setCounter(
-        document.getElementById('positive-test-results-counter'),
-        {
-            value: curCasesTotal,
-            relativeValues: [
-                dates[casesI - 1].confirmed_cases.total,
-            ],
-        });
-
-    BC19.setCounter(
-        document.getElementById('positive-test-rate-counter'),
-        {
-            value: BC19.graphData.viralTests.testPositivityRate[casesI + 1],
-            relativeValues: [
-                BC19.graphData.viralTests.testPositivityRate[casesI],
+                BC19.graphData.viralTests.testPositivityRate[testPosRateI],
             ],
             formatValue: value => value.toFixed(2) + '%',
             formatRelValues: [
@@ -825,55 +907,52 @@ BC19.setupCounters = function(timeline) {
         });
 
     BC19.setCounter(
-        document.getElementById('county-population-counter'),
+        'county-population-counter',
         {
             value: BC19.COUNTY_POPULATION,
         });
 
     BC19.setCounter(
-        document.getElementById('pop-tested-pct-counter'),
+        'pop-tested-pct-counter',
         {
             value: (totalTests / BC19.COUNTY_POPULATION * 100).toFixed(2),
             formatValue: value => '< ' + value + '%',
         });
 
     BC19.setCounter(
-        document.getElementById('pop-not-tested-pct-counter'),
+        'pop-not-tested-pct-counter',
         {
             value: (totalTests / BC19.COUNTY_POPULATION * 100).toFixed(2),
             formatValue: value => '> ' + (100 - value) + '%',
         });
 
 
-    BC19.setCounter(
-        document.getElementById('jail-inmate-pop-counter'),
+    BC19.setCounterFromRows(
+        'jail-inmate-pop-counter',
         {
-            value: BC19.graphData.jail.inmatePopulation[jailI + 1],
-            relativeValues: [
-                BC19.graphData.jail.inmatePopulation[jailI],
-            ],
+            latestRow: jailRow,
+            getValue: row => row.county_jail.inmates.population,
+            deltaDays: [1],
+        });
+
+    BC19.setCounterFromRows(
+        'jail-inmate-total-tests',
+        {
+            latestRow: jailRow,
+            getValue: row => row.county_jail.inmates.total_tests,
+            deltaDays: [1],
+        });
+
+    BC19.setCounterFromRows(
+        'jail-inmate-cur-cases',
+        {
+            latestRow: jailRow,
+            getValue: row => row.county_jail.inmates.current_cases,
+            deltaDays: [1],
         });
 
     BC19.setCounter(
-        document.getElementById('jail-inmate-total-tests'),
-        {
-            value: BC19.graphData.jail.inmateTests[jailI + 1],
-            relativeValues: [
-                BC19.graphData.jail.inmateTests[jailI],
-            ],
-        });
-
-    BC19.setCounter(
-        document.getElementById('jail-inmate-cur-cases'),
-        {
-            value: BC19.graphData.jail.inmateCurCases[jailI + 1],
-            relativeValues: [
-                BC19.graphData.jail.inmateCurCases[jailI],
-            ],
-        });
-
-    BC19.setCounter(
-        document.getElementById('jail-inmate-pos-rate'),
+        'jail-inmate-pos-rate',
         {
             value: (BC19.graphData.jail.inmateCurCases[jailI + 1] /
                     BC19.graphData.jail.inmatePopulation[jailI + 1]) * 100,
@@ -889,22 +968,20 @@ BC19.setupCounters = function(timeline) {
             ],
         });
 
-    BC19.setCounter(
-        document.getElementById('jail-staff-total-tests'),
+    BC19.setCounterFromRows(
+        'jail-staff-total-tests',
         {
-            value: BC19.graphData.jail.staffTests[jailI + 1],
-            relativeValues: [
-                BC19.graphData.jail.staffTests[jailI],
-            ],
+            latestRow: jailRow,
+            getValue: row => row.county_jail.staff.total_tests,
+            deltaDays: [1],
         });
 
-    BC19.setCounter(
-        document.getElementById('jail-staff-total-cases'),
+    BC19.setCounterFromRows(
+        'jail-staff-total-cases',
         {
-            value: BC19.graphData.jail.staffTotalCases[jailI + 1],
-            relativeValues: [
-                BC19.graphData.jail.staffTotalCases[jailI],
-            ],
+            latestRow: jailRow,
+            getValue: row => row.county_jail.staff.total_positive,
+            deltaDays: [1],
         });
 
     document.getElementById('pop-tested-pct-counter-people').innerText =
@@ -922,12 +999,7 @@ BC19.forEachGraphAsync = function(cb) {
 
 
 BC19.setupByAgeGraph = function(timeline) {
-    /*
-     * XXX This is temporary while we're still dealing with the transition
-     *     to finer-segmented age ranges.
-     */
-    const hasPrev = (BC19.latestCasesRow.date != '2020-07-09');
-    const casesI = BC19.latestCasesRow.i + 1;
+    const agesI = BC19.latestRows.ages.i + 1;
 
     BC19.setupBarGraph(
         d3.select('#by_age_graph'),
@@ -935,31 +1007,23 @@ BC19.setupByAgeGraph = function(timeline) {
         BC19.visibleAgeRanges.map(key => {
             const ageRanges = BC19.graphData.ageRanges[key];
             const ageRangeInfo = BC19.ageRangeInfo[key];
-            const value = ageRanges[casesI];
-            const prevValue = ageRanges[casesI - 1];
+            const value = ageRanges[agesI];
 
             return {
                 data_id: key,
                 label: ageRangeInfo.text || key.replace('_', '-'),
                 value: value,
-                relValue: value - (hasPrev ? ageRanges[casesI - 1] : value),
+                relValue: BC19.normRelValue(value, ageRanges[agesI - 1]),
             };
         }));
 };
 
 
 BC19.setupByRegionGraph = function(timeline) {
-    const regions = BC19.latestCasesRow.regions;
-    const prevIndex = BC19.latestCasesRow.i - 1;
+    const row = BC19.latestRows.regions;
+    const regions = row.regions;
+    const prevIndex = row.i - 1;
     const prevRegions = timeline.dates[prevIndex].regions;
-
-    function normRelValue(cases, prevCases, hideNegative) {
-        if (prevCases === null || (hideNegative && cases < prevCases)) {
-            return 0;
-        }
-
-        return cases - prevCases;
-    }
 
     BC19.setupBarGraph(
         d3.select('#by_region_graph'),
@@ -969,53 +1033,53 @@ BC19.setupByRegionGraph = function(timeline) {
                 data_id: 'biggs_gridley',
                 label: 'Biggs, Gridley',
                 value: regions.biggs_gridley.cases,
-                relValue: normRelValue(regions.biggs_gridley.cases,
-                                       prevRegions.biggs_gridley.cases),
+                relValue: BC19.normRelValue(regions.biggs_gridley.cases,
+                                            prevRegions.biggs_gridley.cases),
             },
             {
                 data_id: 'chico',
                 label: 'Chico',
                 value: regions.chico.cases,
-                relValue: normRelValue(regions.chico.cases,
-                                       prevRegions.chico.cases),
+                relValue: BC19.normRelValue(regions.chico.cases,
+                                            prevRegions.chico.cases),
             },
             {
                 data_id: 'durham',
                 label: 'Durham',
                 value: regions.durham.cases,
-                relValue: normRelValue(regions.durham.cases,
-                                       prevRegions.durham.cases),
+                relValue: BC19.normRelValue(regions.durham.cases,
+                                            prevRegions.durham.cases),
             },
             {
                 data_id: 'oroville',
                 label: 'Oroville',
                 value: regions.oroville.cases,
-                relValue: normRelValue(regions.oroville.cases,
-                                       prevRegions.oroville.cases),
+                relValue: BC19.normRelValue(regions.oroville.cases,
+                                            prevRegions.oroville.cases),
             },
             {
                 data_id: 'ridge',
                 label: 'Paradise, Magalia...',
                 value: regions.ridge.cases,
-                relValue: normRelValue(regions.ridge.cases,
-                                       prevRegions.ridge.cases),
+                relValue: BC19.normRelValue(regions.ridge.cases,
+                                            prevRegions.ridge.cases),
             },
             {
                 data_id: 'other',
                 label: 'Other',
                 value: regions.other.cases,
-                relValue: normRelValue(regions.other.cases,
-                                       prevRegions.other.cases,
-                                       true),
+                relValue: BC19.normRelValue(regions.other.cases,
+                                            prevRegions.other.cases,
+                                            true),
             },
         ]);
 };
 
 
 BC19.setupByHospitalGraph = function(timeline) {
-    const dateInfo = BC19.latestPerHospitalDataRow;
-    const prevIndex = BC19.latestPerHospitalDataRow.i - 1;
-    const data = dateInfo.hospitalizations.state_data;
+    const row = BC19.latestRows.perHospital;
+    const prevIndex = row.i - 1;
+    const data = row.hospitalizations.state_data;
     const prevData = timeline.dates[prevIndex].hospitalizations.state_data;
 
     BC19.setupBarGraph(
@@ -1026,19 +1090,22 @@ BC19.setupByHospitalGraph = function(timeline) {
                 data_id: 'enloe',
                 label: 'Enloe Hospital',
                 value: data.enloe_hospital,
-                relValue: data.enloe_hospital - prevData.enloe_hospital,
+                relValue: BC19.normRelValue(data.enloe_hospital,
+                                            prevData.enloe_hospital),
             },
             {
                 data_id: 'oroville',
                 label: 'Oroville Hospital',
                 value: data.oroville_hospital,
-                relValue: data.oroville_hospital - prevData.oroville_hospital,
+                relValue: BC19.normRelValue(data.oroville_hospital,
+                                            prevData.oroville_hospital),
             },
             {
                 data_id: 'orchard',
                 label: 'Orchard Hospital',
                 value: data.orchard_hospital,
-                relValue: data.orchard_hospital - prevData.orchard_hospital,
+                relValue: BC19.normRelValue(data.orchard_hospital,
+                                            prevData.orchard_hospital),
             },
         ]);
 };
@@ -1049,7 +1116,7 @@ BC19.setupMainTimelineGraphs = function(timeline) {
     const maxValues = BC19.maxValues;
     const tickCounts = BC19.tickCounts;
     const isolationData = graphData.isolation;
-    const casesRow = BC19.latestCasesRow;
+    const casesRow = BC19.latestRows.cases;
     const casesI = casesRow.i;
 
     const axisX = {
@@ -1980,20 +2047,18 @@ BC19.setupElements = function() {
     dateRangeThroughEl.max = throughDateValue;
     dateRangeThroughEl.addEventListener('change', onDateRangeChanged);
 
-    const bcdDayText = BC19.getDayText(BC19.latestCasesRow.date);
-    const stateDayText = BC19.getDayText(BC19.latestStateDataRow.date);
-    const jailDayText = BC19.getDayText(BC19.latestJailRow.date);
 
-    document.querySelectorAll('.bc19-o-bcd-update-day').forEach(el => {
-        el.innerText = bcdDayText;
-    });
+    /* Update the dates in the counters. */
+    const datesMap = {};
 
-    document.querySelectorAll('.bc19-o-state-update-day').forEach(el => {
-        el.innerText = stateDayText;
-    });
+    document.querySelectorAll('.bc19-o-update-day').forEach(el => {
+        const key = el.dataset.key;
 
-    document.querySelectorAll('.bc19-o-jail-update-day').forEach(el => {
-        el.innerText = jailDayText;
+        if (!datesMap.hasOwnProperty(key)) {
+            datesMap[key] = BC19.getDayText(BC19.latestRows[key].date);
+        }
+
+        el.innerText = datesMap[key];
     });
 
     document.getElementById('page-spinner').remove();
@@ -2041,7 +2106,7 @@ BC19.init = function() {
             BC19.setupMainTimelineGraphs(timeline);
         })
         .catch(msg => {
-            console.log(msg);
+            console.error(msg);
             alert(msg);
         });
 };
