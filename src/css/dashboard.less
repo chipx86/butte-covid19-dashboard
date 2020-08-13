@@ -33,7 +33,7 @@ a:visited {
   padding: 1em;
 
   &.-is-horiz {
-    grid-template-columns: 5em auto;
+    grid-template-columns: 5em auto min-content;
     align-items: center;
 
     .bc19-c-bar-graph {
@@ -56,6 +56,8 @@ a:visited {
         grid-column: 3;
         grid-row: auto;
         text-align: right;
+        margin-left: 1em;
+        white-space: nowrap;
       }
     }
   }
