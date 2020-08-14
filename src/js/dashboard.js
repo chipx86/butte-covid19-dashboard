@@ -261,6 +261,7 @@ BC19.processTimelineData = function(timeline) {
     let latestRegionDataRow;
     let latestStateHospitalsRow;
     let latestTestPosDataRow;
+    let latestTestsDataRow;
 
     const minTestPositivityRateDate = BC19.minDates.testPositivityRate;
     let foundMinTestPositivityRateDate = false;
@@ -348,6 +349,10 @@ BC19.processTimelineData = function(timeline) {
         } else {
             graphNegativeResults.push(0);
             graphPositiveResults.push(0);
+        }
+
+        if (viralTestResults !== null && viralTests.total !== null) {
+            latestTestsDataRow = row;
         }
 
         if (viralTests.total !== null) {
@@ -554,7 +559,7 @@ BC19.processTimelineData = function(timeline) {
         regions: latestRegionDataRow,
         stateHospitals: latestStateHospitalsRow,
         testPosRate: latestTestPosDataRow,
-        tests: latestTestPosDataRow,
+        tests: latestTestsDataRow,
     };
 
     BC19.firstMDate = BC19.parseMDate(timeline.dates[0].date);
