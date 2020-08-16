@@ -55,6 +55,8 @@ The following data is made available for others to use:
 * [Per-Hospital Case Counts (JSON)](https://bc19.live/data/json/hospital-cases.json)
 * [Butte County Dashboard (CSV)](https://bc19.live/data/csv/butte-dashboard-v3.csv)
 * [Butte County Dashboard (JSON)](https://bc19.live/data/json/butte-dashboard.json)
+* [Butte County Jail (CSV)](https://bc19.live/data/csv/butte-county-jail.csv)
+* [Butte County Jail (JSON)](https://bc19.live/data/csv/butte-county-jail.json)
 * [State Skilled Nursing Facilities - Butte County Only (CSV)](https://bc19.live/data/csv/skilled-nursing-facilities-v2.csv)
 * [State Hospital Case Statistics - Butte County Only (CSV)](https://bc19.live/data/csv/state-hospitals-v3.csv)
 * [State Resources - Butte County Only (CSV)](https://bc19.live/data/csv/state-resources.csv)
