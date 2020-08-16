@@ -479,7 +479,7 @@ def convert_json_to_csv(info, in_fp, out_filename, **kwargs):
         return d
 
     key_map = info['key_map']
-    dataset = json.load(in_fp)
+    dataset = json.load(in_fp) or {}
 
     with open(out_filename, 'w') as fp:
         csv_writer = csv.DictWriter(
@@ -1556,6 +1556,10 @@ def main():
             local_source = info['local_source']
             source_filename = os.path.join(DATA_DIR, local_source['format'],
                                            local_source['filename'])
+
+            if not os.path.exists(source_filename):
+                with open(source_filename, 'w') as out_fp:
+                    out_fp.write('[]')
 
             with open(source_filename, 'r') as in_fp:
                 try:
