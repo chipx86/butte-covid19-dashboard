@@ -379,8 +379,6 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
 
 def parse_butte_county_jail(response, out_filename, **kwargs):
     # Try to find the rough section of content we want to search within.
-    print('DAILY COVID-19' in response.text)
-    print('ENHANCED CLEANING' in response.text)
     with open('/tmp/jail.txt', 'w') as fp:
         fp.write(response.text)
 
