@@ -214,6 +214,12 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
                     'entity %s'
                     % (found_labels, expected_labels, entity_id))
 
+        # This won't always be "pending", but the idea is that we're trying
+        # to gracefully handle when there's an issue with some value coming
+        # from the county or state.
+        if 'pending' in value.lower():
+            return None
+
         try:
             return int(value)
         except Exception:
@@ -221,12 +227,12 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
                              'got %s'
                              % (value, entity_id, type(value)))
 
-    def get_chart_info(entity_id):
+    def get_chart_info(entity_id, label_col=0, value_col=1):
         entity = get_entity(entity_id)
         data = entity['props']['chartData']['data'][0]
 
         return {
-            row[0]: int(row[1])
+            row[label_col]: int(row[value_col])
             for row in data[1:]
         }
 
@@ -277,7 +283,7 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
             'entity_id': '9c8d7a74-c196-40b5-a2e5-3bd643bbae8b',
         },
         'daily_viral_test_results': {
-            'labels': ['daily viral test results'],
+            'labels': ['daily viral test results', 'daily viral tests'],
             'entity_id': '50f7771c-d7fb-49bf-8fb6-604ff802d2d9',
         },
         'total_viral_tests': {
@@ -291,8 +297,9 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
     }
 
     CHART_KEYS_TO_ENTITIES = {
-        'by_age': '9ba3a895-019a-4e68-99ec-0eb7b5bd026c',
-        'by_region': 'b26b9acd-b036-40bc-bbbe-68667dd338e4',
+        'by_age': ('9ba3a895-019a-4e68-99ec-0eb7b5bd026c', 1),
+        'deaths_by_age': ('9ba3a895-019a-4e68-99ec-0eb7b5bd026c', 2),
+        'by_region': ('b26b9acd-b036-40bc-bbbe-68667dd338e4', 1),
     }
 
     scraped_data = {
@@ -301,18 +308,31 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
         for key, info in COUNTER_KEYS_TO_ENTITIES.items()
     }
     scraped_data.update({
-        key: get_chart_info(entity_id)
-        for key, entity_id in CHART_KEYS_TO_ENTITIES.items()
+        key: get_chart_info(entity_id, value_col=value_col)
+        for key, (entity_id, value_col) in CHART_KEYS_TO_ENTITIES.items()
     })
 
     try:
         by_age = scraped_data['by_age']
         by_region = scraped_data['by_region']
+        deaths_by_age = scraped_data['deaths_by_age']
 
         row_result = {
             'date': datestamp.strftime('%Y-%m-%d'),
             'confirmed_cases': scraped_data['confirmed_cases'],
             'deaths': scraped_data['deaths'],
+            'deaths_by': {
+                'age_ranges_in_years': {
+                    '0-17': deaths_by_age['0-17 Years'],
+                    '18-24': deaths_by_age['18-24 Years'],
+                    '25-34': deaths_by_age['25-34 Years'],
+                    '35-44': deaths_by_age['35-44 Years'],
+                    '45-54': deaths_by_age['45-54 Years'],
+                    '55-64': deaths_by_age['55-64 Years'],
+                    '65-74': deaths_by_age['65-74 Years'],
+                    '75_plus': deaths_by_age['75+ Years'],
+                },
+            },
             'in_isolation': {
                 'current': scraped_data['in_isolation'],
                 'total_released': scraped_data['released_from_isolation'],
@@ -916,6 +936,22 @@ FEEDS = [
             ('Ridge Community Cases', ('regions', 'ridge')),
             ('Other Region Cases', ('regions', 'other')),
             ('Gridley Cases (Historical)', ('regions', 'gridley')),
+            ('Deaths - Age 0-17 Years',
+             ('deaths_by', 'age_ranges_in_years', '0-17')),
+            ('Deaths - Age 18-24 Years',
+             ('deaths_by', 'age_ranges_in_years', '18-24')),
+            ('Deaths - Age 25-34 Years',
+             ('deaths_by', 'age_ranges_in_years', '25-34')),
+            ('Deaths - Age 35-44 Years',
+             ('deaths_by', 'age_ranges_in_years', '35-44')),
+            ('Deaths - Age 45-54 Years',
+             ('deaths_by', 'age_ranges_in_years', '45-54')),
+            ('Deaths - Age 55-64 Years',
+             ('deaths_by', 'age_ranges_in_years', '55-64')),
+            ('Deaths - Age 65-74 Years',
+             ('deaths_by', 'age_ranges_in_years', '65-74')),
+            ('Deaths - Age 75+ Years',
+             ('deaths_by', 'age_ranges_in_years', '75_plus')),
         ],
     },
     {
