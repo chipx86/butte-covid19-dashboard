@@ -204,17 +204,7 @@ BC19.processTimelineData = function(timeline) {
     const ageRangeInfo = BC19.ageRangeInfo;
     const ageRangeKeys = Object.keys(ageRangeInfo);
     const graphCasesByAge = {};
-    const graphCasesByAge0_17 = ['age_0_17'];
-    const graphCasesByAge18_24 = ['age_18_24'];
-    const graphCasesByAge25_34 = ['age_25_34'];
-    const graphCasesByAge35_44 = ['age_35_44'];
-    const graphCasesByAge45_54 = ['age_45_54'];
-    const graphCasesByAge55_64 = ['age_55_64'];
-    const graphCasesByAge65_74 = ['age_65_74'];
-    const graphCasesByAge75Plus = ['age_75_plus'];
-    const graphCasesByAge18_49 = ['age_18_49'];
-    const graphCasesByAge50_64 = ['age_50_64'];
-    const graphCasesByAge65Plus = ['age_65_plus'];
+    const graphDeathsByAge = {};
 
     const graphInIsolation = ['in_isolation'];
     const graphReleasedFromIsolation = ['released_from_isolation'];
@@ -255,6 +245,7 @@ BC19.processTimelineData = function(timeline) {
     let latestCasesRow;
     let latestCountyHospitalDataRow;
     let latestDeathsRow;
+    let latestDeathsByAgeDataRow;
     let latestIsolationDataRow;
     let latestJailRow;
     let latestPerHospitalDataRow;
@@ -267,7 +258,10 @@ BC19.processTimelineData = function(timeline) {
     let foundMinTestPositivityRateDate = false;
 
     ageRangeKeys.forEach(key => {
-        graphCasesByAge[key] = [`age_${key.replace('-', '_')}`];
+        const normKey = key.replace('-', '_');
+
+        graphCasesByAge[key] = [`age_${normKey}`];
+        graphDeathsByAge[key] = [`age_${normKey}`];
     });
 
     for (let i = 0; i < rows.length; i++) {
@@ -281,7 +275,8 @@ BC19.processTimelineData = function(timeline) {
         const viralTests = row.viral_tests;
         const viralTestResults = viralTests.results;
         const regions = row.regions;
-        const ageRanges = row.age_ranges_in_years;
+        const casesByAgeRange = row.age_ranges_in_years;
+        const deathsByAgeRange = row.deaths.age_ranges_in_years;
         const countyHospital = row.hospitalizations.county_data;
         const stateHospital = row.hospitalizations.state_data;
         const snf = row.skilled_nursing_facilities;
@@ -378,20 +373,32 @@ BC19.processTimelineData = function(timeline) {
         }
 
 
-        /* Cases By Age Group */
-        let foundAge = false;
+        /* Cases and Deaths By Age */
+        let foundCaseByAge = false;
+        let foundDeathByAge = false;
 
         ageRangeKeys.forEach(key => {
-            const age = ageRanges[ageRangeInfo[key].sourceKey];
-            graphCasesByAge[key].push(age);
+            const caseByAge = casesByAgeRange[ageRangeInfo[key].sourceKey];
+            const deathByAge = deathsByAgeRange[ageRangeInfo[key].sourceKey];
 
-            if (age !== null) {
-                foundAge = true;
+            graphCasesByAge[key].push(caseByAge);
+            graphDeathsByAge[key].push(deathByAge);
+
+            if (caseByAge !== null) {
+                foundCaseByAge = true;
+            }
+
+            if (deathByAge !== null) {
+                foundDeathByAge = true;
             }
         });
 
-        if (foundAge) {
+        if (foundCaseByAge) {
             latestAgeDataRow = row;
+        }
+
+        if (foundDeathByAge) {
+            latestDeathByAgeDataRow = row;
         }
 
 
@@ -553,6 +560,7 @@ BC19.processTimelineData = function(timeline) {
         cases: latestCasesRow,
         countyHospitals: latestCountyHospitalDataRow,
         deaths: latestDeathsRow,
+        deathsByAge: latestDeathByAgeDataRow,
         jail: latestJailRow,
         isolation: latestIsolationDataRow,
         perHospital: latestPerHospitalDataRow,
@@ -597,6 +605,7 @@ BC19.processTimelineData = function(timeline) {
         deaths: {
             totalDeaths: graphTotalDeaths,
             newDeaths: graphNewDeaths,
+            byAge: graphDeathsByAge,
         },
         cases: {
             totalCases: graphTotalCases,
@@ -1078,6 +1087,33 @@ BC19.setupByRegionGraph = function(timeline) {
                                             true),
             },
         ]);
+};
+
+
+BC19.setupDeathsByAgeGraph = function(timeline) {
+    const agesI = BC19.latestRows.deathsByAge.i + 1;
+    const data = [];
+
+
+    BC19.visibleAgeRanges.forEach(key => {
+        const ageRanges = BC19.graphData.deaths.byAge[key];
+        const ageRangeInfo = BC19.ageRangeInfo[key];
+        const value = ageRanges[agesI];
+
+        if (value > 0) {
+            data.push({
+                data_id: key,
+                label: ageRangeInfo.text || key.replace('_', '-'),
+                value: value,
+                relValue: BC19.normRelValue(value, ageRanges[agesI - 1]),
+            });
+        }
+    });
+
+    BC19.setupBarGraph(
+        d3.select('#deaths_by_age_graph'),
+        {},
+        data);
 };
 
 
@@ -2106,6 +2142,7 @@ BC19.init = function() {
             BC19.setupElements();
             BC19.setupCounters(timeline);
             BC19.setupByAgeGraph(timeline);
+            BC19.setupDeathsByAgeGraph(timeline);
             BC19.setupByRegionGraph(timeline);
             BC19.setupByHospitalGraph(timeline);
             BC19.setupMainTimelineGraphs(timeline);
