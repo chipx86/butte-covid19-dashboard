@@ -673,7 +673,7 @@ def build_state_resources_json(session, response, out_filename, **kwargs):
 
 def build_hospital_cases_json(session, response, out_filename, **kwargs):
     hospital_keys = {
-        'Enloe Medical Center - Esplanade Campus': 'enloe_hospital',
+        'Enloe Medical Center - Esplanade': 'enloe_hospital',
         'Oroville Hospital': 'oroville_hospital',
         'Orchard Hospital': 'orchard_hospital',
     }
