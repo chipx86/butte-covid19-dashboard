@@ -6,6 +6,8 @@ import json
 import os
 import re
 import sys
+import tempfile
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from urllib.parse import quote
 
@@ -104,6 +106,16 @@ class ParseError(Exception):
     pass
 
 
+@contextmanager
+def safe_open_for_write(filename):
+    temp_filename = '%s.tmp' % filename
+
+    with open(temp_filename, 'w') as fp:
+        yield fp
+
+    os.rename(temp_filename, filename)
+
+
 def add_nested_key(d, full_key, value):
     keys = full_key.split(':')
 
@@ -170,7 +182,7 @@ def add_or_update_json_date_row(filename, row_data, date_field='date'):
 
         dates_data.append(row_data)
 
-    with open(filename, 'w') as fp:
+    with safe_open_for_write(filename) as fp:
         json.dump(dataset,
                   fp,
                   indent=2,
@@ -379,9 +391,6 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
 
 def parse_butte_county_jail(response, out_filename, **kwargs):
     # Try to find the rough section of content we want to search within.
-    with open('/tmp/jail.txt', 'w') as fp:
-        fp.write(response.text)
-
     m = re.search(r'(DAILY COVID-19.*)ENHANCED CLEANING',
                   response.text,
                   re.S)
@@ -479,7 +488,7 @@ def convert_json_to_csv(info, in_fp, out_filename, **kwargs):
     key_map = info['key_map']
     dataset = json.load(in_fp) or {}
 
-    with open(out_filename, 'w') as fp:
+    with safe_open_for_write(out_filename) as fp:
         csv_writer = csv.DictWriter(
             fp,
             fieldnames=[
@@ -533,7 +542,7 @@ def build_timeline_json(info, in_fp, out_filename, **kwargs):
         'dates': timeline,
     }
 
-    with open(out_filename, 'w') as fp:
+    with safe_open_for_write(out_filename) as fp:
         json.dump(payload,
                   fp,
                   sort_keys=True,
@@ -542,7 +551,7 @@ def build_timeline_json(info, in_fp, out_filename, **kwargs):
     min_filename = os.path.join(os.path.dirname(out_filename),
                                 info['min_filename'])
 
-    with open(min_filename, 'w') as fp:
+    with safe_open_for_write(min_filename) as fp:
         json.dump(payload,
                   fp,
                   sort_keys=True,
@@ -887,7 +896,7 @@ def parse_csv(info, response, out_filename, **kwargs):
     if validator is not None and not validator(results):
         raise ParseError('Resulting CSV file did not pass validation!')
 
-    with open(out_filename, 'w') as out_fp:
+    with safe_open_for_write(out_filename) as out_fp:
         writer = csv.DictWriter(
             out_fp,
             fieldnames=[
