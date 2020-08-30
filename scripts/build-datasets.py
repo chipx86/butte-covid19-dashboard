@@ -129,7 +129,20 @@ class TableauLoader(object):
         self.referer = orig_response.url
         self.raw_bootstrap_payload1 = None
         self.raw_bootstrap_payload2 = None
-        self.bootstrap_payload1 = None
+
+    def get_workbook_metadata(self):
+        if not hasattr(self, '_workbook_metadata'):
+            response = self.session.get(
+                'https://public.tableau.com/profile/api/workbook/%s'
+                % self.owner)
+
+            self._workbook_metadata = response.json()
+
+        return self._workbook_metadata
+
+    def get_last_update_date(self):
+        metadata = self.get_workbook_metadata()
+        return datetime.fromtimestamp(metadata['lastUpdateDate'] / 1000)
 
     def bootstrap(self, extra_params={}):
         response = self.session.post(
@@ -768,6 +781,46 @@ def build_state_resources_json(session, response, out_filename, **kwargs):
     add_or_update_json_date_row(out_filename, data)
 
 
+def build_state_tiers_json(session, response, out_filename, **kwargs):
+    tableau_loader = TableauLoader(session=session,
+                                   owner='Planforreducingcovid-19',
+                                   sheet='Plan for reducing covid-19',
+                                   orig_response=response)
+    tableau_loader.bootstrap({
+        'showParams': json.dumps({
+            'unknownParams': 'County=Butte',
+        }),
+        'stickySessionKey': json.dumps({
+            'workbookId': 6582582,
+        }),
+    })
+
+    data = tableau_loader.get_mapped_col_data({
+        'Counties by Phase': {
+            'AGG(zn([Case Metrics by Episode Date w/ Pop].[Weekly Avg Per 100K]))': {
+                'data_type': 'real',
+                'result_key': 'cases_per_100k',
+                'value_index': 0,
+                'normalize': lambda value: round(value, 2),
+            },
+            'AGG(Positivity Rate)': {
+                'data_type': 'real',
+                'result_key': 'pos_rate',
+                'value_index': 0,
+                'normalize': lambda value: round(value, 5),
+            },
+            'Overall Status': {
+                'data_type': 'integer',
+                'result_key': 'status',
+                'value_index': 0,
+            },
+        },
+    })
+    data['date'] = tableau_loader.get_last_update_date().strftime('%Y-%m-%d')
+
+    add_or_update_json_date_row(out_filename, data)
+
+
 def build_hospital_cases_json(session, response, out_filename, **kwargs):
     hospital_keys = {
         'Enloe Medical Center - Esplanade': 'enloe_hospital',
@@ -1161,6 +1214,30 @@ FEEDS = [
             ('Procedure Masks', ('procedure_masks',)),
             ('ICU Beds Percent', ('icu_beds_pct',)),
             ('Ventilators Percent', ('ventilators_pct',)),
+        ],
+    },
+    {
+        'filename': 'state-tiers.json',
+        'format': 'json',
+        'url': (
+            'https://public.tableau.com/views/Planforreducingcovid-19/'
+            'planforreducingcovid-19/?%3AshowVizHome=no&County=Butte'
+        ),
+        'parser': build_state_tiers_json,
+    },
+    {
+        'filename': 'state-tiers.csv',
+        'format': 'csv',
+        'local_source': {
+            'filename': 'state-tiers.json',
+            'format': 'json',
+        },
+        'parser': convert_json_to_csv,
+        'key_map': [
+            ('Date', ('date',)),
+            ('Status', ('status',)),
+            ('New Case Rate', ('cases_per_100k',)),
+            ('Positivity Rate', ('pos_rate',)),
         ],
     },
     {
