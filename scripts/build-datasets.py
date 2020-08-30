@@ -28,6 +28,85 @@ USER_AGENT = (
 )
 
 
+class TableauPresModel(object):
+    def __init__(self, loader, payload):
+        self.loader = loader
+        self.payload = payload
+
+    @property
+    def all_data_columns(self):
+        return (
+            self.payload
+            ['presModelHolder']
+            ['genVizDataPresModel']
+            ['paneColumnsData']
+            ['vizDataColumns']
+        )
+
+    @property
+    def all_pane_columns(self):
+        return (
+            self.payload
+            ['presModelHolder']
+            ['genVizDataPresModel']
+            ['paneColumnsData']
+            ['paneColumnsList']
+        )
+
+    def get_pane_columns(self, pane_index):
+        return self.all_pane_columns[pane_index]['vizPaneColumns']
+
+    def get_mapped_col_data(self, cols):
+        data_dicts = self.loader.get_bootstrap_data_dicts()
+        result = {}
+
+        for col_data in self.all_data_columns:
+            caption = col_data.get('fieldCaption')
+
+            if caption and caption in cols:
+                col_info = cols[caption]
+                data_type = col_data.get('dataType')
+
+                if data_type != col_info['data_type']:
+                    raise ParseError(
+                        'Expected data type "%s" for column "%s", but got '
+                        '"%s" instead.'
+                        % (col_info['data_type'], caption, data_type))
+
+                data_type_dict = data_dicts[data_type]
+                col_index = col_data['columnIndices'][0]
+                pane_index = col_data['paneIndices'][0]
+
+                result_key = col_info.get('result_key', caption)
+                pane_columns = self.get_pane_columns(pane_index)
+                value_index = col_info.get('value_index')
+                normalize = col_info.get('normalize', lambda value: value)
+
+                alias_indices = pane_columns[col_index]['aliasIndices']
+
+                if value_index is None:
+                    result[result_key] = [
+                        normalize(data_type_dict[i])
+                        for i in alias_indices
+                    ]
+                else:
+                    result[result_key] = normalize(
+                        data_type_dict[alias_indices[value_index]])
+
+        expected_keys = set(
+            col_info.get('result_key', col_key)
+            for col_key, col_info in cols.items()
+        )
+
+        missing_keys = expected_keys - set(result.keys())
+
+        if missing_keys:
+            raise ParseError('The following keys could not be found: %s'
+                             % ', '.join(sorted(missing_keys)))
+
+        return result
+
+
 class TableauLoader(object):
     def __init__(self, session, owner, sheet, orig_response):
         self.session = session
@@ -100,6 +179,29 @@ class TableauLoader(object):
                                  % (key, value_count))
 
         return data_dicts
+
+    def get_pres_model(self, model_key):
+        return TableauPresModel(
+            loader=self,
+            payload=(
+                self.bootstrap_payload2
+                ['secondaryInfo']
+                ['presModelMap']
+                ['vizData']
+                ['presModelHolder']
+                ['genPresModelMapPresModel']
+                ['presModelMap']
+                [model_key]
+            ))
+
+    def get_mapped_col_data(self, models_to_cols):
+        result = {}
+
+        for model_key, cols in models_to_cols.items():
+            pres_model = self.get_pres_model(model_key)
+            result.update(pres_model.get_mapped_col_data(cols))
+
+        return result
 
 
 class ParseError(Exception):
@@ -573,58 +675,11 @@ def build_state_resources_json(session, response, out_filename, **kwargs):
         }),
     })
 
-    data_dicts = tableau_loader.get_bootstrap_data_dicts()
-
-    pres_model_map = (
-        tableau_loader.bootstrap_payload2
-        ['secondaryInfo']
-        ['presModelMap']
-        ['vizData']
-        ['presModelHolder']
-        ['genPresModelMapPresModel']
-        ['presModelMap']
-    )
-
-    def _get_data_value(name, field_caption, expected_data_type):
-        data_pres_model = (
-            pres_model_map
-            [name]
-            ['presModelHolder']
-            ['genVizDataPresModel']
-            ['paneColumnsData']
-        )
-        viz_cols_data = data_pres_model['vizDataColumns']
-
-        for viz_col_data in viz_cols_data:
-            if viz_col_data.get('fieldCaption') == field_caption:
-                col_index = viz_col_data['columnIndices'][0]
-                data_type = viz_col_data['dataType']
-                pane_index = viz_col_data['paneIndices'][0]
-                break
-        else:
-            raise ParseError('fieldCaption "%s" not found for "%s"'
-                             % (field_caption, name))
-
-        if data_type != expected_data_type:
-            raise ParseError('Unexpected data type "%s" found for "%s"'
-                             % (data_type, name))
-
-        data_index = (
-            data_pres_model
-            ['paneColumnsList']
-            [pane_index]
-            ['vizPaneColumns']
-            [col_index]
-            ['aliasIndices']
-            [0]
-        )
-
-        return data_dicts[data_type][data_index]
-
     # NOTE: Ideally we'd look this up from "Last Updated Date", but I'm still
     #       unsure how these map into a dataValues with a negative
     #       aliasIndices. So while this isn't correct, it's sort of what
     #       we've got right now.
+    data_dicts = tableau_loader.get_bootstrap_data_dicts()
     last_updated = datetime.strptime(
         sorted(data_dicts['datetime'])[-1],
         '%Y-%m-%d %H:%M:%S')
@@ -633,51 +688,69 @@ def build_state_resources_json(session, response, out_filename, **kwargs):
         # This isn't today's date. Skip it.
         return False
 
-    beds = _get_data_value('Sheet 42',
-                           'SUM(Bed Reporting (Fixed))',
-                           'integer')
-    face_shields = _get_data_value('Face Shields Distributed',
-                                   'AGG(TableCalc Filled)',
-                                   'integer')
-    gloves = _get_data_value('Gloves Distributed',
-                             'AGG(TableCalc Filled)',
-                             'integer')
-    gowns = _get_data_value('Gowns Distributed',
-                            'AGG(TableCalc Filled)',
-                            'integer')
-    procedure_masks = _get_data_value('Proc Masks Distributed',
-                                      'AGG(TableCalc Filled)',
-                                      'integer')
-    n95_respirators = _get_data_value('N95 Distributed',
-                                      'AGG(TableCalc Filled)',
-                                      'integer')
-    icu_beds_pct = _get_data_value('ICU Beds Available BAN',
-                                   'AGG(ICU Availability)',
-                                   'real')
+    data = tableau_loader.get_mapped_col_data({
+        'Face Shields Distributed': {
+            'AGG(TableCalc Filled)': {
+                'data_type': 'integer',
+                'result_key': 'face_shields',
+                'value_index': 0,
+            },
+        },
+        'Gloves Distributed': {
+            'AGG(TableCalc Filled)': {
+                'data_type': 'integer',
+                'result_key': 'gloves',
+                'value_index': 0,
+            },
+        },
+        'Gowns Distributed': {
+            'AGG(TableCalc Filled)': {
+                'data_type': 'integer',
+                'result_key': 'gowns',
+                'value_index': 0,
+            },
+        },
+        'ICU Beds Available BAN': {
+            'AGG(ICU Availability)': {
+                'data_type': 'real',
+                'normalize': lambda value: int(round(value, 2) * 100),
+                'result_key': 'icu_beds_pct',
+                'value_index': 0,
+            },
+        },
+        'N95 Distributed': {
+            'AGG(TableCalc Filled)': {
+                'data_type': 'integer',
+                'result_key': 'n95_respirators',
+                'value_index': 0,
+            },
+        },
+        'Proc Masks Distributed': {
+            'AGG(TableCalc Filled)': {
+                'data_type': 'integer',
+                'result_key': 'procedure_masks',
+                'value_index': 0,
+            },
+        },
+        'Sheet 42': {
+            'SUM(Bed Reporting (Fixed))': {
+                'data_type': 'integer',
+                'result_key': 'beds',
+                'value_index': 0,
+            },
+        },
+        'Ventilators Available %': {
+            'AGG(Ventilators Available %)': {
+                'data_type': 'real',
+                'normalize': lambda value: int(round(value, 2) * 100),
+                'result_key': 'ventilators_pct',
+                'value_index': 0,
+            },
+        },
+    })
+    data['date'] = last_updated.strftime('%Y-%m-%d')
 
-    try:
-        ventilators_pct = _get_data_value('Ventilators Available %',
-                                          'AGG(Ventilators Available %)',
-                                          'real')
-    except ParseError:
-        ventilators_pct = _get_data_value(
-            'Ventilators Available %',
-            'AGG(Ventilators Available %_tempfix)',
-            'real')
-
-    add_or_update_json_date_row(
-        out_filename,
-        {
-            'date': last_updated.strftime('%Y-%m-%d'),
-            'beds': beds,
-            'face_shields': face_shields,
-            'gloves': gloves,
-            'gowns': gowns,
-            'procedure_masks': procedure_masks,
-            'n95_respirators': n95_respirators,
-            'icu_beds_pct': int(round(icu_beds_pct, 2) * 100),
-            'ventilators_pct': int(round(ventilators_pct, 2) * 100),
-        })
+    add_or_update_json_date_row(out_filename, data)
 
 
 def build_hospital_cases_json(session, response, out_filename, **kwargs):
@@ -709,57 +782,23 @@ def build_hospital_cases_json(session, response, out_filename, **kwargs):
         # This isn't today's date. Skip it.
         return False
 
-    pres_model_map = (
-        tableau_loader.bootstrap_payload2
-        ['secondaryInfo']
-        ['presModelMap']
-        ['vizData']
-        ['presModelHolder']
-        ['genPresModelMapPresModel']
-        ['presModelMap']
-        ['Map Patients']
-        ['presModelHolder']
-        ['genVizDataPresModel']
-        ['paneColumnsData']
-    )
-
-    pane_columns = (
-        pres_model_map
-        ['paneColumnsList']
-        [1]
-        ['vizPaneColumns']
-    )
-
-    real_dicts = data_dicts['real']
-    cstring_dicts = data_dicts['cstring']
-
     # Find the columns we care about.
-    hospital_names = []
-    counts = []
+    data = tableau_loader.get_mapped_col_data({
+        'Map Patients': {
+            'Hospital Name': {
+                'data_type': 'cstring',
+                'result_key': 'hospital_names',
+                'normalize': lambda name: hospital_keys.get(name, name),
+            },
+            'AGG(Selector KPI)': {
+                'data_type': 'real',
+                'result_key': 'counts',
+            },
+        },
+    })
 
-    for viz_col_data in pres_model_map['vizDataColumns']:
-        caption = viz_col_data.get('fieldCaption')
-        data_type = viz_col_data.get('dataType')
-
-        if caption == 'Hospital Name' and data_type == 'cstring':
-            col_index = viz_col_data['columnIndices'][0]
-
-            for i in pane_columns[col_index]['aliasIndices']:
-                hospital_names.append(cstring_dicts[i])
-        elif caption == 'AGG(Selector KPI)' and data_type == 'real':
-            col_index = viz_col_data['columnIndices'][0]
-
-            for i in pane_columns[col_index]['aliasIndices']:
-                counts.append(real_dicts[i])
-
-        if hospital_names and counts:
-            break
-
-    if not hospital_names:
-        raise ParseError('Unable to find hospital names.')
-
-    if not counts:
-        raise ParseError('Unable to find hospital case counts.')
+    hospital_names = data['hospital_names']
+    counts = data['counts']
 
     if len(hospital_names) != len(counts):
         raise ParseError('Number of hospital names (%s) does not match '
@@ -767,7 +806,7 @@ def build_hospital_cases_json(session, response, out_filename, **kwargs):
                          % (len(hospital_names), len(counts)))
 
     hospital_cases = {
-        hospital_keys.get(hospital_name, hospital_name): count
+        hospital_name: count
         for hospital_name, count in zip(hospital_names, counts)
     }
     hospital_cases['date'] = date.strftime('%Y-%m-%d')
