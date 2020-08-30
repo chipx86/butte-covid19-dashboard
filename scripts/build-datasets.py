@@ -74,6 +74,7 @@ class TableauPresModel(object):
                         % (col_info['data_type'], caption, data_type))
 
                 data_type_dict = data_dicts[data_type]
+                cstring_dict = data_dicts['cstring']
                 col_index = col_data['columnIndices'][0]
                 pane_index = col_data['paneIndices'][0]
 
@@ -84,14 +85,25 @@ class TableauPresModel(object):
 
                 alias_indices = pane_columns[col_index]['aliasIndices']
 
+                def _get_value(alias_index):
+                    # I may be wrong, but I believe if an alias index is < 0,
+                    # then it's a reference to a display for a value in the
+                    # cstring data dict instead. It has to be converted to a
+                    # positive value and then converted from a 1-based index
+                    # to a 0-based index.
+                    if alias_index < 0:
+                        return data_dicts['cstring'][-alias_index - 1]
+                    else:
+                        return data_type_dict[alias_index]
+
                 if value_index is None:
                     result[result_key] = [
-                        normalize(data_type_dict[i])
+                        normalize(_get_value(i))
                         for i in alias_indices
                     ]
                 else:
                     result[result_key] = normalize(
-                        data_type_dict[alias_indices[value_index]])
+                        _get_value(alias_indices[value_index]))
 
         expected_keys = set(
             col_info.get('result_key', col_key)
