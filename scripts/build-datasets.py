@@ -118,7 +118,6 @@ class TableauLoader(object):
         self.raw_bootstrap_payload1 = None
         self.raw_bootstrap_payload2 = None
         self.bootstrap_payload1 = None
-        self.bootstrap_payload2 = None
 
     def bootstrap(self, extra_params={}):
         response = self.session.post(
@@ -147,10 +146,14 @@ class TableauLoader(object):
         length = int(data[:i])
         self.raw_bootstrap_payload2 = data[i + 1:length + i + 1]
 
-    def get_bootstrap_data_dicts(self, expected_counts={}):
-        if self.bootstrap_payload2 is None:
-            self.bootstrap_payload2 = json.loads(self.raw_bootstrap_payload2)
+    @property
+    def bootstrap_payload2(self):
+        if not hasattr(self, '_bootstrap_payload2'):
+            self._bootstrap_payload2 = json.loads(self.raw_bootstrap_payload2)
 
+        return self._bootstrap_payload2
+
+    def get_bootstrap_data_dicts(self, expected_counts={}):
         return self.get_data_dicts(
             data_columns=(
                 self.bootstrap_payload2
