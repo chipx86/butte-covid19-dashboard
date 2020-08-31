@@ -1,5 +1,5 @@
 window.BC19 = {
-    COUNTY_POPULATION: 219186,
+    COUNTY_POPULATION: 217769,
 
     tickCounts: {
         VERY_TALL: 15,
