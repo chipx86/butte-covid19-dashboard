@@ -267,11 +267,67 @@ def parse_int(value, allow_blank=False):
     return int(value or 0)
 
 
+def parse_real(value, allow_blank=False):
+    if allow_blank and value == '':
+        return value
+
+    if isinstance(value, float):
+        return value
+
+    value = value.replace(',', '')
+
+    return float(value or 0)
+
+
 def parse_pct(value):
     if value == '':
         return value
 
-    return int(value.replace('%', ''))
+    return float(value.replace('%', ''))
+
+
+def parse_csv_value(value, data_type, col_info):
+    if data_type == 'date':
+        try:
+            value = (
+                datetime.strptime(value, col_info['format'])
+                .strftime('%Y-%m-%d')
+            )
+        except Exception:
+            raise ParseError('Unable to parse date "%s" using format '
+                             '"%s"'
+                             % (value, col_info['format']))
+    elif data_type == 'int_or_blank':
+        try:
+            value = parse_int(value, allow_blank=True)
+        except ValueError:
+            raise ParseError(
+                'Expected %r to be an integer or empty string.'
+                % value)
+    elif data_type == 'int':
+        try:
+            value = parse_int(value)
+        except ValueError:
+            raise ParseError('Expected %r to be an integer.'
+                             % value)
+    elif data_type == 'real':
+        try:
+            value = parse_real(value)
+        except ValueError:
+            raise ParseError('Expected %r to be an integer.'
+                             % value)
+    elif data_type == 'pct':
+        try:
+            value = parse_pct(value)
+        except ValueError:
+            raise ParseError('Expected %r to be a percentage.'
+                             % value)
+    elif data_type == 'string':
+        pass
+    else:
+        raise ParseError('Unexpected data type %s' % data_type)
+
+    return value
 
 
 def add_or_update_json_date_row(filename, row_data, date_field='date'):
@@ -650,7 +706,10 @@ def build_timeline_json(info, in_fp, out_filename, **kwargs):
                     try:
                         col_data = int(col_data)
                     except ValueError:
-                        pass
+                        try:
+                            col_data = float(col_data)
+                        except ValueError:
+                            pass
 
                 add_nested_key(date_info, col_name, col_data)
 
@@ -924,17 +983,7 @@ def parse_csv(info, response, out_filename, **kwargs):
             except KeyError:
                 raise ParseError('Missing column in CSV file: %s' % src_name)
 
-            if data_type == 'date':
-                try:
-                    value = (
-                        datetime.strptime(value, col_info['format'])
-                        .strftime('%Y-%m-%d')
-                    )
-                except Exception:
-                    raise ParseError('Unable to parse date "%s" using format '
-                                     '"%s"'
-                                     % (value, col_info['format']))
-            elif data_type == 'delta':
+            if data_type == 'delta':
                 delta_from = col_info['delta_from']
 
                 if (row[delta_from] == '' or
@@ -942,31 +991,14 @@ def parse_csv(info, response, out_filename, **kwargs):
                     prev_row[delta_from] == ''):
                     value = ''
                 else:
-                    try:
-                        value = parse_int(value)
-                    except ValueError:
-                        raise ParseError(
-                            'Expected %r to be an integer or empty string.'
-                            % value)
-            elif data_type == 'int_or_blank':
-                try:
-                    value = parse_int(value, allow_blank=True)
-                except ValueError:
-                    raise ParseError(
-                        'Expected %r to be an integer or empty string.'
-                        % value)
-            elif data_type == 'int':
-                try:
-                    value = parse_int(value)
-                except ValueError:
-                    raise ParseError('Expected %r to be an integer.'
-                                     % value)
-            elif data_type == 'pct':
-                try:
-                    value = parse_pct(value)
-                except ValueError:
-                    raise ParseError('Expected %r to be a percentage.'
-                                     % value)
+                    value = parse_csv_value(
+                        value=value,
+                        data_type=col_info.get('delta_type', default_type),
+                        col_info=col_info)
+            else:
+                value = parse_csv_value(value=value,
+                                        data_type=data_type,
+                                        col_info=col_info)
 
             row_result[dest_name] = value
 
@@ -1595,6 +1627,30 @@ FEEDS = [
                     'type': 'delta',
                     'delta_from': 'county_jail:staff:total_positive',
                 },
+                {
+                    'name': 'monitoring:tier',
+                    'type': 'string',
+                },
+                {
+                    'name': 'monitoring:new_case_rate',
+                    'type': 'real',
+                },
+                {
+                    'name': 'monitoring:delta_new_case_rate',
+                    'type': 'delta',
+                    'delta_from': 'monitoring:new_case_rate',
+                    'delta_type': 'real',
+                },
+                {
+                    'name': 'monitoring:test_pos_rate',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'monitoring:delta_test_pos_rate',
+                    'type': 'delta',
+                    'delta_from': 'monitoring:test_pos_rate',
+                    'delta_type': 'pct',
+                }
             ],
         },
     },
