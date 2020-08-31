@@ -112,8 +112,8 @@ window.BC19 = {
 
     graphs: [],
     graphsData: {},
-
     latestRows: {},
+    monitoringTier: null,
 
     commonTimelineOptions: {
         bar: {
@@ -256,6 +256,8 @@ BC19.processTimelineData = function(timeline) {
 
     const minTestPositivityRateDate = BC19.minDates.testPositivityRate;
     let foundMinTestPositivityRateDate = false;
+
+    let monitoringTier;
 
     ageRangeKeys.forEach(key => {
         const normKey = key.replace('-', '_');
@@ -535,6 +537,11 @@ BC19.processTimelineData = function(timeline) {
         if (row.county_jail.inmates.population !== null) {
             latestJailRow = row;
         }
+
+        /* Monitoring Tier */
+        if (row.monitoring && row.monitoring.tier) {
+            monitoringTier = row.monitoring.tier;
+        }
     }
 
     if (latestCasesRow === null) {
@@ -573,6 +580,7 @@ BC19.processTimelineData = function(timeline) {
     BC19.firstMDate = BC19.parseMDate(timeline.dates[0].date);
     BC19.lastMDate = BC19.parseMDate(timeline.dates[rows.length - 1].date);
     BC19.timeline = timeline;
+    BC19.monitoringTier = monitoringTier;
 
     BC19.allAgeRanges = ageRangeKeys;
     BC19.visibleAgeRanges = ageRangeKeys.filter(
@@ -2059,6 +2067,16 @@ BC19.setDateRange = function(fromDate, toDate) {
 
 
 BC19.setupElements = function() {
+    /* Show the current monitoring tier. */
+    const tier = BC19.monitoringTier;
+
+    const tierSectionEl = document.getElementById('monitoring-tier-section');
+    tierSectionEl.classList.add(`-is-tier-${tier.toLowerCase()}`);
+
+    const tierEl = document.getElementById('monitoring-tier');
+    tierEl.innerText = tier;
+
+
     function onDateRangeChanged() {
         BC19.setDateRange(
             moment(dateRangeFromEl.value, 'YYYY-MM-DD').toDate(),

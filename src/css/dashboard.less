@@ -279,6 +279,7 @@ a:visited {
   grid-template-areas:
     "notice notice"
     "intro intro"
+    "monitoring-tier monitoring-tier"
     "case-counters case-counters"
     "cases-breakdown case-graphs"
     "demographics-header demographics-header"
@@ -447,6 +448,31 @@ a:visited {
       grid-area: jail-graphs;
     }
 
+    &.-is-monitoring-tier {
+      grid-area: monitoring-tier;
+      padding: 0.5em;
+
+      &.-is-tier-minimal {
+        background: #EFCE2F;
+        color: black;
+      }
+
+      &.-is-tier-moderate {
+        background: #CC7E50;
+        color: white;
+      }
+
+      &.-is-tier-substantial {
+        background: #B56969;
+        color: white;
+      }
+
+      &.-is-tier-widespread {
+        background: #97718B;
+        color: white;
+      }
+    }
+
     &.-is-population-test-counters {
       grid-area: population-test-counters;
     }
@@ -544,6 +570,7 @@ a:visited {
     grid-template-areas:
       "notice"
       "intro"
+      "monitoring-tier"
       "case-counters"
       "cases-breakdown"
       "case-graphs"
