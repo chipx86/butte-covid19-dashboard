@@ -322,7 +322,7 @@ def parse_csv_value(value, data_type, col_info):
         except ValueError:
             raise ParseError('Expected %r to be a percentage.'
                              % value)
-    elif data_type == 'string':
+    elif data_type == 'string' or data_type is None:
         pass
     else:
         raise ParseError('Unexpected data type %s' % data_type)
