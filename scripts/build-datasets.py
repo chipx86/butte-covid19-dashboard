@@ -73,7 +73,7 @@ class TableauPresModel(object):
                         '"%s" instead.'
                         % (col_info['data_type'], caption, data_type))
 
-                data_type_dict = data_dicts[data_type]
+                data_type_dict = data_dicts.get(data_type, [])
                 cstring_dict = data_dicts['cstring']
                 col_index = col_data['columnIndices'][0]
                 pane_index = col_data['paneIndices'][0]
