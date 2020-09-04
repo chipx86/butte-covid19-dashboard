@@ -938,14 +938,14 @@ BC19.setupCounters = function(timeline) {
         'pop-tested-pct-counter',
         {
             value: (totalTests / BC19.COUNTY_POPULATION * 100).toFixed(2),
-            formatValue: value => '< ' + value + '%',
+            formatValue: value => '< ' + value.toLocaleString() + '%',
         });
 
     BC19.setCounter(
         'pop-not-tested-pct-counter',
         {
             value: (totalTests / BC19.COUNTY_POPULATION * 100).toFixed(2),
-            formatValue: value => '> ' + (100 - value) + '%',
+            formatValue: value => '> ' + (100 - value).toLocaleString() + '%',
         });
 
 
