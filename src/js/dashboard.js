@@ -1321,33 +1321,6 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                 new_case_rate: 'area',
             },
         },
-        grid: {
-            x: {
-                lines: [
-                    {
-                        /*
-                         * 3 day state calculation lag +
-                         * 1 day state reporting lag+
-                         */
-                        value: moment().subtract(4, 'days')
-                            .format('YYYY-MM-DD'),
-                        text: 'Rough value considered by state',
-                        position: 'start',
-                    },
-                ],
-            },
-            y: {
-                show: true,
-                lines: [
-                    {
-                        value: per1KPopRound,
-                        text: 'May qualify to be on a monitoring list at ~' +
-                              per1KPopRound + ' cases',
-                        position: 'start',
-                    },
-                ],
-            },
-        },
         axis: {
             x: axisX,
             y: {
@@ -1679,32 +1652,6 @@ BC19.setupMainTimelineGraphs = function(timeline) {
                     stepSize: BC19.getStepSize(maxValues.sevenDayPosRate,
                                                tickCounts.STANDARD),
                 },
-            },
-        },
-        grid: {
-            x: {
-                lines: [
-                    {
-                        /*
-                         * 7 *previous* day state calculation lag +
-                         * 1 day reporting lag
-                         */
-                        value: moment().subtract(9, 'days')
-                            .format('YYYY-MM-DD'),
-                        text: 'Rough value considered by state',
-                        position: 'start',
-                    },
-                ],
-            },
-            y: {
-                show: true,
-                lines: [
-                    {
-                        value: 8,
-                        text: 'May qualify to be on a monitoring list at 8%',
-                        position: 'start',
-                    },
-                ],
             },
         },
         point: {
