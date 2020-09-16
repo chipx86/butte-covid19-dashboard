@@ -724,8 +724,11 @@ BC19.setupBBGraph = function(options) {
 };
 
 
-BC19.setupBarGraph = function(graph, options, data) {
-    const showPct = options && !!options.pct;
+BC19.setupBarGraph = function(graph, options={}, data) {
+    const showPct = !!options.pct;
+    const formatValue = options.formatValue || function(value) {
+        return value.toLocaleString();
+    };
 
     const total = d3.sum(data, d => d.value);
     const x = d3.scaleLinear()
@@ -743,14 +746,16 @@ BC19.setupBarGraph = function(graph, options, data) {
                 .text(d.label)
                 .node());
 
+            const valueText = formatValue(d.value);
+
             this.appendChild(d3.create('div')
                 .attr('class', 'bc19-c-bar-graph__bar')
                 .attr('id', 'bar_graph_' + d.data_id)
                 .style('width', x(d.value) + '%')
                 .text(showPct
-                      ? d.value + '  ' +
+                      ? valueText + '  ' +
                         Math.round((d.value / total) * 100) + '%'
-                      : d.value)
+                      : valueText)
                 .node());
 
             let relValue = '';
@@ -758,20 +763,22 @@ BC19.setupBarGraph = function(graph, options, data) {
             let relTitle;
 
             if (d.relValue > 0) {
-                relValue = d.relValue;
+                relValue = formatValue(d.relValue);
                 relClass = '-is-up';
                 relTitle = '+' + relValue + ' since yesterday';
             } else if (d.relValue < 0) {
-                relValue = -d.relValue;
+                relValue = formatValue(-d.relValue);
                 relClass = '-is-down';
                 relTitle = '-' + relValue + ' since yesterday';
             }
 
-            this.appendChild(d3.create('span')
-                .attr('class', 'bc19-c-bar-graph__rel-value ' + relClass)
-                .attr('title', relTitle)
-                .text(relValue)
-                .node());
+            if (relValue !== '') {
+                this.appendChild(d3.create('span')
+                    .attr('class', 'bc19-c-bar-graph__rel-value ' + relClass)
+                    .attr('title', relTitle)
+                    .text(relValue)
+                    .node());
+            }
         });
 };
 
@@ -1102,7 +1109,6 @@ BC19.setupDeathsByAgeGraph = function(timeline) {
     const agesI = BC19.latestRows.deathsByAge.i + 1;
     const data = [];
 
-
     BC19.visibleAgeRanges.forEach(key => {
         const ageRanges = BC19.graphData.deaths.byAge[key];
         const ageRangeInfo = BC19.ageRangeInfo[key];
@@ -1121,6 +1127,47 @@ BC19.setupDeathsByAgeGraph = function(timeline) {
     BC19.setupBarGraph(
         d3.select('#deaths_by_age_graph'),
         {},
+        data);
+};
+
+
+BC19.setupMortalityRatesByAgeGraph = function(timeline) {
+    const agesI = BC19.latestRows.deathsByAge.i + 1;
+    const data = [];
+
+    BC19.visibleAgeRanges.forEach(key => {
+        const casesAgeRanges = BC19.graphData.ageRanges[key];
+        const deathsAgeRanges = BC19.graphData.deaths.byAge[key];
+        const ageRangeInfo = BC19.ageRangeInfo[key];
+        const cases = casesAgeRanges[agesI];
+        const deaths = deathsAgeRanges[agesI];
+
+        if (cases && deaths) {
+            const value = deaths / cases * 100;
+            const relValue = BC19.normRelValue(
+                value,
+                deathsAgeRanges[agesI - 1] / casesAgeRanges[agesI - 1] * 100);
+
+            data.push({
+                data_id: key,
+                label: ageRangeInfo.text || key.replace('_', '-'),
+                value: value,
+                relValue: relValue,
+            });
+        }
+    });
+
+    BC19.setupBarGraph(
+        d3.select('#mortality_by_age_graph'),
+        {
+            formatValue: (value) => {
+                const normValue = value.toLocaleString(undefined, {
+                    maximumFractionDigits: 1,
+                });
+
+                return normValue !== '0' ? `${normValue}%` : '';
+            }
+        },
         data);
 };
 
@@ -2161,6 +2208,7 @@ BC19.init = function() {
             BC19.setupCounters(timeline);
             BC19.setupByAgeGraph(timeline);
             BC19.setupDeathsByAgeGraph(timeline);
+            BC19.setupMortalityRatesByAgeGraph(timeline);
             BC19.setupByRegionGraph(timeline);
             BC19.setupByHospitalGraph(timeline);
             BC19.setupMainTimelineGraphs(timeline);
