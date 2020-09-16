@@ -419,7 +419,7 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
             return None
 
         try:
-            return int(value)
+            return int(value.replace(',', ''))
         except Exception:
             raise ParseError('Expected value %r for entity %s to be int, '
                              'got %s'
@@ -446,9 +446,14 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
                          '%s'
                          % e)
 
-    entity = get_entity('8af333ad-f476-48c5-8faa-d502b1dd6360')
-    m = re.search(r'As of (\d+)/(\d+)/(\d{4})',
-                  entity['props']['content']['blocks'][0]['text'])
+    try:
+        entity = get_entity('7758d945-3baa-414b-8672-fb348d435436')
+    except KeyError:
+        raise ParseError('Unable to find datestamp entity in Butte Dashboard')
+
+    m = re.search(r'as of (\d+)/(\d+)/(\d{4})',
+                  entity['props']['content']['blocks'][0]['text'],
+                  re.I)
 
     if not m:
         raise ParseError('Unable to find datestamp in Butte Dashboard')
@@ -855,23 +860,45 @@ def build_state_tiers_json(session, response, out_filename, **kwargs):
     })
 
     data = tableau_loader.get_mapped_col_data({
-        'Counties by Phase': {
-            'AGG(zn([Case Metrics by Episode Date w/ Pop].[Weekly Avg Per 100K]))': {
+        'Cases per 100K': {
+            'AGG(Avg Cases per Day per 100K)': {
                 'data_type': 'real',
                 'result_key': 'cases_per_100k',
                 'value_index': 0,
                 'normalize': lambda value: round(value, 2),
             },
-            'AGG(Positivity Rate)': {
+        },
+        'Adj Cases per 100K': {
+            'AGG(Adj Avg Case Rate per Day per 100K)': {
+                'data_type': 'real',
+                'result_key': 'adjusted_cases_per_100k',
+                'value_index': 0,
+                'normalize': lambda value: round(value, 2),
+            },
+        },
+        'Test Positivity Rate': {
+            'AGG(Test Positivity Rate)': {
                 'data_type': 'real',
                 'result_key': 'pos_rate',
                 'value_index': 0,
                 'normalize': lambda value: round(value, 5),
             },
-            'Overall Status': {
+        },
+        'Map': {
+            'Current tier': {
                 'data_type': 'integer',
                 'result_key': 'status',
                 'value_index': 0,
+            },
+            'Effective date': {
+                'data_type': 'cstring',
+                'result_key': 'effective_date',
+                'value_index': 0,
+                'normalize': lambda date_str: (
+                    datetime
+                    .strptime(date_str, '(as of %m/%d/%y)')
+                    .strftime('%Y-%m-%d')
+                ),
             },
         },
     })
@@ -901,13 +928,6 @@ def build_hospital_cases_json(session, response, out_filename, **kwargs):
     })
 
     data_dicts = tableau_loader.get_bootstrap_data_dicts()
-    date = datetime.strptime(
-        sorted(data_dicts['datetime'])[-1],
-        '%Y-%m-%d %H:%M:%S.%f')
-
-    if date > datetime.now():
-        # This isn't today's date. Skip it.
-        return False
 
     # Find the columns we care about.
     data = tableau_loader.get_mapped_col_data({
@@ -922,7 +942,19 @@ def build_hospital_cases_json(session, response, out_filename, **kwargs):
                 'result_key': 'counts',
             },
         },
+        'Updated on': {
+            'max loaded timestamp': {
+                'data_type': 'datetime',
+                'result_key': 'date',
+            },
+        },
     })
+
+    date = datetime.strptime(data['date'][0], '%m/%d/%Y')
+
+    if date > datetime.now():
+        # This isn't today's date. Skip it.
+        return False
 
     hospital_names = data['hospital_names']
     counts = data['counts']
@@ -1050,7 +1082,7 @@ def parse_csv(info, response, out_filename, **kwargs):
 
 FEEDS = [
     {
-        'filename': 'skilled-nursing-facilities-v2.csv',
+        'filename': 'skilled-nursing-facilities-v3.csv',
         'format': 'csv',
         'url': 'https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/cdph-skilled-nursing-facilities.csv',
         'csv': {
@@ -1065,8 +1097,6 @@ FEEDS = [
                     'format': '%Y-%m-%d',
                 },
                 {'name': 'name'},
-                {'name': 'staff_active_cases'},
-                {'name': 'patients_active_cases'},
                 {'name': 'staff_confirmed_cases'},
                 {'name': 'patients_confirmed_cases'},
                 {'name': 'staff_confirmed_cases_note'},
@@ -1258,7 +1288,7 @@ FEEDS = [
         'parser': build_state_tiers_json,
     },
     {
-        'filename': 'state-tiers.csv',
+        'filename': 'state-tiers-v2.csv',
         'format': 'csv',
         'local_source': {
             'filename': 'state-tiers.json',
@@ -1267,8 +1297,10 @@ FEEDS = [
         'parser': convert_json_to_csv,
         'key_map': [
             ('Date', ('date',)),
+            ('Effective Date', ('effective_date',)),
             ('Status', ('status',)),
             ('New Case Rate', ('cases_per_100k',)),
+            ('Adjusted New Case Rate', ('adjusted_cases_per_100k',)),
             ('Positivity Rate', ('pos_rate',)),
         ],
     },
@@ -1734,6 +1766,10 @@ def main():
                     sys.stderr.write('Data parse error while building %s: %s\n'
                                      % (filename, e))
                     continue
+                except Exception as e:
+                    sys.stderr.write('Unexpected error while building %s: %s\n'
+                                     % (filename, e))
+                    continue
 
                 if response.headers.get('etag'):
                     cache[url] = {
@@ -1762,6 +1798,10 @@ def main():
                                     out_filename=out_filename)
                 except ParseError as e:
                     sys.stderr.write('Data parse error while building %s: %s\n'
+                                     % (filename, e))
+                    continue
+                except Exception as e:
+                    sys.stderr.write('Unexpected error while building %s: %s\n'
                                      % (filename, e))
                     continue
         else:
