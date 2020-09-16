@@ -752,11 +752,16 @@ BC19.setupBarGraph = function(graph, options={}, data) {
                 .attr('class', 'bc19-c-bar-graph__bar')
                 .attr('id', 'bar_graph_' + d.data_id)
                 .style('width', x(d.value) + '%')
-                .text(showPct
-                      ? valueText + '  ' +
-                        Math.round((d.value / total) * 100) + '%'
-                      : valueText)
+                .text(valueText)
                 .node());
+
+            if (showPct) {
+                this.appendChild(d3.create('div')
+                    .attr('class', 'bc19-c-bar-graph__pct')
+                    .attr('id', 'bar_graph_' + d.data_id)
+                    .text(Math.round((d.value / total) * 100) + '%')
+                    .node());
+            }
 
             let relValue = '';
             let relClass = '';
@@ -1032,7 +1037,9 @@ BC19.setupByAgeGraph = function(timeline) {
 
     BC19.setupBarGraph(
         d3.select('#by_age_graph'),
-        {},
+        {
+            pct: true,
+        },
         BC19.visibleAgeRanges.map(key => {
             const ageRanges = BC19.graphData.ageRanges[key];
             const ageRangeInfo = BC19.ageRangeInfo[key];
@@ -1056,7 +1063,9 @@ BC19.setupByRegionGraph = function(timeline) {
 
     BC19.setupBarGraph(
         d3.select('#by_region_graph'),
-        {},
+        {
+            pct: true,
+        },
         [
             {
                 data_id: 'biggs_gridley',
