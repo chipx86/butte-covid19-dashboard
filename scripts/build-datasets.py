@@ -1086,7 +1086,10 @@ FEEDS = [
         'format': 'csv',
         'url': 'https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/cdph-skilled-nursing-facilities.csv',
         'csv': {
-            'match_row': lambda row: row['county'] == 'Butte',
+            'match_row': lambda row: (
+                row['county'] == 'Butte' and
+                row['date'] not in ('2020-04-21', '2020-04-22', '2020-04-23')
+            ),
             'validator': lambda results: results[0]['date'] == '2020-04-24',
             'sort_by': 'date',
             'unique_col': ('date', 'name'),
