@@ -36,6 +36,8 @@ BC19.live's data is compiled from the following sources:
 * [State Hospital Case Statistics - Butte County (Dashboard)](https://public.tableau.com/views/COVID-19HospitalsDashboard/Hospitals?:embed=y&:showVizHome=no&COUNTY=Butte)
 * [State Hospital Case Statistics - All Counties (CSV)](https://data.chhs.ca.gov/dataset/6882c390-b2d7-4b9a-aefa-2068cee63e47/resource/6cd8d424-dfaa-4bdd-9410-a3d656e1176e/download/covid19data.csv)
 * [Butte County Jail - COVID-19](https://www.buttecounty.net/sheriffcoroner/Covid-19)
+* [State Cases - All Countes (CSV)](https://data.ca.gov/dataset/590188d5-8545-4c93-a9a0-e230f0db7290/resource/926fd08f-cc91-4828-af38-bd45de97f8c3/download/statewide_cases.csv)
+* [State Cases - All Countes (Data Viewer)](https://data.ca.gov/dataset/covid-19-cases/resource/926fd08f-cc91-4828-af38-bd45de97f8c3)
 * [State Monitoring Tier Status (Dashboard)](https://covid19.ca.gov/safer-economy/#reopening-data)
 
 Additional datasets can be found on the [COVID-19
@@ -57,6 +59,7 @@ The following data is made available for others to use:
 * [Butte County Dashboard (JSON)](https://bc19.live/data/json/butte-dashboard.json)
 * [Butte County Jail (CSV)](https://bc19.live/data/csv/butte-county-jail.csv)
 * [Butte County Jail (JSON)](https://bc19.live/data/csv/butte-county-jail.json)
+* [State Cases - Butte County Only (CSV)](https://bc19.live/data/csv/state-cases.csv)
 * [State Skilled Nursing Facilities - Butte County Only (CSV)](https://bc19.live/data/csv/skilled-nursing-facilities-v3.csv)
 * [State Hospital Case Statistics - Butte County Only (CSV)](https://bc19.live/data/csv/state-hospitals-v3.csv)
 * [State Resources - Butte County Only (CSV)](https://bc19.live/data/csv/state-resources.csv)
