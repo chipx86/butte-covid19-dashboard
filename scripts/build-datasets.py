@@ -520,6 +520,13 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
         by_region = scraped_data['by_region']
         deaths_by_age = scraped_data['deaths_by_age']
 
+        # As of Monday, September 28, 2020, the county has changed the By Ages
+        # graph to show the non-fatal vs. fatal cases, instead of total vs.
+        # fatal. To preserve the information we had, we need to add the deaths
+        # back in.
+        for key in list(by_age.keys()):
+            by_age[key] += deaths_by_age[key]
+
         row_result = {
             'date': datestamp.strftime('%Y-%m-%d'),
             'confirmed_cases': scraped_data['confirmed_cases'],
