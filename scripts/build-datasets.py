@@ -209,18 +209,21 @@ class TableauLoader(object):
         return data_dicts
 
     def get_pres_model(self, model_key):
-        return TableauPresModel(
-            loader=self,
-            payload=(
-                self.bootstrap_payload2
-                ['secondaryInfo']
-                ['presModelMap']
-                ['vizData']
-                ['presModelHolder']
-                ['genPresModelMapPresModel']
-                ['presModelMap']
-                [model_key]
-            ))
+        try:
+            return TableauPresModel(
+                loader=self,
+                payload=(
+                    self.bootstrap_payload2
+                    ['secondaryInfo']
+                    ['presModelMap']
+                    ['vizData']
+                    ['presModelHolder']
+                    ['genPresModelMapPresModel']
+                    ['presModelMap']
+                    [model_key]
+                ))
+        except KeyError:
+            raise ParseError('Could not find "%s" in presModelMap' % model_key)
 
     def get_mapped_col_data(self, models_to_cols):
         result = {}
@@ -867,31 +870,25 @@ def build_state_tiers_json(session, response, out_filename, **kwargs):
     })
 
     data = tableau_loader.get_mapped_col_data({
-        'Cases per 100K': {
+        'Map': {
             'AGG(Avg Cases per Day per 100K)': {
                 'data_type': 'real',
                 'result_key': 'cases_per_100k',
                 'value_index': 0,
                 'normalize': lambda value: round(value, 2),
             },
-        },
-        'Adj Cases per 100K': {
             'AGG(Adj Avg Case Rate per Day per 100K)': {
                 'data_type': 'real',
                 'result_key': 'adjusted_cases_per_100k',
                 'value_index': 0,
                 'normalize': lambda value: round(value, 2),
             },
-        },
-        'Test Positivity Rate': {
             'AGG(Test Positivity Rate)': {
                 'data_type': 'real',
                 'result_key': 'pos_rate',
                 'value_index': 0,
                 'normalize': lambda value: round(value, 5),
             },
-        },
-        'Map': {
             'Current tier': {
                 'data_type': 'integer',
                 'result_key': 'status',
