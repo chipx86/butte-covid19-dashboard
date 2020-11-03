@@ -588,7 +588,7 @@ BC19.processTimelineData = function(timeline) {
 
     BC19.defaultTimelineDomain = [
         moment(BC19.lastMDate).subtract(90, 'days').format('YYYY-MM-DD'),
-        BC19.lastMDate.format('YYYY-MM-DD'),
+        moment(BC19.lastMDate).add(1, 'days').format('YYYY-MM-DD'),
     ];
 
     BC19.maxValues = {
@@ -2078,7 +2078,6 @@ BC19.setupElements = function() {
 
     const tierEl = document.getElementById('monitoring-tier');
     tierEl.innerText = tier;
-
 
     function onDateRangeChanged() {
         BC19.setDateRange(
