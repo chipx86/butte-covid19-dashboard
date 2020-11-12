@@ -61,7 +61,7 @@ class TableauPresModel(object):
         return self.all_pane_columns[pane_index]['vizPaneColumns']
 
     def get_mapped_col_data(self, cols):
-        data_dicts = self.loader.get_bootstrap_data_dicts()
+        data_dicts = self.loader.get_data_dicts()
         result = {}
 
         for col_data in self.all_data_columns:
@@ -175,29 +175,21 @@ class TableauLoader(object):
         length = int(data[:i])
         self.raw_bootstrap_payload2 = data[i + 1:length + i + 1]
 
-    @property
-    def bootstrap_payload2(self):
-        if not hasattr(self, '_bootstrap_payload2'):
-            self._bootstrap_payload2 = json.loads(self.raw_bootstrap_payload2)
+        self.bootstrap_payload2 = json.loads(self.raw_bootstrap_payload2)
 
-        return self._bootstrap_payload2
+    def get_data_dicts(self, expected_counts={}):
+        data_columns = (
+            self.bootstrap_payload2
+            ['secondaryInfo']
+            ['presModelMap']
+            ['dataDictionary']
+            ['presModelHolder']
+            ['genDataDictionaryPresModel']
+            ['dataSegments']
+            ['0']
+            ['dataColumns']
+        )
 
-    def get_bootstrap_data_dicts(self, expected_counts={}):
-        return self.get_data_dicts(
-            data_columns=(
-                self.bootstrap_payload2
-                ['secondaryInfo']
-                ['presModelMap']
-                ['dataDictionary']
-                ['presModelHolder']
-                ['genDataDictionaryPresModel']
-                ['dataSegments']
-                ['0']
-                ['dataColumns']
-            ),
-            expected_counts=expected_counts)
-
-    def get_data_dicts(self, data_columns, expected_counts):
         data_dicts = {
             item['dataType']: item['dataValues']
             for item in data_columns
@@ -781,7 +773,7 @@ def build_state_resources_json(session, response, out_filename, **kwargs):
     #       unsure how these map into a dataValues with a negative
     #       aliasIndices. So while this isn't correct, it's sort of what
     #       we've got right now.
-    data_dicts = tableau_loader.get_bootstrap_data_dicts()
+    data_dicts = tableau_loader.get_data_dicts()
     last_updated = datetime.strptime(
         sorted(data_dicts['datetime'])[-1],
         '%Y-%m-%d %H:%M:%S')
@@ -931,7 +923,7 @@ def build_hospital_cases_json(session, response, out_filename, **kwargs):
         }),
     })
 
-    data_dicts = tableau_loader.get_bootstrap_data_dicts()
+    data_dicts = tableau_loader.get_data_dicts()
 
     # Find the columns we care about.
     data = tableau_loader.get_mapped_col_data({
