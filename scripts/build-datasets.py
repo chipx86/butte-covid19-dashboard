@@ -459,7 +459,7 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
         # This is stale data not from today. OR it might be new data but
         # the county forgot to update the datestamp on it *again*. So don't
         # risk overwriting historical data, and instead bail.
-        return
+        return False
 
     COUNTER_KEYS_TO_ENTITIES = {
         'confirmed_cases': {
@@ -624,7 +624,7 @@ def parse_butte_county_jail(response, out_filename, **kwargs):
         # This is stale data not from today. OR it might be new data but
         # the county forgot to update the datestamp. So don't risk
         # overwriting historical data, and instead bail.
-        return
+        return False
 
     def get_int(pattern):
         m = re.search(pattern, content)
