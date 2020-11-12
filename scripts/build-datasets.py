@@ -28,6 +28,10 @@ USER_AGENT = (
 )
 
 
+class ParseError(Exception):
+    """Error parsing or extracting data from a dataset."""
+
+
 class TableauPresModel(object):
     def __init__(self, loader, payload):
         self.loader = loader
@@ -233,10 +237,6 @@ class TableauLoader(object):
             result.update(pres_model.get_mapped_col_data(cols))
 
         return result
-
-
-class ParseError(Exception):
-    pass
 
 
 @contextmanager
