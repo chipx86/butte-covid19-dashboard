@@ -251,10 +251,8 @@ def add_nested_key(d, full_key, value):
 
 
 def parse_int(value, allow_blank=False):
-    if allow_blank and value == '':
-        return value
-
-    if isinstance(value, int):
+    if ((allow_blank and value == '') or
+        isinstance(value, int)):
         return value
 
     value = value.replace(',', '')
@@ -263,10 +261,8 @@ def parse_int(value, allow_blank=False):
 
 
 def parse_real(value, allow_blank=False):
-    if allow_blank and value == '':
-        return value
-
-    if isinstance(value, float):
+    if ((allow_blank and value == '') or
+        isinstance(value, float)):
         return value
 
     value = value.replace(',', '')
@@ -275,10 +271,8 @@ def parse_real(value, allow_blank=False):
 
 
 def parse_pct(value):
-    if value == '':
-        return value
 
-    return float(value.replace('%', ''))
+    return parse_real(value.replace('%s', ''), allow_blank=True)
 
 
 def parse_csv_value(value, data_type, col_info):
@@ -393,8 +387,12 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
             for label in expected_labels:
                 for i in (0, 1):
                     if len(blocks) >= i and label in blocks[0]['text'].lower():
-                        value = \
-                            blocks[0]['text'].lower().split(label)[0].strip()
+                        value = (
+                            blocks[0]['text']
+                            .lower()
+                            .split(label)[0]
+                            .strip()
+                        )
 
             if value is None:
                 found_labels = [
