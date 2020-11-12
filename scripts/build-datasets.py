@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""Builds datasets for the bc19.live dashboard from public COVID-19 sources.
+
+This script is responsible for going through a number of public sources,
+consisting of CSV files, JSON feeds, Tableau dashboards, and web pages, and
+building/validating new datasets that can be pulled in to analyze the COVID-19
+situation in Butte County.
+"""
 
 import codecs
 import csv
@@ -14,14 +21,26 @@ from urllib.parse import quote
 import requests
 
 
+#: Location of the HTTP cached data file.
 CACHE_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
                                           '.http-cache'))
+
+#: Location of the data export directory.
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                         '..', 'htdocs', 'data'))
+
+#: Location of the CSV export directory.
 CSV_DIR = os.path.join(DATA_DIR, 'csv')
+
+#: Location of the JSON export directory.
 JSON_DIR = os.path.join(DATA_DIR, 'json')
 
 
+#: The user agent that this script will identify as.
+#:
+#: This helps create the appearance that a browser, not a Python script, is
+#: fetching content from the servers, making it less likely to be blocked or
+#: to receive legacy content.
 USER_AGENT = (
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 '
     '(KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36'
@@ -33,12 +52,42 @@ class ParseError(Exception):
 
 
 class TableauPresModel(object):
+    """Wrapper around a Tableau dashboard's presentation model.
+
+    The presentation model is a JSON structure containing all the data that's
+    used to render a Tableau dashboard. It's broken down into panes containing
+    rows and columns, which themselves contain labels, data types, and
+    references to data in typed, deduplicated data dictionaries.
+
+    This class helps provide easy access to the data, allowing the caller to
+    think about the information they want to retrieve, rather than the parsing
+    gymanstics needed to get it.
+    """
+
     def __init__(self, loader, payload):
+        """Initialize the presentation model.
+
+        Args:
+            loader (TableauLoader):
+                The parent Tableau dashboard loader that created this.
+
+            payload (dict):
+                The deserialized presentation model data.
+        """
         self.loader = loader
         self.payload = payload
 
     @property
     def all_data_columns(self):
+        """The list of all data columns in this model.
+
+        Data columns contain metadata on the data (such as a data type) that
+        backs the presentation model, and references to the pane(s) containing
+        the data value(s).
+
+        Type:
+            list of dict
+        """
         return (
             self.payload
             ['presModelHolder']
@@ -49,6 +98,15 @@ class TableauPresModel(object):
 
     @property
     def all_pane_columns(self):
+        """The list of all pane column lists in this model.
+
+        Each entry here is a list of pane columns of a given pane index.
+        The entry itself is really the list of pane columns, and contains
+        information used to locate data values for a column.
+
+        Type:
+            list of list
+        """
         return (
             self.payload
             ['presModelHolder']
@@ -58,9 +116,59 @@ class TableauPresModel(object):
         )
 
     def get_pane_columns(self, pane_index):
+        """Return all pane columns for a given pane index.
+
+        Args:
+            pane_index (int):
+                The index for the pane.
+
+        Returns:
+            list of dict:
+            The list of pane columns.
+
+        Raises:
+            IndexError:
+                The pane index is invalid.
+        """
         return self.all_pane_columns[pane_index]['vizPaneColumns']
 
     def get_mapped_col_data(self, cols):
+        """Return data from the model based on the given criteria.
+
+        This allows callers to specify a list of columns to extract data
+        from, giving the expected field caption, data type, value index,
+        and the desired key for the resulting dictionary. It takes care of
+        parsing the appropriate data from the presentation model, validating
+        it, and generating results.
+
+        Args:
+            cols (dict):
+                A dictionary mapping field captions to query information.
+                The query information should contain:
+
+                ``data_type`` (str):
+                    The expected data type for the column.
+
+                ``normalize`` (callable, optional):
+                    A function used to normalize the value(s).
+
+                ``result_key`` (str, optional):
+                    The key to set in the resulting dictionary. This defaults
+                    to the field caption.
+
+                ``value_index`` (int, optional):
+                    The index in the values list for the column. If not
+                    provided, a list of all values are returned.
+
+        Returns:
+            dict:
+            A dictionary of results, mapping keys to values.
+
+        Raises:
+            ParseError:
+                The data type for a column did not match, or keys were missing.
+                Details are in the error message.
+        """
         data_dicts = self.loader.get_data_dicts()
         result = {}
 
@@ -124,7 +232,37 @@ class TableauPresModel(object):
 
 
 class TableauLoader(object):
+    """Loads a public Tableau workbook and parses results.
+
+    This is used to extract data from a public Tableau workbook/dashboard that
+    doesn't otherwise offer any kind of exportable CSV/JSON/etc. dataaset.
+
+    It works by pretending to be a web browser, fetching the various data
+    payloads that the server sends, parsing it, and providing helpful accessors
+    so the caller can easily fetch information from it.
+    """
+
     def __init__(self, session, owner, sheet, orig_response):
+        """Initialize the loader.
+
+        Once initialized, the caller is responsible for calling
+        :py:meth:`bootstrap` to load the data.
+
+        Args:
+            session (requests.Session):
+                The existing HTTP session, used for cookie management.
+
+            owner (str):
+                The owner name for the Tableau workbook, as found in the URL.
+
+            sheet (str):
+                The sheet name for the Tableau workbook, as found in the URL.
+
+            orig_response (requests.Response):
+                The HTTP response used to fetch the initial Tableau workbook
+                webpage. This is used to fetch metadata used to fetch the
+                related payloads.
+        """
         self.session = session
         self.owner = owner
         self.sheet = sheet
@@ -135,6 +273,15 @@ class TableauLoader(object):
         self.raw_bootstrap_payload2 = None
 
     def get_workbook_metadata(self):
+        """Return metadata on the workbook.
+
+        The first time this is called, an HTTP request will be performed to
+        fetch the metadata. Subsequent calls will return cached data.
+
+        Returns:
+            dict:
+            The workbook metadata.
+        """
         if not hasattr(self, '_workbook_metadata'):
             response = self.session.get(
                 'https://public.tableau.com/profile/api/workbook/%s'
@@ -145,10 +292,31 @@ class TableauLoader(object):
         return self._workbook_metadata
 
     def get_last_update_date(self):
+        """Return the date the workbook was last updated.
+
+        The first time this is called, an HTTP request will be performed to
+        fetch the metadata. Subsequent calls will return cached data.
+
+        Returns:
+            datetime.datetime:
+            The date the workbook was last updated.
+        """
         metadata = self.get_workbook_metadata()
         return datetime.fromtimestamp(metadata['lastUpdateDate'] / 1000)
 
     def bootstrap(self, extra_params={}):
+        """Bootstrap the loader.
+
+        This is required after initializing the loader. It will initiate an
+        HTTP request to fetch the two payloads backing the workbook, parsing
+        the raw data behind those payloads out and storing them for later
+        deserialization.
+
+        Args:
+            extra_params (dict, optional):
+                Additional HTTP POST data to pass, used to specify additional
+                settings the caller needs to fetch the workbook.
+        """
         response = self.session.post(
             ('https://public.tableau.com/vizql/w/%s/v/%s/bootstrapSession/'
              'sessions/%s'
@@ -178,6 +346,17 @@ class TableauLoader(object):
         self.bootstrap_payload2 = json.loads(self.raw_bootstrap_payload2)
 
     def get_data_dicts(self, expected_counts={}):
+        """Return the data dictionaries from the workbook.
+
+        Args:
+            expected_counts (dict, optional):
+                The expected number of items in each typed data dictionary,
+                for validation purposes.
+
+        Returns:
+            dict:
+            A dictionary mapping data types to lists of values.
+        """
         data_columns = (
             self.bootstrap_payload2
             ['secondaryInfo']
@@ -205,6 +384,20 @@ class TableauLoader(object):
         return data_dicts
 
     def get_pres_model(self, model_key):
+        """Return a presentation model from the workbook.
+
+        Args:
+            model_key (str):
+                The key identifying the presentation model.
+
+        Returns:
+            TableauPresModel:
+            The resulting presentation model.
+
+        Raises:
+            ParseError:
+                The presentation model could not be found.
+        """
         try:
             return TableauPresModel(
                 loader=self,
@@ -222,6 +415,27 @@ class TableauLoader(object):
             raise ParseError('Could not find "%s" in presModelMap' % model_key)
 
     def get_mapped_col_data(self, models_to_cols):
+        """Return data from presentation models based on the given criteria.
+
+        This wraps :py:meth:`TableauPresModel.get_mapped_col_data`, allowing
+        data to be returned from multiple presentation models at once.
+
+        Args:
+            models_to_cols (dict):
+                A dictionary of presentation model names to query dictionaries
+                (as would normally be provided to
+                :py:meth:`TableauPresModel.get_mapped_col_data`).
+
+        Returns:
+            dict:
+            A dictionary of results, mapping keys to values.
+
+        Raises:
+            ParseError:
+                The data type for a column did not match, or keys were missing,
+                or a presentation model was missing. Details are in the error
+                message.
+        """
         result = {}
 
         for model_key, cols in models_to_cols.items():
@@ -233,6 +447,20 @@ class TableauLoader(object):
 
 @contextmanager
 def safe_open_for_write(filename):
+    """Safely open a file for writing.
+
+    This will write to a temp file, and then rename it to the destination
+    file upon completion. This ensures that anything reading the file will not
+    receive an empty, partially-written, or truncated file.
+
+    Args:
+        filename (str):
+            The name of the file to write.
+
+    Context:
+        object:
+        The file pointer.
+    """
     temp_filename = '%s.tmp' % filename
 
     with open(temp_filename, 'w') as fp:
@@ -242,6 +470,22 @@ def safe_open_for_write(filename):
 
 
 def add_nested_key(d, full_key, value):
+    """Add a nested key path to a dictionary.
+
+    This takes a ``.``-separated key path, creating nested dictionaries as
+    needed, and assigning the provided value to the final key in that
+    dictionary.
+
+    Args:
+        d (dict):
+            The dictionary to set the key in.
+
+        full_key (str):
+            The ``.``-separated key path.
+
+        value (object):
+            The value to set.
+    """
     keys = full_key.split(':')
 
     for key in keys[:-1]:
@@ -251,6 +495,28 @@ def add_nested_key(d, full_key, value):
 
 
 def parse_int(value, allow_blank=False):
+    """Parse an integer from a string.
+
+    This handles integers formatted with ``,`` separators and empty strings.
+
+    Args:
+        value (int or str):
+            The value to parse.
+
+        allow_blank (bool, optional):
+            Whether to allow a blank value. If set, the value will be
+            returned as-is if an empty string. Otherwise, a blank value will
+            default to 0.
+
+    Returns:
+        int or str:
+        The parsed integer, or the string if it's empty and
+        ``allow_blank=True`` is passed.
+
+    Raises:
+        ValueError:
+            The string did not contain an integer.
+    """
     if ((allow_blank and value == '') or
         isinstance(value, int)):
         return value
@@ -261,6 +527,28 @@ def parse_int(value, allow_blank=False):
 
 
 def parse_real(value, allow_blank=False):
+    """Parse a real/float from a string.
+
+    This handles reals formatted with ``,`` separators and empty strings.
+
+    Args:
+        value (float or str):
+            The value to parse.
+
+        allow_blank (bool, optional):
+            Whether to allow a blank value. If set, the value will be
+            returned as-is if an empty string. Otherwise, a blank value will
+            default to 0.
+
+    Returns:
+        float or str:
+        The parsed real/float, or the string if it's empty and
+        ``allow_blank=True`` is passed.
+
+    Raises:
+        ValueError:
+            The string did not contain a real/float.
+    """
     if ((allow_blank and value == '') or
         isinstance(value, float)):
         return value
@@ -271,11 +559,76 @@ def parse_real(value, allow_blank=False):
 
 
 def parse_pct(value):
+    """Parse a percentage from a string.
 
+    This will convert a ``X%`` value to a float.
+
+    Args:
+        value (str):
+            The value to parse.
+
+    Returns:
+        float:
+        The parsed percentage as a float, or an empty string if provided.
+
+    Raises:
+        ValueError:
+            The string did not contain a float.
+    """
     return parse_real(value.replace('%s', ''), allow_blank=True)
 
 
 def parse_csv_value(value, data_type, col_info):
+    """Parse a value from a CSV file.
+
+    This takes in a value and data type, along with parser-specified
+    information on the expectations for that column, and returns a value.
+
+    This accepts several data types:
+
+    ``date``:
+        Parses a date/time (as specified in ``col_info['format']``,
+        returning a ``YYYY-MM-DD`` string value.
+
+    ``int``:
+        Parses a string, returning an integer. This supports ``,``-delimited
+        numbers.
+
+    ``int_or_blank``:
+        Parses a string, returning an integer. If the string was blank, it
+        will be returned as-is. This supports ``,``-delimited numbers.
+
+    ``real``:
+        Parses a string, returning a real/float. This supports ``,``-delimited
+        numbers.
+
+    ``pct``:
+        Parses a ``X%`` string, returning a float. This supports
+        ``,``-delimited numbers.
+
+    ``string``:
+        Returns a string as-is.
+
+    Args:
+        value (str):
+            The value to parse.
+
+        data_type (str):
+            The data type to parse.
+
+        col_info (dict):
+            The column information, used to specify additional options for
+            a data type.
+
+    Returns:
+        object:
+        The parsed value.
+
+    Raises:
+        ParseError:
+            The data could not be parsed correctly. Details are in the error
+            message.
+    """
     if data_type == 'date':
         try:
             value = (
@@ -320,6 +673,27 @@ def parse_csv_value(value, data_type, col_info):
 
 
 def add_or_update_json_date_row(filename, row_data, date_field='date'):
+    """Add a new row of data for a date, or update an existing one.
+
+    This will effectively append a new date row to a new or existing JSON file,
+    or update the last row if it matches the given date.
+
+    The JSON file must be a dictionary with a ``dates`` key, mapping to a list
+    of rows. Dates must be in YYYY-MM-DD format.
+
+    If rows were missing for dates between the last row's date and the current
+    date, they will be added as blank rows with only the date field set.
+
+    Args:
+        filename (str):
+            The name of the file to write to.
+
+        row_data (dict):
+            Data for the row.
+
+        date_field (str, optional):
+            The name of the field in the row data that references the date.
+    """
     date_key = row_data[date_field]
 
     if os.path.exists(filename):
@@ -365,13 +739,85 @@ def add_or_update_json_date_row(filename, row_data, date_field='date'):
 
 
 def parse_butte_dashboard(response, out_filename, **kwargs):
+    """Parse the Butte County dashboard.
+
+    This extracts case, fatalities, hospitalization, demographics, and testing
+    information from the Butte County COVID-19 dashboard, hosted on Infogram.
+    It's built to work around quirks that may show up from time to time, and
+    to cancel out if any data appears to be missing.
+
+    Infogram pages contain a JSON payload of data used to generate the
+    dashboard. These consist of entities, which contain information for some
+    part of the dashboard. An entity may be broken into blocks that each
+    contain a label and a value, or may contain chart data.
+
+    If the current timestamp on the dashboard doesn't match today's date, the
+    dashboard state will not be loaded.
+
+    Args:
+        response (requests.Response):
+            The HTTP response containing the page.
+
+        out_filename (str):
+            The name of the outputted JSON file.
+
+        **kwargs (dict, unused):
+            Unused keyword arguments passed to this parser.
+
+    Returns:
+        bool:
+        ``True`` if the file was written, or ``False`` if skipped.
+
+    Raises:
+        ParseError:
+            Expected data was missing or was in an unexpected format. Detailed
+            information will be in the error message.
+    """
     def get_entity(entity_id):
+        """Return an entity from the page's dashboard data.
+
+        Args:
+            entity_id (str):
+                The unique ID of the entity.
+
+        Returns:
+            dict:
+            The entity's payload data.
+
+        Raises:
+            KeyError:
+                The entity ID was not found.
+        """
         return (
             dashboard_data['elements']['content']['content']
             ['entities'][entity_id]
         )
 
     def get_counter_value(entity_id, expected_labels, label_first=False):
+        """Return a value from a counter entity.
+
+        This is used for entities like "Confirmed Cases". It will look for a
+        label matching one of the possible expected labels and try to return
+        the associated number.
+
+        Args:
+            entity_id (str):
+                The unique ID of the counter entity.
+
+            expected_labels (list of str):
+                The list of labels that can match the entity.
+
+            label_first (bool, optional):
+                Whether the label is listed before the value.
+
+        Returns:
+            int:
+            The counter value.
+
+        Raises:
+            ParseError:
+                The entity could not be found.
+        """
         entity = get_entity(entity_id)
         blocks = entity['props']['content']['blocks']
 
@@ -419,6 +865,27 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
                              % (value, entity_id, type(value)))
 
     def get_chart_info(entity_id, label_col=0, value_col=1):
+        """Return information from a chart.
+
+        This will extract a chart's data, returning a mapping of chart axis
+        labels to values.
+
+        Args:
+            entity_id (str):
+                The unique ID of the counter entity.
+
+            label_col (int, optional):
+                The column index containing the label. This defaults to the
+                first column.
+
+            value_col (int, optional):
+                The column index containing the value. This defaults to the
+                second column.
+
+        Returns:
+            dict:
+            A dictionary mapping chart labels to values.
+        """
         entity = get_entity(entity_id)
         data = entity['props']['chartData']['data'][0]
 
@@ -581,6 +1048,31 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
 
 
 def parse_butte_county_jail(response, out_filename, **kwargs):
+    """Parse the Butte County Jail page.
+
+    The Butte County Jail page uses a simple template for their reporting.
+    This parser looks for parts of that template and pulls out the numbers,
+    generating useful JSON data.
+
+    Args:
+        response (requests.Response):
+            The HTTP response containing the page.
+
+        out_filename (str):
+            The name of the outputted JSON file.
+
+        **kwargs (dict, unused):
+            Unused keyword arguments passed to this parser.
+
+    Returns:
+        bool:
+        ``True`` if the file was written, or ``False`` if skipped.
+
+    Raises:
+        ParseError:
+            Expected data was missing or was in an unexpected format. Detailed
+            information will be in the error message.
+    """
     # Try to find the rough section of content we want to search within.
     m = re.search(r'(DAILY COVID-19.*)ENHANCED CLEANING',
                   response.text,
@@ -667,6 +1159,28 @@ def parse_butte_county_jail(response, out_filename, **kwargs):
 
 
 def convert_json_to_csv(info, in_fp, out_filename, **kwargs):
+    """A parser that converts a JSON file to CSV.
+
+    This loads a JSON file and, based on a mapping of nested key paths to
+    columns, generates a new CSV file.
+
+    The key map is defined in the parser info options as ``key_map``. Each
+    key is a ``.``-separated key path within a row's data in the JSON file,
+    and each value is a CSV header name.
+
+    Args:
+        info (dict):
+            Parser option information. This must define ``key_map``.
+
+        in_fp (file):
+            A file pointer to the JSON file being read.
+
+        out_filename (str):
+            The filename for the CSV file to write.
+
+        **kwargs (dict, unused):
+            Unused keyword arguments passed to this parser.
+    """
     def _get_key_value(d, paths):
         for path in paths:
             d = d.get(path)
@@ -696,6 +1210,41 @@ def convert_json_to_csv(info, in_fp, out_filename, **kwargs):
 
 
 def build_timeline_json(info, in_fp, out_filename, **kwargs):
+    """Parse the Google Sheets CSV export and build JSON data for the website.
+
+    This takes all the consolidated information from the main "Timeline Data"
+    sheet in Google Sheets and generates a new JSON file for consumption by
+    the https://bc19.live dashboard.
+
+    Each header in the Google Sheets CSV file is expected to be a
+    ``.``-delimited nested key path, which will be used when setting the
+    appropriate key in the JSON file.
+
+    Both a ``.json`` and a ``.min.json`` (actually used by the website) will
+    be generated.
+
+    Args:
+        info (dict):
+            Parser option information. This must define ``min_filename``.
+
+        in_fp (file):
+            A file pointer to the CSV file being read.
+
+        out_filename (str):
+            The filename for the JSON file to write.
+
+        **kwargs (dict, unused):
+            Unused keyword arguments passed to this parser.
+
+    Returns:
+        bool:
+        ``True`` if the file was written, or ``False`` if skipped.
+
+    Raises:
+        ParseError:
+            Expected data was missing or was in an unexpected format. Detailed
+            information will be in the error message.
+    """
     timeline = []
     reader = csv.DictReader(in_fp, delimiter=',')
 
@@ -751,8 +1300,37 @@ def build_timeline_json(info, in_fp, out_filename, **kwargs):
                   sort_keys=True,
                   separators=(',', ':'))
 
+    return True
+
 
 def build_state_resources_json(session, response, out_filename, **kwargs):
+    """Parse the state resources dashboard and build a JSON file.
+
+    Note:
+        This is currently defunct, as this dashboard has been removed.
+
+    Args:
+        session (requests.Session):
+            The HTTP request session, for cookie management.
+
+        response (requests.Respone):
+            The HTTP response containing the initial dashboard page.
+
+        out_filename (str):
+            The filename for the JSON file to write.
+
+        **kwargs (dict, unused):
+            Unused keyword arguments passed to this parser.
+
+    Returns:
+        bool:
+        ``True`` if the file was written, or ``False`` if skipped.
+
+    Raises:
+        ParseError:
+            Expected data was missing or was in an unexpected format. Detailed
+            information will be in the error message.
+    """
     # Set up the session and fetch the initial payloads.
     tableau_loader = TableauLoader(session=session,
                                    owner='COVID-19CountyProfile3',
@@ -846,6 +1424,34 @@ def build_state_resources_json(session, response, out_filename, **kwargs):
 
 
 def build_state_tiers_json(session, response, out_filename, **kwargs):
+    """Parse the state tiers dashboard and build a JSON file.
+
+    This parses the Tableau dashboard containing information on Butte County's
+    tier status, and generates JSON data that can be consumed to track which
+    tier we're in and what the numbers look like.
+
+    Args:
+        session (requests.Session):
+            The HTTP request session, for cookie management.
+
+        response (requests.Respone):
+            The HTTP response containing the initial dashboard page.
+
+        out_filename (str):
+            The filename for the JSON file to write.
+
+        **kwargs (dict, unused):
+            Unused keyword arguments passed to this parser.
+
+    Returns:
+        bool:
+        ``True`` if the file was written, or ``False`` if skipped.
+
+    Raises:
+        ParseError:
+            Expected data was missing or was in an unexpected format. Detailed
+            information will be in the error message.
+    """
     tableau_loader = TableauLoader(session=session,
                                    owner='Planforreducingcovid-19',
                                    sheet='Plan for reducing covid-19',
@@ -902,6 +1508,34 @@ def build_state_tiers_json(session, response, out_filename, **kwargs):
 
 
 def build_hospital_cases_json(session, response, out_filename, **kwargs):
+    """Parse the state hospitals dashboard and build a JSON file.
+
+    This parses the Tableau dashboard containing information on Butte County's
+    hospital status, which includes all patients (regardless of county of
+    residency), along with the ICU numbers.
+
+    Args:
+        session (requests.Session):
+            The HTTP request session, for cookie management.
+
+        response (requests.Respone):
+            The HTTP response containing the initial dashboard page.
+
+        out_filename (str):
+            The filename for the JSON file to write.
+
+        **kwargs (dict, unused):
+            Unused keyword arguments passed to this parser.
+
+    Returns:
+        bool:
+        ``True`` if the file was written, or ``False`` if skipped.
+
+    Raises:
+        ParseError:
+            Expected data was missing or was in an unexpected format. Detailed
+            information will be in the error message.
+    """
     hospital_keys = {
         'Enloe Medical Center - Esplanade': 'enloe_hospital',
         'Oroville Hospital': 'oroville_hospital',
@@ -968,6 +1602,83 @@ def build_hospital_cases_json(session, response, out_filename, **kwargs):
 
 
 def parse_csv(info, response, out_filename, **kwargs):
+    """Parse a CSV file, building a new CSV file based on its information.
+
+    This takes information on the columns in a source CSV file and how they
+    should be transformed into a destination CSV File.
+
+    These options live in ``info['csv']``, and contain:
+
+    ``columns`` (list):
+        A list of column definitions. Each definition contains:
+
+        ``name`` (str):
+            The name of the column.
+
+        ``delta_from`` (str, optional);
+            For ints, pcts, and reals, the field in the generated row data that
+            this number will be relative to.
+
+        ``delta_type`` (str, optional);
+            The type to interpret a delta value for. This accepts ``int``,
+            ``pct``, and ``real``, and defaults to the ``delta_type`` option
+            (see below).
+
+        ``format`` (str, optional):
+            For dates, the :py:func:`datetime.datetime.strftime` format.
+
+        ``type`` (str, optional).
+            The type of the column (as supported by
+            :py:func:`parse_csv_value`). Defaults to the ``default_type``
+            option (see below).
+
+    ``default_type`` (str, optional):
+        The optional default type for any values present.
+
+    ``end_if`` (callable, optional):
+        An optional function that takes a row's data and returns whether
+        parsing should stop for the file.
+
+    ``match_row`` (callable, optional):
+        An optional function that determines whether a row should be processed
+        from the source CSV file. This takes the parsed row dictionary.
+
+    ``skip_rows`` (int, optional):
+        An optional number of rows to skip in the source file.
+
+    ``sort_by`` (str, optional):
+        The column in the destination file that entries should be sorted by.
+
+    ``unique_col`` (str, optional):
+        The name of a column that is considered unique across all entries
+        (generally an ID).
+
+    ``validator`` (callable, optional):
+        An optional function that takes in the resulting row data and returns
+        a boolean indicating if the results are valid and suitable for writing.
+
+    Args:
+        info (dict):
+            The parser options information. This must contain a ``csv`` key.
+
+        response (requests.Respone):
+            The HTTP response containing the CSV file.
+
+        out_filename (str):
+            The filename for the CSV file to write.
+
+        **kwargs (dict, unused):
+            Unused keyword arguments passed to this parser.
+
+    Returns:
+        bool:
+        ``True`` if the file was written, or ``False`` if skipped.
+
+    Raises:
+        ParseError:
+            Expected data was missing or was in an unexpected format. Detailed
+            information will be in the error message.
+    """
     csv_info = info.get('csv', {})
     columns = csv_info['columns']
     match = csv_info.get('match_row')
@@ -1074,6 +1785,10 @@ def parse_csv(info, response, out_filename, **kwargs):
             writer.writerow(row_result)
 
 
+#: The list of feeds to download and parse.
+#:
+#: Each of these will generate one or more files, which may be used as
+#: final datasets or intermediary datasets for another parser.
 FEEDS = [
     {
         'filename': 'skilled-nursing-facilities-v3.csv',
@@ -1721,6 +2436,18 @@ FEEDS = [
 
 
 def main():
+    """Main function for building datasets.
+
+    This accepts names of feeds on the command line to build, as well as a
+    special ``-not-timeline`` argument that excludes the ``timeline.csv``,
+    ``timeline.json``, and ``timeline.min.json`` files.
+
+    Once the options are chosen, this will run through :py:data:`FEEDS` and
+    handle pulling down files via HTTP(S), running them through a parser,
+    possibly building exports, and then listing the states of that feed.
+
+    HTTP responses are cached, to minimize traffic.
+    """
     if '--not-timeline' in sys.argv:
         feeds_to_build = {
             feed['filename']
