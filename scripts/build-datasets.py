@@ -575,7 +575,7 @@ def parse_pct(value):
         ValueError:
             The string did not contain a float.
     """
-    return parse_real(value.replace('%s', ''), allow_blank=True)
+    return parse_real(value.replace('%', ''), allow_blank=True)
 
 
 def parse_csv_value(value, data_type, col_info):
