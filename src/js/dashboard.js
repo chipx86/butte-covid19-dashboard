@@ -149,11 +149,6 @@ BC19.parseMDate = function(dateStr) {
 };
 
 
-BC19.formatMDate = function(mDate) {
-    return mDate.format('LL');
-};
-
-
 BC19.getDayText = function(date) {
     const days = moment().diff(date, 'days');
 
@@ -849,7 +844,7 @@ BC19.setCounterFromRows = function(elID, options) {
 };
 
 
-BC19.setupCounters = function(timeline) {
+BC19.setupCounters = function() {
     const casesRow = BC19.latestRows.cases;
     const isolationRow = BC19.latestRows.isolation;
     const stateHospitalsRow = BC19.latestRows.stateHospitals;
@@ -1025,14 +1020,7 @@ BC19.setupCounters = function(timeline) {
 };
 
 
-BC19.forEachGraphAsync = function(cb) {
-    BC19.graphs.forEach(graph => {
-        requestAnimationFrame(() => cb(graph));
-    });
-};
-
-
-BC19.setupByAgeGraph = function(timeline) {
+BC19.setupByAgeGraph = function() {
     const agesI = BC19.latestRows.ages.i + 1;
 
     BC19.setupBarGraph(
@@ -1055,11 +1043,11 @@ BC19.setupByAgeGraph = function(timeline) {
 };
 
 
-BC19.setupByRegionGraph = function(timeline) {
+BC19.setupByRegionGraph = function() {
     const row = BC19.latestRows.regions;
     const regions = row.regions;
     const prevIndex = row.i - 1;
-    const prevRegions = timeline.dates[prevIndex].regions;
+    const prevRegions = BC19.timeline.dates[prevIndex].regions;
 
     BC19.setupBarGraph(
         d3.select('#by_region_graph'),
@@ -1114,7 +1102,7 @@ BC19.setupByRegionGraph = function(timeline) {
 };
 
 
-BC19.setupDeathsByAgeGraph = function(timeline) {
+BC19.setupDeathsByAgeGraph = function() {
     const agesI = BC19.latestRows.deathsByAge.i + 1;
     const data = [];
 
@@ -1140,7 +1128,7 @@ BC19.setupDeathsByAgeGraph = function(timeline) {
 };
 
 
-BC19.setupMortalityRatesByAgeGraph = function(timeline) {
+BC19.setupMortalityRatesByAgeGraph = function() {
     const agesI = BC19.latestRows.deathsByAge.i + 1;
     const data = [];
 
@@ -1181,11 +1169,12 @@ BC19.setupMortalityRatesByAgeGraph = function(timeline) {
 };
 
 
-BC19.setupByHospitalGraph = function(timeline) {
+BC19.setupByHospitalGraph = function() {
     const row = BC19.latestRows.perHospital;
     const prevIndex = row.i - 1;
     const data = row.hospitalizations.state_data;
-    const prevData = timeline.dates[prevIndex].hospitalizations.state_data;
+    const prevData =
+        BC19.timeline.dates[prevIndex].hospitalizations.state_data;
 
     BC19.setupBarGraph(
         d3.select('#by_hospital_graph'),
@@ -1216,7 +1205,7 @@ BC19.setupByHospitalGraph = function(timeline) {
 };
 
 
-BC19.setupMainTimelineGraphs = function(timeline) {
+BC19.setupMainTimelineGraphs = function() {
     const graphData = BC19.graphData;
     const maxValues = BC19.maxValues;
     const tickCounts = BC19.tickCounts;
@@ -2160,13 +2149,13 @@ BC19.init = function() {
             BC19.processTimelineData(timeline);
 
             BC19.setupElements();
-            BC19.setupCounters(timeline);
-            BC19.setupByAgeGraph(timeline);
-            BC19.setupDeathsByAgeGraph(timeline);
-            BC19.setupMortalityRatesByAgeGraph(timeline);
-            BC19.setupByRegionGraph(timeline);
-            BC19.setupByHospitalGraph(timeline);
-            BC19.setupMainTimelineGraphs(timeline);
+            BC19.setupCounters();
+            BC19.setupByAgeGraph();
+            BC19.setupDeathsByAgeGraph();
+            BC19.setupMortalityRatesByAgeGraph();
+            BC19.setupByRegionGraph();
+            BC19.setupByHospitalGraph();
+            BC19.setupMainTimelineGraphs();
         })
         .catch(msg => {
             console.error(msg);
