@@ -144,11 +144,40 @@ window.BC19 = {
 };
 
 
+/**
+ * Parse a "YYYY-MM-DD" date string into a moment object.
+ *
+ * This assumes that the date will always be in PST (specifically, -0700).
+ *
+ * Args:
+ *     dateStr (string):
+ *         The date string to parse.
+ *
+ * Returns:
+ *     moment:
+ *     The moment-wrapped date.
+ */
 BC19.parseMDate = function(dateStr) {
     return moment(dateStr + ' -0700', 'YYYY-MM-DD Z');
 };
 
 
+/**
+ * Return a relative date representation.
+ *
+ * If the date is today or yesterday (based on the current date), this will
+ * return a relative date ("today" or "yesterday"). Otherwise, it will
+ * return a day of the week.
+ *
+ * Args:
+ *     date (Date):
+ *         The date to format.
+ *
+ * Returns:
+ *     string:
+ *     "today" or "yesterday", if appropriate for the date. Otherwise, a day
+ *     of the week.
+ */
 BC19.getDayText = function(date) {
     const days = moment().diff(date, 'days');
 
@@ -162,6 +191,29 @@ BC19.getDayText = function(date) {
 };
 
 
+/**
+ * Return a normalized number relative to another number.
+ *
+ * The relative value is the difference between the value and the previous
+ * value.
+ *
+ * Args:
+ *     value (number):
+ *         The "new" value.
+ *
+ *     prevValue (number):
+ *         The previous value that ``value`` is relative to. If ``null``,
+ *         this function will simply return 0.
+ *
+ *     hideNegative (boolean, optional):
+ *         Whether to turn negative results into 0. By default, negative
+ *         results will be returned as-is.
+ *
+ * Returns:
+ *     number:
+ *     The relative value, or 0 if either ``prevValue`` is ``null`` or
+ *     the relative value is negative and ``hideNegative=true``.
+ */
 BC19.normRelValue = function(value, prevValue, hideNegative) {
     if (prevValue === null || (hideNegative && value < prevValue)) {
         return 0;
@@ -171,6 +223,18 @@ BC19.normRelValue = function(value, prevValue, hideNegative) {
 };
 
 
+/**
+ * Process the downloaded timeline data.
+ *
+ * This is the main function used by the website to compute data for display.
+ * It parses the ``timeline.min.json`` data feed, computing information for
+ * all the graphs and counters on the page, as well as the variables in
+ * the :js:data:`BC19` namespace at the top of this file.
+ *
+ * Args:
+ *     timeline (object):
+ *         The deserialized timeline data.
+ */
 BC19.processTimelineData = function(timeline) {
     const rows = timeline.dates;
     const graphDates = ['date'];
@@ -539,6 +603,10 @@ BC19.processTimelineData = function(timeline) {
         }
     }
 
+    /*
+     * Validate the results, so that we can display a message to the user
+     * to bug me if something is somehow missing.
+     */
     if (latestCasesRow === null) {
         throw new Error(
             "Oh no! The latest COVID-19 case data couldn't be " +
@@ -557,6 +625,7 @@ BC19.processTimelineData = function(timeline) {
             "found! Please report this :)");
     }
 
+    /* Set all the state for the graphs, counters, and calculations. */
     BC19.latestRows = {
         ages: latestAgeDataRow,
         cases: latestCasesRow,
@@ -662,6 +731,30 @@ BC19.processTimelineData = function(timeline) {
 };
 
 
+/**
+ * Return the desired graph axis tick step size, based on a value.
+ *
+ * This attempts to calculate the number of values represented in-between
+ * each tick in a graph, based on the number of ticks that will be displayed
+ * and the maximum value for the graph.
+ *
+ * It starts by computing a "nearest" step size (5, 10, 25, 50, 100, or 1000,
+ * depending on the maximum value), and then computing a step size from that.
+ *
+ * The resulting step size will always ensure that the maximum value shown in
+ * the graph will never be greater than the highest tick.
+ *
+ * Args:
+ *     maxValue (number):
+ *         The maximum value being shown in the graph.
+ *
+ *     numTicks (number):
+ *         The number of ticks that will be shown on the graph.
+ *
+ * Returns:
+ *     number:
+ *     The step size between ticks.
+ */
 BC19.getStepSize = function(maxValue, numTicks) {
     let nearest = 2;
 
@@ -683,6 +776,26 @@ BC19.getStepSize = function(maxValue, numTicks) {
 };
 
 
+/**
+ * Return the maximum Y axis value on a graph.
+ *
+ * This will compute the maximum Y value based on the maximum value that will
+ * be displayed in the graph and the number of ticks to display. The result
+ * will always be at least as large as the maximum value.
+ *
+ * This is used to set the appropriate display range for a graph.
+ *
+ * Args:
+ *     maxValue (number):
+ *         The maximum value being shown in the graph.
+ *
+ *     numTicks (number):
+ *         The number of ticks that will be shown on the graph.
+ *
+ * Returns:
+ *     number:
+ *     The maximum Y value for the graph.
+ */
 BC19.getMaxY = function(maxValue, numTicks) {
     const stepSize = BC19.getStepSize(maxValue, numTicks);
 
@@ -690,6 +803,23 @@ BC19.getMaxY = function(maxValue, numTicks) {
 };
 
 
+/**
+ * Set up a billboard.js-backed graph.
+ *
+ * This will create and render the graph based on a combination of the
+ * provided options and the standard timeline options
+ * (:js:data:`BC19.commonTimelineOptions`) and store the graph in
+ * :js:data:`BC19.graphs`.
+ *
+ * Args:
+ *     options (object):
+ *         The options for the graph. These are options that are accepted
+ *         by :js:func:`bb.generate`.
+ *
+ * Returns:
+ *     object:
+ *     The graph object.
+ */
 BC19.setupBBGraph = function(options) {
     options = Object.assign({}, BC19.commonTimelineOptions, options);
 
@@ -719,6 +849,46 @@ BC19.setupBBGraph = function(options) {
 };
 
 
+/**
+ * Set up a bar graph.
+ *
+ * This will create and render a bar graph based on the provided options
+ * and data.
+ *
+ * These are used for the demographics and hospitalization information on
+ * the side of the page (in desktop mode).
+ *
+ * Args:
+ *     graph (object):
+ *         The D3-wrapped graph element.
+ *
+ *     options (object):
+ *         Options for the graph.
+ *
+ *     data (Array of object):
+ *         Data for the bar graph. Each item is an object with the following:
+ *
+ *         ``data_id`` (string):
+ *             An ID uniquely representing the bar.
+ *
+ *         ``label`` (string):
+ *             The visible label for the bar.
+ *
+ *         ``value`` (number):
+ *             The value associated with the bar.
+ *
+ *         ``relValue`` (number):
+ *             The previous value that ``value`` is relative to (used to show
+ *             a delta indicator).
+ *
+ * Option Args:
+ *     formatValue (function, optional):
+ *         A function to format the value for display. Defaults to showing
+ *         the value in the current locale.
+ *
+ *     pct (boolean, optional):
+ *         Whether to show a percentage beside the bar.
+ */
 BC19.setupBarGraph = function(graph, options={}, data) {
     const showPct = !!options.pct;
     const formatValue = options.formatValue || function(value) {
@@ -783,6 +953,41 @@ BC19.setupBarGraph = function(graph, options={}, data) {
 };
 
 
+/**
+ * Set the value for a counter.
+ *
+ * Args:
+ *     elID (string):
+ *         The ID of the element for the counter component.
+ *
+ *     options (object):
+ *         Options for the counter's display.
+ *
+ * Option Args:
+ *     formatRelValues (Array of function, optional):
+ *         An array of functions to format relative values for display. Each
+ *         will take two aprameters, the value and the relative value, and must
+ *         return a string.
+ *
+ *         This must be the same length as the number of relative value
+ *         elements.
+ *
+ *         If not provided, it will default to showing the difference between
+ *         values.
+ *
+ *     formatValue (function, optional):
+ *         A function to format the value for display. Defaults to showing
+ *         the value in the current locale.
+ *
+ *     relativeValues (Array of number):
+ *         An array of previous value that ``value`` is relative to.
+ *
+ *         This must be the same length as the number of relative value
+ *         elements.
+ *
+ *     value (number):
+ *         The value to show in the main counter.
+ */
 BC19.setCounter = function(elID, options) {
     const el = document.getElementById(elID);
     const value = options.value;
@@ -825,6 +1030,27 @@ BC19.setCounter = function(elID, options) {
 };
 
 
+/**
+ * Set a counter based on rows of timeline data.
+ *
+ * Args:
+ *     elID (string):
+ *         The ID of the element for the counter component.
+ *
+ *     options (object):
+ *         Options for the counter's display.
+ *
+ * Option Args:
+ *     deltaDays (number):
+ *         The number of days between the latest row and the previous row.
+ *
+ *     getValue (function):
+ *         A function to return the value from a row. This takes the row
+ *         of data to return the value from.
+ *
+ *     latestRow (object):
+ *         The latest row from the timeline data.
+ */
 BC19.setCounterFromRows = function(elID, options) {
     const latestRow = options.latestRow;
     const rowI = latestRow.i;
@@ -844,6 +1070,30 @@ BC19.setCounterFromRows = function(elID, options) {
 };
 
 
+/**
+ * Set up all the counters on the page, based on timeline data.
+ *
+ * This will set up the following counters:
+ *
+ *     * Total Cases
+ *     * Total Deaths
+ *     * In Isolation
+ *     * Total Hospitalized
+ *     * Total In ICU
+ *     * County Patients
+ *     * Total Tests
+ *     * Positive Test Results
+ *     * 7-Day Test Positivity Rate
+ *     * County Population
+ *     * Population Tested
+ *     * Population NOT Tested
+ *     * Inmate Population
+ *     * Total Inmate Tests
+ *     * Current Inmate Tests
+ *     * % of Inmates Positive
+ *     * Total Staff Tests
+ *     * Total Staff Cases
+ */
 BC19.setupCounters = function() {
     const casesRow = BC19.latestRows.cases;
     const isolationRow = BC19.latestRows.isolation;
@@ -1020,6 +1270,9 @@ BC19.setupCounters = function() {
 };
 
 
+/**
+ * Set up the Cases By Age bar graph.
+ */
 BC19.setupByAgeGraph = function() {
     const agesI = BC19.latestRows.ages.i + 1;
 
@@ -1043,6 +1296,9 @@ BC19.setupByAgeGraph = function() {
 };
 
 
+/**
+ * Set up the Cases By Region bar graph.
+ */
 BC19.setupByRegionGraph = function() {
     const row = BC19.latestRows.regions;
     const regions = row.regions;
@@ -1102,6 +1358,9 @@ BC19.setupByRegionGraph = function() {
 };
 
 
+/**
+ * Set up the Deaths By Age bar graph.
+ */
 BC19.setupDeathsByAgeGraph = function() {
     const agesI = BC19.latestRows.deathsByAge.i + 1;
     const data = [];
@@ -1128,6 +1387,9 @@ BC19.setupDeathsByAgeGraph = function() {
 };
 
 
+/**
+ * Set up the Mortality Rates By Age bar graph.
+ */
 BC19.setupMortalityRatesByAgeGraph = function() {
     const agesI = BC19.latestRows.deathsByAge.i + 1;
     const data = [];
@@ -1169,6 +1431,9 @@ BC19.setupMortalityRatesByAgeGraph = function() {
 };
 
 
+/**
+ * Set up the Cases By Hospital bar graph.
+ */
 BC19.setupByHospitalGraph = function() {
     const row = BC19.latestRows.perHospital;
     const prevIndex = row.i - 1;
@@ -1205,6 +1470,29 @@ BC19.setupByHospitalGraph = function() {
 };
 
 
+/**
+ * Set up the main timeline graphs.
+ *
+ * This will set up:
+ *
+ *     * Total Confirmed Cases
+ *     * New Cases
+ *     * 14-Day New Case Rate
+ *     * Total Deaths
+ *     * New Deaths
+ *     * Cases By Age
+ *     * Cases By Region
+ *     * 7-Day Test Positivity Rate
+ *     * % of Cases In Each Batch of Test Results
+ *     * Test Results
+ *     * Total Hospitalizations vs. ICU
+ *     * Hospitalized Butte County Residents
+ *     * People In Isolation
+ *     * Skilled Nursing Facility Cases
+ *     * Skilled Nursing Facility Deaths
+ *     * Current Inmate Cases
+ *     * Total Staff Cases
+ */
 BC19.setupMainTimelineGraphs = function() {
     const graphData = BC19.graphData;
     const maxValues = BC19.maxValues;
@@ -2008,6 +2296,19 @@ BC19.setupMainTimelineGraphs = function() {
 };
 
 
+/**
+ * Set the date range for all the timeline graphs.
+ *
+ * This will update the selector at the bottom of the page and redraw all
+ * graphs to center on the new range.
+ *
+ * Args:
+ *     fromDate (Date):
+ *         The beginning date for the range.
+ *
+ *     toDate (Date):
+ *         The ending date for the range.
+ */
 BC19.setDateRange = function(fromDate, toDate) {
     const domain = [
         moment(fromDate).format('YYYY-MM-DD'),
@@ -2131,6 +2432,15 @@ BC19.setupElements = function() {
 }
 
 
+/**
+ * Initialize the page.
+ *
+ * This will begin loading the timeline data for the page. Once loaded, it
+ * will be parsed, and then all counters and graphs will be set to render
+ * the data.
+ *
+ * Any errors encountered will result in a log message and an alert.
+ */
 BC19.init = function() {
     fetch(new Request('data/json/timeline.min.json?' + moment().format('x')))
         .then(response => {
@@ -2164,6 +2474,18 @@ BC19.init = function() {
 };
 
 
+/**
+ * Handle changes to the date selector.
+ *
+ * If the user has chosen "Custom", date range fields will be shown.
+ *
+ * Any other selection will result in a date range being calculated. The
+ * graphs will then be updated to show this range.
+ *
+ * Args:
+ *     value (string):
+ *         The value chosen in the dropdown.
+ */
 function _onDateSelectorChanged(value) {
     const rangeEl = document.querySelector('.bc19-c-option-pane__date-range');
 
