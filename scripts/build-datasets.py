@@ -1187,6 +1187,7 @@ def parse_cusd(response, out_filename, **kwargs):
         'Elementary Schools': 'elementary',
         'Junior Highs': 'junior_high',
         'High Schools': 'high_school',
+        'State Preschools': 'state_preschools',
         'Other': 'other',
     }
 
@@ -1230,6 +1231,9 @@ def parse_cusd(response, out_filename, **kwargs):
         else:
             if row['Type']:
                 cur_section = school_type_map[row['Type']]
+
+            if location.startswith('State Funded Preschools'):
+                location = 'State Funded Preschools'
 
             by_school_type.setdefault(cur_section, {})[location] = row_payload
 
@@ -1968,6 +1972,9 @@ FEEDS = [
                     'Itinerant Staff',
                     'Non-School Campus',
                     'Online Learning',
+                )),
+                ('state_preschools', (
+                    'State Funded Preschools',
                 )),
             )
             for _location in _locations
