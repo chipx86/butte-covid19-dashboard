@@ -469,6 +469,23 @@ def safe_open_for_write(filename):
     os.rename(temp_filename, filename)
 
 
+def slugify(s):
+    """Return a string, slugified.
+
+    This will lowercase the string and replace anything non-alphanumeric with
+    an underscore.
+
+    Args:
+        s (str):
+            The string to slugify.
+
+    Returns:
+        str:
+        The slugified string.
+    """
+    return re.sub('[^A-Za-z0-9]', '_', s.strip().lower())
+
+
 def add_nested_key(d, full_key, value):
     """Add a nested key path to a dictionary.
 
@@ -1417,6 +1434,72 @@ def build_timeline_json(info, in_fp, out_filename, **kwargs):
     return True
 
 
+def build_state_region_icu_pct_json(response, out_filename, **kwargs):
+    """Build JSON data for the California Region-specific ICU availability.
+
+    California provides a table on their Shelter In Place page with the
+    ICU bed availability percentages for the 5 regions established in the
+    state. This parses out that data into something that can be pulled in
+    elsewhere.
+
+    Args:
+        response (requests.Response):
+            The HTTP response containing the page.
+
+        out_filename (str):
+            The name of the outputted JSON file.
+
+        **kwargs (dict, unused):
+            Unused keyword arguments passed to this parser.
+
+    Returns:
+        bool:
+        ``True`` if the file was written, or ``False`` if skipped.
+
+    Raises:
+        ParseError:
+            Expected data was missing or was in an unexpected format. Detailed
+            information will be in the error message.
+    """
+    m = re.search(r'(ICU actual capacity as of.*)Questions and answers',
+                  response.text,
+                  re.S)
+
+    if not m:
+        raise ParseError('Could not find the ICU information section')
+
+    content = m.group(1)
+
+    m = re.search(r'ICU actual capacity as of ([A-Za-z]+ \d+, \d{4}) for '
+                  'the 5 regions:',
+                  content,
+                  re.S)
+
+    if not m:
+        raise ParseError('Could not find the ICU capacity date information.')
+
+    datestamp = datetime.strptime(m.group(1), '%B %d, %Y')
+
+    if datestamp.date() != datetime.now().date():
+        return False
+
+    regions = re.findall(r'<tr>\s*'
+                         r'<td>([^<]+)</td>\s*'
+                         r'<td>\s*</td>\s*'
+                         r'<td>([\d\.]+%)</td>',
+                         content)
+
+    if not regions:
+        raise ParseError('Could not find the regions information')
+
+    add_or_update_json_date_row(out_filename, dict({
+        'date': datestamp.strftime('%Y-%m-%d'),
+    }, **{
+        slugify(region): parse_pct(pct)
+        for region, pct in regions
+    }))
+
+
 def build_state_resources_json(session, response, out_filename, **kwargs):
     """Parse the state resources dashboard and build a JSON file.
 
@@ -2177,6 +2260,29 @@ FEEDS = [
                 {'name': 'newcountdeaths'},
             ],
         },
+    },
+    {
+        'filename': 'state-region-icu-pct.json',
+        'format': 'json',
+        'url': 'https://covid19.ca.gov/stay-home-except-for-essential-needs/',
+        'parser': build_state_region_icu_pct_json,
+    },
+    {
+        'filename': 'state-region-icu-pct.csv',
+        'format': 'csv',
+        'local_source': {
+            'filename': 'state-region-icu-pct.json',
+            'format': 'json',
+        },
+        'parser': convert_json_to_csv,
+        'key_map': [
+            ('Date', ('date',)),
+            ('Bay Area', ('bay_area',)),
+            ('Greater Sacramento', ('greater_sacramento',)),
+            ('Northern California', ('northern_california',)),
+            ('San Joaquin Valley', ('san_joaquin_valley',)),
+            ('Southern California', ('southern_california',)),
+        ],
     },
     {
         'filename': 'state-resources.json',
