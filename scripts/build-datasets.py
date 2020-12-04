@@ -1461,7 +1461,7 @@ def build_state_region_icu_pct_json(response, out_filename, **kwargs):
             Expected data was missing or was in an unexpected format. Detailed
             information will be in the error message.
     """
-    m = re.search(r'(ICU actual capacity as of.*)Questions and answers',
+    m = re.search(r'(Actual ICU capacity remaining.*)Questions and answers',
                   response.text,
                   re.S)
 
@@ -1470,7 +1470,7 @@ def build_state_region_icu_pct_json(response, out_filename, **kwargs):
 
     content = m.group(1)
 
-    m = re.search(r'ICU actual capacity as of ([A-Za-z]+ \d+, \d{4}) for '
+    m = re.search(r'capacity remaining as of ([A-Za-z]+ \d+, \d{4}) for '
                   'the 5 regions:',
                   content,
                   re.S)
