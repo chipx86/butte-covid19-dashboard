@@ -2509,6 +2509,12 @@ function _onDateSelectorChanged(value) {
         fromMDate = moment().subtract(60, 'days');
     } else if (value === 'days-90') {
         fromMDate = moment().subtract(90, 'days');
+    } else if (value === 'days-120') {
+        fromMDate = moment().subtract(120, 'days');
+    } else if (value === 'days-180') {
+        fromMDate = moment().subtract(180, 'days');
+    } else if (value === 'days-365') {
+        fromMDate = moment().subtract(365, 'days');
     }
 
     BC19.setDateRange(moment.max(fromMDate, BC19.firstMDate).toDate(),
