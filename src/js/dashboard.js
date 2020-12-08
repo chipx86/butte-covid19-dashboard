@@ -1008,6 +1008,12 @@ BC19.setCounter = function(elID, options) {
             const relValueEl = relativeValueEls[i];
             const relEl = relValueEl.parentNode;
             const relValue = relValues[i];
+
+            if (relValue === null || isNaN(relValue)) {
+                relValueEl.innerText = 'no data';
+                continue;
+            }
+
             const formatRelValue =
                 options.formatRelValues
                 ? options.formatRelValues[i]
