@@ -469,6 +469,26 @@ def safe_open_for_write(filename):
     os.rename(temp_filename, filename)
 
 
+def convert_csv_to_tsv(filename):
+    """Convert a CSV file to TSV.
+
+    This provides an alternative feed in the event that Google Sheets cannot
+    read from a CSV file (a bug that seems to have been introduced the
+    week of December 7).
+
+    Args:
+        filename (str):
+            The filename of the CSV file.
+    """
+    out_filename = filename.replace('.csv', '.tsv')
+
+    with open(filename, 'r') as in_fp:
+        rows = csv.reader(in_fp)
+
+        with safe_open_for_write(out_filename) as out_fp:
+            csv.writer(out_fp, dialect='excel-tab').writerows(rows)
+
+
 def slugify(s):
     """Return a string, slugified.
 
@@ -1339,6 +1359,8 @@ def convert_json_to_csv(info, in_fp, out_filename, **kwargs):
                 for key, paths in key_map
             })
 
+    convert_csv_to_tsv(out_filename)
+
 
 def build_timeline_json(info, in_fp, out_filename, **kwargs):
     """Parse the Google Sheets CSV export and build JSON data for the website.
@@ -1979,6 +2001,8 @@ def parse_csv(info, response, out_filename, **kwargs):
 
         for row_result in results:
             writer.writerow(row_result)
+
+    convert_csv_to_tsv(out_filename)
 
 
 #: The list of feeds to download and parse.
