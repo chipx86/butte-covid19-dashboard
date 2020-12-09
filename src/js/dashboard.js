@@ -651,7 +651,7 @@ BC19.processTimelineData = function(timeline) {
         key => !BC19.ageRangeInfo[key].legacy);
 
     BC19.defaultTimelineDomain = [
-        moment(BC19.lastMDate).subtract(90, 'days').format('YYYY-MM-DD'),
+        moment(BC19.lastMDate).subtract(120, 'days').format('YYYY-MM-DD'),
         moment(BC19.lastMDate).add(1, 'days').format('YYYY-MM-DD'),
     ];
 
