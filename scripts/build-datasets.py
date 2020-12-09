@@ -926,10 +926,22 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
         entity = get_entity(entity_id)
         data = entity['props']['chartData']['data'][0]
 
-        return {
-            row[label_col]: int(row[value_col])
-            for row in data[1:]
-        }
+        result = {}
+
+        whitespace_re = re.compile('\s+')
+
+        for row in data[1:]:
+            try:
+                value = int(row[value_col])
+            except IndexError:
+                # This column may not exist in this field, due to no value
+                # provided yet in the graph data.
+                value = 0
+
+            key = whitespace_re.sub(' ', row[label_col])
+            result[key] = value
+
+        return result
 
     m = re.search(r'window.infographicData=(.*);</script>', response.text)
 
@@ -1030,7 +1042,9 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
             'deaths': scraped_data['deaths'],
             'deaths_by': {
                 'age_ranges_in_years': {
-                    '0-17': deaths_by_age['0-17 Years'],
+                    '0-4': deaths_by_age['0-4 Years'],
+                    '5-12': deaths_by_age['5-12 Years'],
+                    '13-17': deaths_by_age['13-17 Years'],
                     '18-24': deaths_by_age['18-24 Years'],
                     '25-34': deaths_by_age['25-34 Years'],
                     '35-44': deaths_by_age['35-44 Years'],
@@ -1038,6 +1052,11 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
                     '55-64': deaths_by_age['55-64 Years'],
                     '65-74': deaths_by_age['65-74 Years'],
                     '75_plus': deaths_by_age['75+ Years'],
+
+                    # Legacy
+                    '0-17': (deaths_by_age['0-4 Years'] +
+                             deaths_by_age['5-12 Years'] +
+                             deaths_by_age['13-17 Years']),
                 },
             },
             'in_isolation': {
@@ -1052,7 +1071,9 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
                 'current': scraped_data['hospitalized'],
             },
             'age_ranges_in_years': {
-                '0-17': by_age['0-17 Years'],
+                '0-4': by_age['0-4 Years'],
+                '5-12': by_age['5-12 Years'],
+                '13-17': by_age['13-17 Years'],
                 '18-24': by_age['18-24 Years'],
                 '25-34': by_age['25-34 Years'],
                 '35-44': by_age['35-44 Years'],
@@ -1062,6 +1083,9 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
                 '75_plus': by_age['75+ Years'],
 
                 # Legacy
+                '0-17': (by_age['0-4 Years'] +
+                         by_age['5-12 Years'] +
+                         by_age['13-17 Years']),
                 '18-49': None,
                 '50-64': None,
                 '65_plus': by_age['65-74 Years'] + by_age['75+ Years'],
