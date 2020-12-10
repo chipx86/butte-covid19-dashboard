@@ -80,7 +80,9 @@ window.BC19 = {
     els: {},
 
     ageRangeInfo: {
-        '0_17': {sourceKey: '0-17'},
+        '0_4': {sourceKey: '0-4'},
+        '5-12': {sourceKey: '5-12'},
+        '13-17': {sourceKey: '13-17'},
         '18_24': {sourceKey: '18-24'},
         '25_34': {sourceKey: '25-34'},
         '35_44': {sourceKey: '35-44'},
@@ -90,6 +92,12 @@ window.BC19 = {
         '75_plus': {
             text: '75+',
             sourceKey: '75_plus',
+        },
+
+        // Legacy data, unpublished as of December 9, 2020.
+        '0-17': {
+            legacy: true,
+            sourceKey: '0-17',
         },
 
         // Legacy data, unpublished as of July 9, 2020.
@@ -1715,7 +1723,9 @@ BC19.setupMainTimelineGraphs = function() {
                 graphData.dates,
             ].concat(Object.values(graphData.ageRanges)),
             names: {
-                age_0_17: '0-17',
+                age_0_4: '0-4',
+                age_5_12: '5-12',
+                age_13_17: '13-17',
                 age_18_24: '18-24',
                 age_25_34: '25-34',
                 age_35_44: '35-44',
@@ -1724,13 +1734,16 @@ BC19.setupMainTimelineGraphs = function() {
                 age_65_74: '65-74',
                 age_75_plus: '75+',
 
+                age_0_17: '0-17 (Historical)',
                 age_18_49: '18-49 (Historical)',
                 age_50_64: '50-64 (Historical)',
                 age_65_plus: '65+ (Historical)',
             },
             order: null,
             types: {
-                age_0_17: 'bar',
+                age_0_4: 'bar',
+                age_5_12: 'bar',
+                age_13_17: 'bar',
                 age_18_24: 'bar',
                 age_25_34: 'bar',
                 age_35_44: 'bar',
@@ -1739,13 +1752,16 @@ BC19.setupMainTimelineGraphs = function() {
                 age_65_74: 'bar',
                 age_75_plus: 'bar',
 
+                age_0_17: 'bar',
                 age_18_49: 'bar',
                 age_50_64: 'bar',
                 age_65_plus: 'bar',
             },
             groups: [
                 [
-                    'age_0_17',
+                    'age_0_4',
+                    'age_5_12',
+                    'age_13_17',
                     'age_18_24',
                     'age_25_34',
                     'age_35_44',
@@ -1754,6 +1770,7 @@ BC19.setupMainTimelineGraphs = function() {
                     'age_65_74',
                     'age_75_plus',
 
+                    'age_0_17',
                     'age_18_49',
                     'age_50_64',
                     'age_65_plus',
