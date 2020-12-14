@@ -2067,8 +2067,6 @@ def build_hospital_cases_json(session, response, out_filename, **kwargs):
         total_field_caption='SUM(Icu Suspected Covid Patients)',
         expected_date=date_raw)
 
-    import pprint; pprint.pprint(result)
-
     add_or_update_json_date_row(out_filename, result)
 
 
