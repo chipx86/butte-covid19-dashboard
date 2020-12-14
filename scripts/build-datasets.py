@@ -274,6 +274,9 @@ class TableauLoader(object):
         self.referer = orig_response.url
         self.raw_bootstrap_payload1 = None
         self.raw_bootstrap_payload2 = None
+        self.base_url = None
+        self._data_pres_model_map = None
+        self._data_dicts = {}
 
     def get_workbook_metadata(self):
         """Return metadata on the workbook.
@@ -320,20 +323,14 @@ class TableauLoader(object):
                 Additional HTTP POST data to pass, used to specify additional
                 settings the caller needs to fetch the workbook.
         """
-        response = self.session.post(
-            ('https://public.tableau.com/vizql/w/%s/v/%s/bootstrapSession/'
-             'sessions/%s'
-             % (self.owner, self.sheet_urlarg, self.session_id)),
+        self.base_url = ('https://public.tableau.com/vizql/w/%s/v/%s/'
+                         % (self.owner, self.sheet_urlarg))
+
+        response = self._session_post(
+            path='bootstrapSession/sessions/%s' % self.session_id,
             data=dict({
                 'sheet_id': self.sheet,
-            }, **extra_params),
-            headers={
-                'Accept': 'text/javascript',
-                'Referer': self.referer,
-                'X-Requested-With': 'XMLHttpRequest',
-                'x-tsi-active-tab': self.sheet,
-                'x-tsi-supports-accepted': 'true',
-            })
+            }, **extra_params))
 
         # The response contains two JSON payloads, each prefixed by a length.
         data = response.text
@@ -348,6 +345,94 @@ class TableauLoader(object):
 
         self.bootstrap_payload2 = json.loads(self.raw_bootstrap_payload2)
 
+        pres_model_map = (
+            self.bootstrap_payload2
+            ['secondaryInfo']
+            ['presModelMap']
+        )
+
+        self._data_pres_model_map = (
+            pres_model_map
+            ['vizData']
+            ['presModelHolder']
+            ['genPresModelMapPresModel']
+            ['presModelMap']
+        )
+
+        self._data_segments = (
+            pres_model_map
+            ['dataDictionary']
+            ['presModelHolder']
+            ['genDataDictionaryPresModel']
+            ['dataSegments']
+        )
+
+        self._build_data_dicts()
+
+    def set_parameter_value(self, name, value):
+        """Set a parameter value on the server.
+
+        This will trigger a reload of any new data dictionary or presentation
+        model information.
+
+        Note:
+            The data this reloads is limited to the needs of this script, and
+            is not complete. It also makes assumptions that may not always be
+            true. If you're using this in your own script, you may have work
+            to do here.
+
+        Args:
+            name (str):
+                The name of the parameter to set.
+
+            value (str):
+                The parameter value.
+        """
+        response = self._session_post(
+            path='sessions/%s/commands/tabdoc/set-parameter-value'
+                 % self.session_id,
+            data={
+                'globalFieldName': name,
+                'valueString': value,
+                'useUsLocale': 'false',
+            })
+
+        data = response.json()
+        app_pres_model_data = (
+            data
+            ['vqlCmdResponse']
+            ['layoutStatus']
+            ['applicationPresModel']
+        )
+
+        if 'dataDictionary' in app_pres_model_data:
+            # Append the new data dictionaries.
+            self._data_segments.update(
+                app_pres_model_data
+                ['dataDictionary']
+                ['dataSegments']
+            )
+            self._build_data_dicts()
+
+        # Update all the presentation models for the new state.
+        model_map = self._data_pres_model_map
+        zones = (
+            app_pres_model_data
+            ['workbookPresModel']
+            ['dashboardPresModel']
+            ['zones']
+        )
+
+        for zone_id, zone_info in zones.items():
+            try:
+                worksheet = zone_info['worksheet']
+                viz_data = zone_info['presModelHolder']['visual']['vizData']
+            except KeyError:
+                continue
+
+            model_map[worksheet]['presModelHolder']['genVizDataPresModel'] = \
+                viz_data
+
     def get_data_dicts(self, expected_counts={}):
         """Return the data dictionaries from the workbook.
 
@@ -360,22 +445,7 @@ class TableauLoader(object):
             dict:
             A dictionary mapping data types to lists of values.
         """
-        data_columns = (
-            self.bootstrap_payload2
-            ['secondaryInfo']
-            ['presModelMap']
-            ['dataDictionary']
-            ['presModelHolder']
-            ['genDataDictionaryPresModel']
-            ['dataSegments']
-            ['0']
-            ['dataColumns']
-        )
-
-        data_dicts = {
-            item['dataType']: item['dataValues']
-            for item in data_columns
-        }
+        data_dicts = self._data_dicts
 
         for key, count in expected_counts.items():
             value_count = len(data_dicts[key])
@@ -404,16 +474,7 @@ class TableauLoader(object):
         try:
             return TableauPresModel(
                 loader=self,
-                payload=(
-                    self.bootstrap_payload2
-                    ['secondaryInfo']
-                    ['presModelMap']
-                    ['vizData']
-                    ['presModelHolder']
-                    ['genPresModelMapPresModel']
-                    ['presModelMap']
-                    [model_key]
-                ))
+                payload=self._data_pres_model_map[model_key])
         except KeyError:
             raise ParseError('Could not find "%s" in presModelMap' % model_key)
 
@@ -446,6 +507,55 @@ class TableauLoader(object):
             result.update(pres_model.get_mapped_col_data(cols))
 
         return result
+
+    def _build_data_dicts(self):
+        """Build type-mapped data dictionaries from official data segments.
+
+        This will loop through all data segments, building a single normalized
+        dictionary mapping data dictionary types to lists of values.
+
+        The resulting dictionary is updated in-place. Callers do not need to
+        re-fetch a data dictionary.
+
+        This must be called any time the list of data segments change in any
+        way.
+        """
+        new_data_dicts = {}
+
+        for key, segment_info in sorted(self._data_segments.items(),
+                                        key=lambda pair: int(pair[0])):
+            for item in segment_info['dataColumns']:
+                new_data_dicts.setdefault(item['dataType'], []).extend(
+                    item['dataValues'])
+
+        # Update in-place so existing references continue to work.
+        self._data_dicts.clear()
+        self._data_dicts.update(new_data_dicts)
+
+    def _session_post(self, path, data={}):
+        """Perform an HTTP POST for the Tableau session.
+
+        Args:
+            path (str):
+                The path to append to the base URL.
+
+            data (dict, optional):
+                HTTP POST data to send.
+
+        Returns:
+            requests.Response:
+            The resulting HTTP response.
+        """
+        return self.session.post(
+            '%s%s' % (self.base_url, path),
+            data=data,
+            headers={
+                'Accept': 'text/javascript',
+                'Referer': self.referer,
+                'X-Requested-With': 'XMLHttpRequest',
+                'x-tsi-active-tab': self.sheet,
+                'x-tsi-supports-accepted': 'true',
+            })
 
 
 @contextmanager
