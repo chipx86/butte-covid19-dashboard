@@ -36,6 +36,9 @@ CSV_DIR = os.path.join(DATA_DIR, 'csv')
 JSON_DIR = os.path.join(DATA_DIR, 'json')
 
 
+http_cache = {}
+
+
 #: The user agent that this script will identify as.
 #:
 #: This helps create the appearance that a browser, not a Python script, is
@@ -487,6 +490,47 @@ def convert_csv_to_tsv(filename):
 
         with safe_open_for_write(out_filename) as out_fp:
             csv.writer(out_fp, dialect='excel-tab').writerows(rows)
+
+
+def http_get(url, allow_cache=True):
+    """Perform a HTTP GET request to a server.
+
+    This will handle looking up and storing cache details, along with setting
+    up session management and standard headers.
+
+    Args:
+        url (str):
+            The URL to retrieve.
+
+        allow_cache (bool, optional):
+            Whether to allow HTTP cache management.
+
+    Returns:
+        tuple:
+        A 2-tuple containing:
+
+        1. The requests session.
+        2. The response.
+    """
+    session = requests.Session()
+    session.headers['User-Agent'] = USER_AGENT
+
+    headers = {}
+
+    if allow_cache and url in http_cache:
+        try:
+            headers['If-None-Match'] = http_cache[url]['etag']
+        except KeyError:
+            pass
+
+    response = session.get(url, headers=headers)
+
+    if response.headers.get('etag') and response.status_code == 200:
+        http_cache[url] = {
+            'etag': response.headers['etag'],
+        }
+
+    return session, response
 
 
 def slugify(s):
@@ -2839,6 +2883,8 @@ def main():
 
     HTTP responses are cached, to minimize traffic.
     """
+    global http_cache
+
     if '--not-timeline' in sys.argv:
         feeds_to_build = {
             feed['filename']
@@ -2852,11 +2898,12 @@ def main():
             for feed in FEEDS
         }
 
+    # Load in the stored HTTP cache, if it exists.
     try:
         with open(CACHE_FILE, 'r') as fp:
-            cache = json.load(fp)
+            http_cache = json.load(fp)
     except Exception:
-        cache = {}
+        http_cache = {}
 
     for info in FEEDS:
         filename = info['filename']
@@ -2880,20 +2927,9 @@ def main():
 
         if 'url' in info:
             url = info['url']
-            url_cache_info = cache.get(url)
 
-            session = requests.Session()
-            session.headers['User-Agent'] = USER_AGENT
-
-            headers = {}
-
-            if url_cache_info and os.path.exists(out_filename):
-                try:
-                    headers['If-None-Match'] = url_cache_info['etag']
-                except KeyError:
-                    pass
-
-            response = session.get(url, headers=headers)
+            session, response = \
+                http_get(url, allow_cache=os.path.exists(out_filename))
 
             if response.status_code == 200:
                 try:
@@ -2909,11 +2945,6 @@ def main():
                     sys.stderr.write('Unexpected error while building %s: %s\n'
                                      % (filename, e))
                     continue
-
-                if response.headers.get('etag'):
-                    cache[url] = {
-                        'etag': response.headers['etag'],
-                    }
             elif response.status_code == 304:
                 up_to_date = True
             else:
@@ -2957,8 +2988,9 @@ def main():
             print('Wrote %s' % out_filename)
 
 
+    # Write the new HTTP cache.
     with open(CACHE_FILE, 'w') as fp:
-        json.dump(cache, fp)
+        json.dump(http_cache, fp)
 
 
 if __name__ == '__main__':
