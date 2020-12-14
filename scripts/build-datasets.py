@@ -180,6 +180,18 @@ class TableauPresModel(object):
 
             if caption and caption in cols:
                 col_info = cols[caption]
+
+                require_attrs = col_info.get('require_attrs')
+
+                if require_attrs:
+                    valid = all(
+                        col_data.get(attr) == attr_value
+                        for attr, attr_value in require_attrs.items()
+                    )
+
+                    if not valid:
+                        continue
+
                 data_type = col_data.get('dataType')
 
                 if data_type != col_info['data_type']:
@@ -1634,17 +1646,22 @@ def build_timeline_json(info, in_fp, out_filename, **kwargs):
     return True
 
 
-def build_state_region_icu_pct_json(response, out_filename, **kwargs):
-    """Build JSON data for the California Region-specific ICU availability.
+def build_stay_at_home_json(session, response, out_filename, **kwargs):
+    """Build JSON data for the California Stay-at-Home dashboard.
 
-    California provides a table on their Shelter In Place page with the
-    ICU bed availability percentages for the 5 regions established in the
-    state. This parses out that data into something that can be pulled in
-    elsewhere.
+    This parses the Tableau Stay-At-Home Order dashboard, collecting
+    information on each region, their Stay-at-Home active state, case rates,
+    positivity rates, effective dates, and bed availability.
+
+    It also collects general state-wide states, as shown in the dashboard,
+    for posterity.
 
     Args:
+        session (requests.Session):
+            The HTTP request session, for cookie management.
+
         response (requests.Response):
-            The HTTP response containing the page.
+            The HTTP response from the initial dashboard page.
 
         out_filename (str):
             The name of the outputted JSON file.
@@ -1661,42 +1678,181 @@ def build_state_region_icu_pct_json(response, out_filename, **kwargs):
             Expected data was missing or was in an unexpected format. Detailed
             information will be in the error message.
     """
-    m = re.search(r'(ICU bed % available as of .*)Questions and answers',
-                  response.text,
-                  re.S)
+    def _parse_effective_date(date_str):
+        if not date_str:
+            return None
 
-    if not m:
-        raise ParseError('Could not find the ICU information section')
+        return (
+            datetime.strptime(date_str, '%m/%d/%Y %H:%M %p')
+            .strftime('%Y-%m-%d')
+        )
 
-    content = m.group(1)
+    tableau_loader = TableauLoader(
+        session=session,
+        owner='COVID-19Planforreducingcovid-19wregionsmap',
+        sheet='regionalmap',
+        orig_response=response)
 
-    m = re.search(r'as of ([A-Za-z]+ \d+, \d{4}) for the 5 regions:',
-                  content,
-                  re.S)
+    tableau_loader.bootstrap({
+        'stickySessionKey': json.dumps({
+            'workbookId': 7014571,
+        }),
+    })
 
-    if not m:
-        raise ParseError('Could not find the ICU capacity date information.')
+    data = tableau_loader.get_mapped_col_data({
+        '% CA Population County Tiers': {
+            'Current tier': {
+                'data_type': 'integer',
+                'result_key': 'pct_tiers_types',
+            },
+            'SUM(Population)': {
+                'data_type': 'real',
+                'result_key': 'pct_tiers_population',
+                'normalize': lambda value: value * 100,
+            },
+        },
+        '% CA Population SHO': {
+            'Regional Stay At Home Order': {
+                'data_type': 'integer',
+                'result_key': 'pct_sho_active',
+                'normalize': lambda value: value.strip().lower() == 'yes',
+            },
+            'SUM(Population)': {
+                'data_type': 'real',
+                'result_key': 'pct_sho_population',
+                'normalize': lambda value: value * 100,
+            },
+        },
+        'Last Updated Regional SHO': {
+            'SF_LOAD_TIMESTAMP': {
+                'data_type': 'datetime',
+                'result_key': 'date',
+                'value_index': 0,
+                'normalize': lambda date_str: (
+                    datetime.strptime(date_str, '%m/%d/%Y')
+                ),
+            },
+        },
+        'Regions Map': {
+            'AGG(Avg Cases per Day per 100K)': {
+                'data_type': 'real',
+                'result_key': 'case_rate',
+            },
+            'AGG(Adj Avg Case Rate per Day per 100K)': {
+                'data_type': 'real',
+                'result_key': 'adjusted_case_rate',
 
-    datestamp = datetime.strptime(m.group(1), '%B %d, %Y')
+                # Not 100% sure this is right, but it does seem to be 10x
+                # the unadjusted rate.
+                'normalize': lambda value: value / 10,
+            },
+            'AGG(Test Positivity Rate)': {
+                'data_type': 'real',
+                'result_key': 'test_pos_rate',
+                'normalize': lambda value: value * 100,
+            },
+            'ATTR(Stay At Home Date Effective)': {
+                'data_type': 'datetime',
+                'result_key': 'stay_at_home_date',
+                'normalize': _parse_effective_date,
+            },
+            'Region': {
+                'data_type': 'cstring',
+                'result_key': 'region_names',
+            },
+            'Regional Stay At Home Order': {
+                'data_type': 'integer',
+                'result_key': 'in_stay_at_home',
+                'normalize': lambda value: value.strip().lower() == 'yes',
+            },
+            'SUM(Saho Icu Pct Avail)': {
+                'data_type': 'real',
+                'result_key': 'icu_beds_available_pct',
+            },
+        },
+        'Percent of Population SHO': {
+            'AGG(Counties)': {
+                'data_type': 'integer',
+                'result_key': 'pct_pop_num_counties',
+            },
+            'AGG(Regions)': {
+                'data_type': 'integer',
+                'result_key': 'pct_pop_num_regions',
+            },
+            'Regional Stay At Home Order': {
+                'data_type': 'integer',
+                'result_key': 'pct_pop_sho_active',
+                'normalize': lambda value: value.strip().lower() == 'yes',
+            },
+            'SUM(Population)': {
+                'data_type': 'integer',
+                'result_key': 'pct_pop_sho_pop',
+                'require_attrs': {
+                    'isAutoSelect': True,
+                },
+                'normalize': lambda value: value * 100,
+            },
+        }
+    })
 
-    if datestamp.date() != datetime.now().date():
+    date = data['date']
+
+    if date > datetime.now():
+        # This isn't today's date. Skip it.
         return False
 
-    regions = re.findall(r'<tr>\s*'
-                         r'<td>([^<]+)</td>\s*'
-                         r'<td>[^<]*</td>\s*'
-                         r'<td>\s*(?:<strong>)?([\d\.]+%)(?:</strong>)?\s*</td>',
-                         content)
+    case_rate = data['case_rate']
+    adjusted_case_rate = data['adjusted_case_rate']
+    in_stay_at_home = data['in_stay_at_home']
+    stay_at_home_date = data['stay_at_home_date']
+    icu_beds_available_pct = data['icu_beds_available_pct']
+    test_pos_rate = data['test_pos_rate']
 
-    if not regions:
-        raise ParseError('Could not find the regions information')
+    pct_pop_sho_pop = dict(zip(data['pct_pop_sho_active'],
+                               data['pct_pop_sho_pop']))
+    pct_pop_num_counties = dict(zip(data['pct_pop_sho_active'],
+                                    data['pct_pop_num_counties']))
+    pct_pop_num_regions = dict(zip(data['pct_pop_sho_active'],
+                                   data['pct_pop_num_regions']))
+    pct_pop_sho_pop_pct = dict(zip(data['pct_sho_active'],
+                                   data['pct_sho_population']))
+    tiers_pop = dict(zip(data['pct_tiers_types'],
+                         data['pct_tiers_population']))
 
-    add_or_update_json_date_row(out_filename, dict({
-        'date': datestamp.strftime('%Y-%m-%d'),
-    }, **{
-        slugify(region): parse_pct(pct)
-        for region, pct in regions
-    }))
+    result = {
+        'date': date.strftime('%Y-%m-%d'),
+        'stats': {
+            'stay_home_order': {
+                key: {
+                    'num_counties': pct_pop_num_counties[active],
+                    'num_regions': pct_pop_num_regions[active],
+                    'population': pct_pop_sho_pop[active],
+                    'population_pct': pct_pop_sho_pop_pct[active],
+                }
+                for key, active in (('active', True),
+                                    ('inactive', False))
+            },
+            'tiers': {
+                tier.lower(): {
+                    'population_pct': population_pct,
+                }
+                for tier, population_pct in tiers_pop.items()
+            },
+        },
+        'regions': {
+            slugify(region): {
+                'adjusted_case_rate': adjusted_case_rate[i],
+                'case_rate': case_rate[i],
+                'icu_beds_available_pct': icu_beds_available_pct[i],
+                'stay_at_home_active': in_stay_at_home[i],
+                'stay_at_home_date': stay_at_home_date[i],
+                'test_pos_rate': test_pos_rate[i],
+            }
+            for i, region in enumerate(data['region_names'])
+        },
+    }
+
+    add_or_update_json_date_row(out_filename, result)
 
 
 def build_state_resources_json(session, response, out_filename, **kwargs):
@@ -2545,26 +2701,36 @@ FEEDS = [
         },
     },
     {
-        'filename': 'state-region-icu-pct.json',
+        'filename': 'stay-at-home.json',
         'format': 'json',
-        'url': 'https://covid19.ca.gov/stay-home-except-for-essential-needs/',
-        'parser': build_state_region_icu_pct_json,
+        'url': (
+            'https://public.tableau.com/views/'
+            'COVID-19Planforreducingcovid-19wregionsmap/'
+            'regionalmap/?%3AshowVizHome=no'
+        ),
+        'parser': build_stay_at_home_json,
     },
     {
         'filename': 'state-region-icu-pct.csv',
         'format': 'csv',
         'local_source': {
-            'filename': 'state-region-icu-pct.json',
+            'filename': 'stay-at-home.json',
             'format': 'json',
         },
         'parser': convert_json_to_csv,
         'key_map': [
             ('Date', ('date',)),
-            ('Bay Area', ('bay_area',)),
-            ('Greater Sacramento', ('greater_sacramento',)),
-            ('Northern California', ('northern_california',)),
-            ('San Joaquin Valley', ('san_joaquin_valley',)),
-            ('Southern California', ('southern_california',)),
+        ] + [
+            (region, ('regions', region_key, 'icu_beds_available_pct'))
+            for region, region_key in (('Bay Area', 'bay_area'),
+                                       ('Greater Sacramento',
+                                        'greater_sacramento'),
+                                       ('Northern California',
+                                        'northern_california'),
+                                       ('San Joaquin Valley',
+                                        'san_joaquin_valley'),
+                                       ('Southern California',
+                                        'southern_california'))
         ],
     },
     {
