@@ -14,6 +14,7 @@ import os
 import re
 import sys
 import tempfile
+from collections import OrderedDict
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from urllib.parse import quote
@@ -1092,17 +1093,22 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
         entity = get_entity(entity_id)
         data = entity['props']['chartData']['data'][0]
 
-        result = {}
+        result = OrderedDict()
 
         whitespace_re = re.compile('\s+')
 
         for row in data[1:]:
-            try:
-                value = int(row[value_col])
-            except IndexError:
-                # This column may not exist in this field, due to no value
-                # provided yet in the graph data.
+            value = row[value_col]
+
+            if value == '':
                 value = 0
+            else:
+                try:
+                    value = int(value)
+                except IndexError:
+                    # This column may not exist in this field, due to no value
+                    # provided yet in the graph data.
+                    value = 0
 
             key = whitespace_re.sub(' ', row[label_col])
             result[key] = value
@@ -1137,9 +1143,9 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
                          day=int(m.group(2)),
                          year=int(m.group(3)))
 
-    if datestamp.date() != datetime.now().date():
-        # This is stale data not from today. OR it might be new data but
-        # the county forgot to update the datestamp on it *again*. So don't
+    if datestamp.date() != (datetime.now() - timedelta(days=1)).date():
+        # This is stale data not from yesterday's report OR it might be new
+        # data but the county forgot to update the datestamp on it. So don't
         # risk overwriting historical data, and instead bail.
         return False
 
@@ -1176,8 +1182,10 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
 
     CHART_KEYS_TO_ENTITIES = {
         'by_age': ('9ba3a895-019a-4e68-99ec-0eb7b5bd026c', 1),
-        'deaths_by_age': ('9ba3a895-019a-4e68-99ec-0eb7b5bd026c', 2),
+        'deaths_by_age': ('f744cc14-179a-428f-8125-e68421784ada', 1),
+        'probable_deaths_by_age': ('f744cc14-179a-428f-8125-e68421784ada', 2),
         'by_region': ('b26b9acd-b036-40bc-bbbe-68667dd338e4', 1),
+        'probable_cases': ('7e36765a-23c2-4bc7-9fc1-ea4a927c8064', 2),
     }
 
     scraped_data = {
@@ -1190,27 +1198,32 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
         for key, (entity_id, value_col) in CHART_KEYS_TO_ENTITIES.items()
     })
 
+    graph_date_key = datestamp.strftime('%d-%b')
+
     try:
         by_age = scraped_data['by_age']
         by_region = scraped_data['by_region']
         deaths_by_age = scraped_data['deaths_by_age']
+        probable_deaths_by_age = scraped_data['probable_deaths_by_age']
+
 
         # As of Monday, September 28, 2020, the county has changed the By Ages
         # graph to show the non-fatal vs. fatal cases, instead of total vs.
         # fatal. To preserve the information we had, we need to add the deaths
         # back in.
         for key in list(by_age.keys()):
-            by_age[key] += deaths_by_age[key]
+            by_age[key] += deaths_by_age.get(key, 0)
 
         row_result = {
             'date': datestamp.strftime('%Y-%m-%d'),
             'confirmed_cases': scraped_data['confirmed_cases'],
+            'probable_cases': scraped_data['probable_cases'][graph_date_key],
             'deaths': scraped_data['deaths'],
             'deaths_by': {
                 'age_ranges_in_years': {
-                    '0-4': deaths_by_age['0-4 Years'],
-                    '5-12': deaths_by_age['5-12 Years'],
-                    '13-17': deaths_by_age['13-17 Years'],
+                    '0-4': deaths_by_age.get('0-4 Years', 0),
+                    '5-12': deaths_by_age.get('5-12 Years', 0),
+                    '13-17': deaths_by_age.get('13-17 Years', 0),
                     '18-24': deaths_by_age['18-24 Years'],
                     '25-34': deaths_by_age['25-34 Years'],
                     '35-44': deaths_by_age['35-44 Years'],
@@ -1220,9 +1233,23 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
                     '75_plus': deaths_by_age['75+ Years'],
 
                     # Legacy
-                    '0-17': (deaths_by_age['0-4 Years'] +
-                             deaths_by_age['5-12 Years'] +
-                             deaths_by_age['13-17 Years']),
+                    '0-17': (deaths_by_age.get('0-4 Years', 0) +
+                             deaths_by_age.get('5-12 Years', 0) +
+                             deaths_by_age.get('13-17 Years', 0)),
+                },
+            },
+            'probable_deaths_by': {
+                'age_ranges_in_years': {
+                    '0-4': probable_deaths_by_age.get('0-4 Years', 0),
+                    '5-12': probable_deaths_by_age.get('5-12 Years', 0),
+                    '13-17': probable_deaths_by_age.get('13-17 Years', 0),
+                    '18-24': probable_deaths_by_age['18-24 Years'],
+                    '25-34': probable_deaths_by_age['25-34 Years'],
+                    '35-44': probable_deaths_by_age['35-44 Years'],
+                    '45-54': probable_deaths_by_age['45-54 Years'],
+                    '55-64': probable_deaths_by_age['55-64 Years'],
+                    '65-74': probable_deaths_by_age['65-74 Years'],
+                    '75_plus': probable_deaths_by_age['75+ Years'],
                 },
             },
             'in_isolation': {
