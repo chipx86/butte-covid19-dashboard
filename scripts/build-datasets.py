@@ -1198,14 +1198,15 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
         for key, (entity_id, value_col) in CHART_KEYS_TO_ENTITIES.items()
     })
 
-    graph_date_key = datestamp.strftime('%d-%b')
+    graph_date_key1 = datestamp.strftime('%d-%b')
+    graph_date_key2 = datestamp.strftime('%m/%d')
 
     try:
         by_age = scraped_data['by_age']
         by_region = scraped_data['by_region']
         deaths_by_age = scraped_data['deaths_by_age']
+        probable_cases = scraped_data['probable_cases']
         probable_deaths_by_age = scraped_data['probable_deaths_by_age']
-
 
         # As of Monday, September 28, 2020, the county has changed the By Ages
         # graph to show the non-fatal vs. fatal cases, instead of total vs.
@@ -1214,10 +1215,17 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
         for key in list(by_age.keys()):
             by_age[key] += deaths_by_age.get(key, 0)
 
+        try:
+            # Normal graph entries: <dd>-<Mon>
+            probable_case_total = probable_cases[graph_date_key1]
+        except KeyError:
+            # Variant: <mm>/<dd>
+            probable_case_total = probable_cases[graph_date_key2]
+
         row_result = {
             'date': datestamp.strftime('%Y-%m-%d'),
             'confirmed_cases': scraped_data['confirmed_cases'],
-            'probable_cases': scraped_data['probable_cases'][graph_date_key],
+            'probable_cases': probable_case_total,
             'deaths': scraped_data['deaths'],
             'deaths_by': {
                 'age_ranges_in_years': {
@@ -1296,7 +1304,7 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
             },
         }
     except Exception as e:
-        raise ParseError('Unable to build row data: %s' % e)
+        raise ParseError('Unable to build row data: %s' % e) from e
 
     add_or_update_json_date_row(out_filename, row_result)
 
