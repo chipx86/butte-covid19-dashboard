@@ -1099,7 +1099,15 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
         whitespace_re = re.compile('\s+')
 
         for row in data[1:]:
-            value = row[value_col]
+            try:
+                label = row[label_col]
+                value = row[value_col]
+            except IndexError:
+                label = None
+                value = ''
+
+            if label is None:
+                continue
 
             if value == '':
                 value = 0
@@ -1111,7 +1119,7 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
                     # provided yet in the graph data.
                     value = 0
 
-            key = whitespace_re.sub(' ', row[label_col])
+            key = whitespace_re.sub(' ', label)
             result[key] = value
 
         return result
@@ -1164,7 +1172,7 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
             'entity_id': 'f335bb23-9900-4acf-854a-8214e532c1de',
         },
         'deaths': {
-            'labels': ['death', 'deaths'],
+            'labels': ['deaths confirmed by viral test'],
             'entity_id': '9c8d7a74-c196-40b5-a2e5-3bd643bbae8b',
         },
         'daily_viral_test_results': {
@@ -1199,8 +1207,14 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
         for key, (entity_id, value_col) in CHART_KEYS_TO_ENTITIES.items()
     })
 
-    graph_date_key1 = datestamp.strftime('%d-%b')
-    graph_date_key2 = datestamp.strftime('%m/%d')
+    # We have two forms of dates being used on the dashboard.
+    #
+    # strftime sadly does not allow for representing day/month numbers
+    # without a padded 0, so do this the hard way.
+    graph_date_key1 = '%s-%s' % (datestamp.strftime('%d').lstrip('0'),
+                                 datestamp.strftime('%b').lstrip('0'))
+    graph_date_key2 = '%s/%s' % (datestamp.strftime('%m').lstrip('0'),
+                                 datestamp.strftime('%d').lstrip('0'))
 
     try:
         by_age = scraped_data['by_age']
