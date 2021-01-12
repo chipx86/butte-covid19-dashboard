@@ -1815,7 +1815,7 @@ def build_stay_at_home_json(session, response, out_filename, **kwargs):
                 'result_key': 'in_stay_at_home',
                 'normalize': lambda value: value.strip().lower() == 'yes',
             },
-            'SUM(Saho Icu Pct Avail (floored at 0))': {
+            'SUM(Saho Icu Pct Avail)': {
                 'data_type': 'real',
                 'result_key': 'icu_beds_available_pct',
             },
