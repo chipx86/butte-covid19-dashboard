@@ -14,6 +14,7 @@ import os
 import re
 import sys
 import tempfile
+import traceback
 from collections import OrderedDict
 from contextlib import contextmanager
 from datetime import datetime, timedelta
@@ -3344,6 +3345,7 @@ def main():
                 except Exception as e:
                     sys.stderr.write('Unexpected error while building %s: %s\n'
                                      % (filename, e))
+                    traceback.print_exc()
                     continue
             elif response.status_code == 304:
                 up_to_date = True
@@ -3373,6 +3375,7 @@ def main():
                 except Exception as e:
                     sys.stderr.write('Unexpected error while building %s: %s\n'
                                      % (filename, e))
+                    traceback.print_exc()
                     continue
         else:
             sys.stderr.write('Invalid feed entry: %r\n' % info)
