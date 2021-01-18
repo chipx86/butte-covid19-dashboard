@@ -3038,6 +3038,7 @@ FEEDS = [
                     'type': 'date',
                     'format': '%a, %b %d, %Y',
                 },
+                {'name': 'confirmed_cases:total_as_of_report'},
                 {'name': 'confirmed_cases:total'},
                 {
                     'name': 'confirmed_cases:delta_total',
@@ -3056,6 +3057,7 @@ FEEDS = [
                     'type': 'delta',
                     'delta_from': 'in_isolation:total_released',
                 },
+                {'name': 'deaths:total_as_of_report'},
                 {'name': 'deaths:total'},
                 {
                     'name': 'deaths:delta_total',

@@ -1125,7 +1125,8 @@ BC19.setupCounters = function() {
         'total-cases-counter',
         {
             latestRow: casesRow,
-            getValue: row => row.confirmed_cases.total,
+            getValue: row => (row.confirmed_cases.total_as_of_report ||
+                              row.confirmed_cases.total),
             deltaDays: [1, 7, 14, 30],
         });
 
@@ -1133,8 +1134,13 @@ BC19.setupCounters = function() {
         'deaths-counter',
         {
             latestRow: casesRow,
-            getValue: row => row.deaths.total,
-            deltaDays: [1],
+            getValue: row => {
+                console.log(row.date, row.deaths.total_as_of_report ||
+                              row.deaths.total);
+                return (row.deaths.total_as_of_report ||
+                              row.deaths.total);
+            },
+            deltaDays: [1, 7, 14, 30],
         });
 
     BC19.setCounterFromRows(
