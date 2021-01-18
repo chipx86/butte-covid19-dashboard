@@ -1762,6 +1762,7 @@ def build_timeline_json(info, in_fp, out_filename, **kwargs):
 
     payload = {
         'dates': timeline,
+        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
     }
 
     with safe_open_for_write(out_filename) as fp:

@@ -118,6 +118,7 @@ window.BC19 = {
     allAgeRanges: [],
     visibleAgeRanges: [],
 
+    reportTimestamp: null,
     graphs: [],
     graphsData: {},
     latestRows: {},
@@ -653,6 +654,7 @@ BC19.processTimelineData = function(timeline) {
     BC19.lastMDate = BC19.parseMDate(timeline.dates[rows.length - 1].date);
     BC19.timeline = timeline;
     BC19.monitoringTier = monitoringTier;
+    BC19.reportTimestamp = BC19.parseMDate(timeline.timestamp);
 
     BC19.allAgeRanges = ageRangeKeys;
     BC19.visibleAgeRanges = ageRangeKeys.filter(
@@ -2383,6 +2385,11 @@ BC19.setDateRange = function(fromDate, toDate) {
 
 
 BC19.setupElements = function() {
+    /* Show the report timestamp. */
+    const timestampEl = document.getElementById('report-timestamp');
+    timestampEl.innerText = BC19.reportTimestamp.format(
+        'dddd, MMMM Do, YYYY @ h:mm a');
+
     /* Show the current monitoring tier. */
     const tier = BC19.monitoringTier;
 
