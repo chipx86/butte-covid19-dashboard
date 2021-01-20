@@ -1868,7 +1868,7 @@ def build_stay_at_home_json(session, response, out_filename, **kwargs):
             },
         },
         'Last Updated Regional SHO': {
-            'SF_LOAD_TIMESTAMP': {
+            'Sf Load Timestamp': {
                 'data_type': 'datetime',
                 'result_key': 'date',
                 'value_index': 0,
