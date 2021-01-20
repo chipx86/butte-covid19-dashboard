@@ -1158,6 +1158,9 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
         # risk overwriting historical data, and instead bail.
         return False
 
+    # This is still for the previous day's report.
+    datestamp -= timedelta(days=1)
+
     COUNTER_KEYS_TO_ENTITIES = {
         'confirmed_cases': {
             'labels': ['confirmed cases'],
@@ -1235,7 +1238,11 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
             probable_case_total = probable_cases[graph_date_key1]
         except KeyError:
             # Variant: <mm>/<dd>
-            probable_case_total = probable_cases[graph_date_key2]
+            try:
+                probable_case_total = probable_cases[graph_date_key2]
+            except KeyError:
+                # The graph wasn't updated in the current report.
+                probable_case_total = None
 
         row_result = {
             'date': datestamp.strftime('%Y-%m-%d'),
