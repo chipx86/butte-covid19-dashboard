@@ -1152,8 +1152,8 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
                          day=int(m.group(2)),
                          year=int(m.group(3)))
 
-    if datestamp.date() != (datetime.now() - timedelta(days=1)).date():
-        # This is stale data not from yesterday's report OR it might be new
+    if datestamp.date() != datetime.now().date():
+        # This is stale data not from today's report OR it might be new
         # data but the county forgot to update the datestamp on it. So don't
         # risk overwriting historical data, and instead bail.
         return False
