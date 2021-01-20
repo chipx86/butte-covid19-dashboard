@@ -2394,7 +2394,7 @@ BC19.setupElements = function() {
     /* Show the report timestamp. */
     const timestampEl = document.getElementById('report-timestamp');
     timestampEl.innerText = BC19.reportTimestamp.format(
-        'dddd, MMMM Do, YYYY @ h:mm a');
+        'dddd, MMMM Do, YYYY');
 
     /* Show the current monitoring tier. */
     const tier = BC19.monitoringTier;
