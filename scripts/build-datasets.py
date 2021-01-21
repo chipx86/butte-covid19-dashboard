@@ -1148,18 +1148,22 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
     if not m:
         raise ParseError('Unable to find datestamp in Butte Dashboard')
 
+    # Sometimes the county reports the current day in the report, and sometimes
+    # the previous day. This flag dictates behavior around that.
+    REPORT_USES_PREV_DAY = True
+
     datestamp = datetime(month=int(m.group(1)),
                          day=int(m.group(2)),
                          year=int(m.group(3)))
 
-    if datestamp.date() != datetime.now().date():
+    if not REPORT_USES_PREV_DAY:
+        datestamp -= timedelta(days=1)
+
+    if datestamp.date() != (datetime.now() - timedelta(days=1)).date():
         # This is stale data not from today's report OR it might be new
         # data but the county forgot to update the datestamp on it. So don't
         # risk overwriting historical data, and instead bail.
         return False
-
-    # This is still for the previous day's report.
-    datestamp -= timedelta(days=1)
 
     COUNTER_KEYS_TO_ENTITIES = {
         'confirmed_cases': {
