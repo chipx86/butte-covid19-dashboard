@@ -166,8 +166,8 @@ window.BC19 = {
  *     moment:
  *     The moment-wrapped date.
  */
-BC19.parseMDate = function(dateStr) {
-    return moment(dateStr + ' -0700', 'YYYY-MM-DD Z');
+BC19.parseMDate = function(dateStr, fmt='YYYY-MM-DD Z') {
+    return moment.tz(dateStr, fmt, 'US/Pacific');
 };
 
 
@@ -654,7 +654,8 @@ BC19.processTimelineData = function(timeline) {
     BC19.lastMDate = BC19.parseMDate(timeline.dates[rows.length - 1].date);
     BC19.timeline = timeline;
     BC19.monitoringTier = monitoringTier;
-    BC19.reportTimestamp = BC19.parseMDate(timeline.timestamp);
+    BC19.reportTimestamp = BC19.parseMDate(timeline.timestamp,
+                                           'YYYY-MM-DD hh:mm:ss Z')
 
     BC19.allAgeRanges = ageRangeKeys;
     BC19.visibleAgeRanges = ageRangeKeys.filter(
@@ -1135,8 +1136,6 @@ BC19.setupCounters = function() {
         {
             latestRow: casesRow,
             getValue: row => {
-                console.log(row.date, row.deaths.total_as_of_report ||
-                              row.deaths.total);
                 return (row.deaths.total_as_of_report ||
                               row.deaths.total);
             },
@@ -2394,7 +2393,7 @@ BC19.setupElements = function() {
     /* Show the report timestamp. */
     const timestampEl = document.getElementById('report-timestamp');
     timestampEl.innerText = BC19.reportTimestamp.format(
-        'dddd, MMMM Do, YYYY');
+        'dddd, MMMM Do, YYYY @ h:mm a');
 
     /* Show the current monitoring tier. */
     const tier = BC19.monitoringTier;
