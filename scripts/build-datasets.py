@@ -1028,9 +1028,10 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
 
         value = None
 
-        if blocks[0]['text'].lower() in expected_labels:
+        if blocks[0]['text'].strip().lower() in expected_labels:
             value = blocks[1]['text']
-        elif len(blocks) > 1 and blocks[1]['text'].lower() in expected_labels:
+        elif (len(blocks) > 1 and
+              blocks[1]['text'].strip().lower() in expected_labels):
             value = blocks[0]['text']
         else:
             # They probably broke the labels/values again. Let's try to
@@ -1194,6 +1195,26 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
             'labels': ['currently hospitalized'],
             'entity_id': '3f7e639a-c67b-48b3-8b29-f552c9a30dcf',
         },
+        'vaccines_total_allocation': {
+            'labels': ['total vaccine allocation for butte county'],
+            'entity_id': '6735874d-4394-4f10-92c4-60a861aef46f',
+        },
+        'vaccines_total_received': {
+            'labels': ['total vaccine received'],
+            'entity_id': 'f844fcb6-6b99-4267-8491-9f43e47bcc63',
+        },
+        'vaccines_total_first_doses_ordered': {
+            'labels': ['total number of first doses ordered'],
+            'entity_id': '70ab4c6c-10c4-4f04-ae90-d9a0ddcdffca',
+        },
+        'vaccines_total_second_doses_ordered': {
+            'labels': ['total number of second doses ordered'],
+            'entity_id': '8637a3ab-5335-467d-95b8-53f413a74238',
+        },
+        'vaccines_total_administered': {
+            'labels': ['total administered vaccines*'],
+            'entity_id': '74e76670-078b-40b9-8ec5-b61159126122',
+        },
     }
 
     CHART_KEYS_TO_ENTITIES = {
@@ -1213,6 +1234,25 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
         key: get_chart_info(entity_id, value_col=value_col)
         for key, (entity_id, value_col) in CHART_KEYS_TO_ENTITIES.items()
     })
+
+    # Find the datestamp for vaccines.
+    try:
+        entity = get_entity('0ebe511f-988e-4b1f-a68d-9fc2f4be5901')
+    except KeyError:
+        raise ParseError('Unable to find vaccine datestamp entity in '
+                         'Butte Dashboard')
+
+    m = re.search(r'Updated (\d+)/(\d+)/(\d{4})',
+                  entity['props']['content']['blocks'][0]['text'],
+                  re.I)
+
+    if not m:
+        raise ParseError('Unable to parse vaccine datestamp entity in '
+                         'Butte Dashboard')
+
+    vaccines_datestamp = datetime(month=int(m.group(1)),
+                                  day=int(m.group(2)),
+                                  year=int(m.group(3)))
 
     # We have two forms of dates being used on the dashboard.
     #
@@ -1327,6 +1367,17 @@ def parse_butte_dashboard(response, out_filename, **kwargs):
 
                 # Legacy
                 'gridley': None,
+            },
+            'vaccines': {
+                'total_allocation': scraped_data['vaccines_total_allocation'],
+                'total_administered':
+                    scraped_data['vaccines_total_administered'],
+                'total_received': scraped_data['vaccines_total_received'],
+                'total_first_doses_ordered':
+                    scraped_data['vaccines_total_first_doses_ordered'],
+                'total_second_doses_ordered':
+                    scraped_data['vaccines_total_second_doses_ordered'],
+                'as_of_date': vaccines_datestamp.strftime('%Y-%m-%d'),
             },
         }
     except Exception as e:
@@ -2815,6 +2866,18 @@ FEEDS = [
              ('probable_deaths_by', 'age_ranges_in_years', '65-74')),
             ('Probable Deaths - Age 75+ Years',
              ('probable_deaths_by', 'age_ranges_in_years', '75_plus')),
+            ('Vaccines - As Of Date',
+             ('vaccines', 'as_of_date')),
+            ('Vaccines - Total Allocation',
+             ('vaccines', 'total_allocation')),
+            ('Vaccines - Total Received',
+             ('vaccines', 'total_received')),
+            ('Vaccines - Total Administered',
+             ('vaccines', 'total_administered')),
+            ('Vaccines - Total First Doses Ordered',
+             ('vaccines', 'total_first_doses_ordered')),
+            ('Vaccines - Total Second Doses Ordered',
+             ('vaccines', 'total_second_doses_ordered')),
         ],
     },
     {
