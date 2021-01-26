@@ -1206,27 +1206,6 @@ BC19.setupCounters = function() {
             ],
         });
 
-    BC19.setCounter(
-        'county-population-counter',
-        {
-            value: BC19.COUNTY_POPULATION,
-        });
-
-    BC19.setCounter(
-        'pop-tested-pct-counter',
-        {
-            value: (totalTests / BC19.COUNTY_POPULATION * 100).toFixed(2),
-            formatValue: value => '< ' + value.toLocaleString() + '%',
-        });
-
-    BC19.setCounter(
-        'pop-not-tested-pct-counter',
-        {
-            value: (totalTests / BC19.COUNTY_POPULATION * 100).toFixed(2),
-            formatValue: value => '> ' + (100 - value).toLocaleString() + '%',
-        });
-
-
     BC19.setCounterFromRows(
         'jail-inmate-pop-counter',
         {
@@ -1283,11 +1262,6 @@ BC19.setupCounters = function() {
             getValue: row => row.county_jail.staff.total_positive,
             deltaDays: [1],
         });
-
-    document.getElementById('pop-tested-pct-counter-people').innerText =
-        totalTests.toLocaleString();
-    document.getElementById('pop-not-tested-pct-counter-people').innerText =
-        (BC19.COUNTY_POPULATION - totalTests).toLocaleString();
 };
 
 
