@@ -299,6 +299,8 @@ a:visited {
     "cases-breakdown case-graphs"
     "demographics-header demographics-header"
     "demographics-graphs demographics-graphs"
+    "vaccines-header vaccines-header"
+    "vaccines-counters vaccines-counters"
     "viral-testing-info viral-testing-info"
     "viral-test-counters viral-test-counters"
     "population-test-counters population-test-counters"
@@ -378,6 +380,10 @@ a:visited {
 
     &.-is-jail-header {
       grid-area: jail-header;
+    }
+
+    &.-is-vaccine-intro {
+      grid-area: vaccines-header;
     }
 
     &.-is-viral-testing-intro {
@@ -498,6 +504,10 @@ a:visited {
       padding: 0.5em;
     }
 
+    &.-is-vaccine-counters {
+      grid-area: vaccines-counters;
+    }
+
     &.-is-viral-test-counters {
       grid-area: viral-test-counters;
     }
@@ -598,6 +608,8 @@ a:visited {
       "case-graphs"
       "demographics-header"
       "demographics-graphs"
+      "vaccines-header"
+      "vaccines-counters"
       "viral-testing-info"
       "viral-test-counters"
       "population-test-counters"

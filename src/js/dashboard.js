@@ -321,6 +321,7 @@ BC19.processTimelineData = function(timeline) {
     let latestStateHospitalsRow;
     let latestTestPosDataRow;
     let latestTestsDataRow;
+    let latestVaccinesDataRow;
 
     const minTestPositivityRateDate = BC19.minDates.testPositivityRate;
     let foundMinTestPositivityRateDate = false;
@@ -606,9 +607,16 @@ BC19.processTimelineData = function(timeline) {
             latestJailRow = row;
         }
 
+
         /* Monitoring Tier */
         if (row.monitoring && row.monitoring.tier) {
             monitoringTier = row.monitoring.tier;
+        }
+
+
+        /* Vaccines */
+        if (row.vaccines && row.vaccines.allocated != null) {
+            latestVaccinesDataRow = row;
         }
     }
 
@@ -648,6 +656,7 @@ BC19.processTimelineData = function(timeline) {
         stateHospitals: latestStateHospitalsRow,
         testPosRate: latestTestPosDataRow,
         tests: latestTestsDataRow,
+        vaccines: latestVaccinesDataRow,
     };
 
     BC19.firstMDate = BC19.parseMDate(timeline.dates[0].date);
@@ -1098,12 +1107,14 @@ BC19.setCounterFromRows = function(elID, options) {
  *     * Total Hospitalized
  *     * Total In ICU
  *     * County Patients
+ *     * Vaccines Allocated
+ *     * Vaccines Administered
+ *     * Vaccines First Doses Ordered
+ *     * Vaccines Second Doses Ordered
+ *     * Vaccines Received
  *     * Total Tests
  *     * Positive Test Results
  *     * 7-Day Test Positivity Rate
- *     * County Population
- *     * Population Tested
- *     * Population NOT Tested
  *     * Inmate Population
  *     * Total Inmate Tests
  *     * Current Inmate Tests
@@ -1116,6 +1127,7 @@ BC19.setupCounters = function() {
     const isolationRow = BC19.latestRows.isolation;
     const stateHospitalsRow = BC19.latestRows.stateHospitals;
     const jailRow = BC19.latestRows.jail;
+    const vaccinesRow = BC19.latestRows.vaccines;
     const testsRow = BC19.latestRows.tests;
     const testPosRateRow = BC19.latestRows.testPosRate;
     const jailI = jailRow.i;
@@ -1172,6 +1184,46 @@ BC19.setupCounters = function() {
             latestRow: stateHospitalsRow,
             getValue: row => row.hospitalizations.state_data.icu_positive,
             deltaDays: [1],
+        });
+
+    BC19.setCounterFromRows(
+        'vaccines-allocated-counter',
+        {
+            latestRow: vaccinesRow,
+            getValue: row => row.vaccines.allocated,
+            deltaDays: [1, 7, 14],
+        });
+
+    BC19.setCounterFromRows(
+        'vaccines-administered-counter',
+        {
+            latestRow: vaccinesRow,
+            getValue: row => row.vaccines.administered,
+            deltaDays: [1, 7, 14],
+        });
+
+    BC19.setCounterFromRows(
+        'vaccines-ordered1-counter',
+        {
+            latestRow: vaccinesRow,
+            getValue: row => row.vaccines.first_doses_ordered,
+            deltaDays: [1, 7, 14],
+        });
+
+    BC19.setCounterFromRows(
+        'vaccines-ordered2-counter',
+        {
+            latestRow: vaccinesRow,
+            getValue: row => row.vaccines.second_doses_ordered,
+            deltaDays: [1, 7, 14],
+        });
+
+    BC19.setCounterFromRows(
+        'vaccines-received-counter',
+        {
+            latestRow: vaccinesRow,
+            getValue: row => row.vaccines.received,
+            deltaDays: [1, 7, 14],
         });
 
     BC19.setCounterFromRows(
