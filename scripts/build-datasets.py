@@ -3096,7 +3096,10 @@ FEEDS = [
         'format': 'csv',
         'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRwJpCeZj4tsxMXqrHFDjIis5Znv-nI0kQk9enEAJAbYzZUBHm7TELQe0wl2huOYEkdaWLyR8N9k_uq/pub?gid=169564738&single=true&output=csv',
         'csv': {
-            'end_if': lambda row: (row['confirmed_cases:total'] == ''),
+            'end_if': lambda row: (
+                row['confirmed_cases:total'] == '' and
+                row['county_jail:inmates:population'] == ''
+            ),
             'validator': lambda results: (
                 len(results) > 0 and
                 results[0]['date'] == '2020-03-20' and
