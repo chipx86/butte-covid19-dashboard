@@ -1357,7 +1357,7 @@ BC19.setupByRegionGraph = function() {
  * Set up the Deaths By Age bar graph.
  */
 BC19.setupDeathsByAgeGraph = function() {
-    const agesI = BC19.latestRows.deathsByAge.i + 1;
+    const agesI = BC19.latestRows.deathsByAge.i;
     const data = [];
 
     BC19.visibleAgeRanges.forEach(key => {
@@ -1386,7 +1386,7 @@ BC19.setupDeathsByAgeGraph = function() {
  * Set up the Mortality Rates By Age bar graph.
  */
 BC19.setupMortalityRatesByAgeGraph = function() {
-    const agesI = BC19.latestRows.deathsByAge.i + 1;
+    const agesI = BC19.latestRows.deathsByAge.i;
     const data = [];
 
     BC19.visibleAgeRanges.forEach(key => {
@@ -1416,7 +1416,7 @@ BC19.setupMortalityRatesByAgeGraph = function() {
         {
             formatValue: (value) => {
                 const normValue = value.toLocaleString(undefined, {
-                    maximumFractionDigits: 1,
+                    maximumFractionDigits: 2,
                 });
 
                 return normValue !== '0' ? `${normValue}%` : '';
