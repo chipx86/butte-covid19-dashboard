@@ -1,6 +1,7 @@
 _build
 htdocs
 node_modules
+__pycache__
 
 .babelrc
 .http-cache
