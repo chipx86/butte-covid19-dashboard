@@ -3486,7 +3486,12 @@ FEEDS = [
                     'type': 'delta',
                     'delta_from': 'monitoring:test_pos_rate',
                     'delta_type': 'pct',
-                }
+                },
+                {'name': 'vaccines:allocated'},
+                {'name': 'vaccines:administered'},
+                {'name': 'vaccines:first_doses_ordered'},
+                {'name': 'vaccines:second_doses_ordered'},
+                {'name': 'vaccines:received'},
             ],
         },
     },
