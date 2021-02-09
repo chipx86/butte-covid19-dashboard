@@ -1037,7 +1037,9 @@ BC19.setCounter = function(elID, options) {
             const formatRelValue =
                 options.formatRelValues
                 ? options.formatRelValues[i]
-                : (value, relValue) => Math.abs(value - relValue);
+                : (value, relValue) => {
+                    return Math.abs(value - relValue).toLocaleString()
+                };
 
             relValueEl.innerText = formatRelValue(value, relValue);
             relEl.classList.remove('-is-up');
