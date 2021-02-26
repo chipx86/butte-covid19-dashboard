@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from collections import OrderedDict
 from datetime import datetime, timedelta
@@ -215,7 +216,7 @@ def build_dataset(response, out_filename, **kwargs):
 
     # Sometimes the county reports the current day in the report, and sometimes
     # the previous day. This flag dictates behavior around that.
-    REPORT_USES_PREV_DAY = True
+    REPORT_USES_PREV_DAY = (os.environ.get('BCD_REPORT_USES_PREV_DAY') != '0')
 
     datestamp = datetime(month=int(m.group(1)),
                          day=int(m.group(2)),
