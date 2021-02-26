@@ -26,8 +26,9 @@ DATASET_MODULE_NAMES = [
     'stay_at_home',
     'vaccination_stats',
 
-    # This must be last.
+    # These must be last.
     'timeline',
+    'bc19_dashboard',
 ]
 
 

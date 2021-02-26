@@ -1,0 +1,861 @@
+import json
+import os
+from collections import OrderedDict
+
+from bc19live.utils import safe_open_for_write
+
+
+DATASET_VERSION = 1
+
+
+AGE_RANGE_INFO_MAP = {
+    '0_4': {
+        'source_key': '0-4',
+    },
+    '5_12': {
+        'source_key': '5-12',
+    },
+    '13_17': {
+        'source_key': '13-17',
+    },
+    '18_24': {
+        'source_key': '18-24',
+    },
+    '25_34': {
+        'source_key': '25-34',
+    },
+    '35_44': {
+        'source_key': '35-44',
+    },
+    '45_54': {
+        'source_key': '45-54',
+    },
+    '55_64': {
+        'source_key': '55-64',
+    },
+    '65_74': {
+        'source_key': '65-74',
+    },
+    '75_plus': {
+        'source_key': '75_plus',
+        'text': '75+',
+    },
+
+    # Legacy data, unpublished as of December 9, 2020.
+    '0_17': {
+        'legacy': True,
+        'source_key': '0-17',
+    },
+
+    # Legacy data, unpublished as of July 9, 2020.
+    '18_49': {
+        'legacy': True,
+        'source_key': '18-49',
+    },
+    '50_64': {
+        'legacy': True,
+        'source_key': '50-64',
+    },
+    '65_plus': {
+        'legacy': True,
+        'source_key': '65_plus',
+        'text': '65+',
+    },
+}
+
+# Ensure these are in sorted order.
+AGE_RANGE_INFO_MAP = OrderedDict(
+    pair
+    for pair in sorted(AGE_RANGE_INFO_MAP.items(),
+                       key=lambda pair: (pair[1].get('legacy', False),
+                                         int(pair[0].split('_')[0])))
+)
+
+AGE_RANGE_KEYS = list(AGE_RANGE_INFO_MAP.keys())
+
+REGIONS = [
+    {
+        'key': 'biggs_gridley',
+        'label': 'Biggs, Gridley',
+    },
+    {
+        'key': 'chico',
+        'label': 'Chico',
+    },
+    {
+        'key': 'durham',
+        'label': 'Durham',
+    },
+    {
+        'key': 'oroville',
+        'label': 'Oroville',
+    },
+    {
+        'key': 'ridge',
+        'label': 'Paradise, Magalia...',
+    },
+    {
+        'key': 'other',
+        'label': 'Other',
+    },
+]
+
+HOSPTIALS = [
+    {
+        'key': 'enloe_hospital',
+        'label': 'Enloe Hospital',
+    },
+    {
+        'key': 'oroville_hospital',
+        'label': 'Oroville Hospital',
+    },
+    {
+        'key': 'orchard_hospital',
+        'label': 'Orchard Hospital',
+    },
+]
+
+
+def norm_rel_value(value, prev_value):
+    """Return a normalized number relative to another number.
+
+    The relative value is the difference between the value and the previous
+    value.
+
+    Args:
+        value (int):
+            The "new" value.
+
+        prev_value (int):
+            The previous value that ``value`` is relative to. If ``None``,
+            this function will simply return 0.
+
+        hide_negative (bool, optional):
+    """
+    if prev_value is None:
+        return 0
+
+    return value - prev_value
+
+
+def build_dataset(info, in_fp, out_filename, **kwargs):
+    """Parse other datasets to generate JSON data for the dashboard.
+
+    This takes the generated timeline data and compiles it into a dataset
+    that can be directly fed into the counters and graphs on the dashboard,
+    keeping file sizes down.
+
+    Both a ``.json`` and a ``.min.json`` (actually used by the website) will
+    be generated.
+
+    Args:
+        info (dict):
+            Parser option information. This must define ``min_filename``.
+
+        in_fp (file):
+            A file pointer to the timeline CSV file being read.
+
+        out_filename (str):
+            The filename for the JSON file to write.
+
+        **kwargs (dict, unused):
+            Unused keyword arguments passed to this parser.
+
+    Returns:
+        bool:
+        ``True`` if the file was written, or ``False`` if skipped.
+
+    Raises:
+        ParseError:
+            Expected data was missing or was in an unexpected format. Detailed
+            information will be in the error message.
+    """
+    def build_bar_graph_data(data_id, label, row_index, get_value):
+        latest_row = rows[row_index]
+        prev_row = rows[row_index - 1]
+
+        value = get_value(latest_row)
+        prev_value = get_value(prev_row)
+
+        return {
+            'data_id': data_id,
+            'label': label,
+            'value': value,
+            'relValue': norm_rel_value(value, prev_value),
+        }
+
+    def build_counter_data(row_index, get_value, delta_days=[1]):
+        latest_row = rows[row_index]
+
+        return {
+            'value': get_value(rows[row_index]),
+            'relativeValues': [
+                get_value(rows[row_index - num_days])
+                for num_days in delta_days
+            ],
+        }
+
+    timeline = json.loads(in_fp.read())
+
+    rows = timeline['dates']
+
+    graph_dates = ['date']
+
+    graph_total_cases = ['cases']
+    graph_new_cases = ['new_cases']
+    graph_total_deaths = ['total_deaths']
+    graph_new_deaths = ['new_deaths']
+    graph_two_week_new_case_rate = ['new_case_rate']
+
+    graph_total_tests = ['total_tests']
+    graph_new_tests = ['new_tests']
+    graph_total_test_results = ['test_results']
+    graph_negative_results = ['neg_results']
+    graph_positive_results = ['pos_results']
+    graph_test_pos_rate = ['test_pos_rate']
+
+    graph_cases_in_biggs_gridley = ['biggs_gridley']
+    graph_cases_in_chico = ['chico']
+    graph_cases_in_durham = ['durham']
+    graph_cases_in_gridley = ['gridley']
+    graph_cases_in_oroville = ['oroville']
+    graph_cases_in_ridge = ['ridge']
+    graph_cases_in_other = ['other']
+
+    graph_cases_by_age = OrderedDict()
+    graph_deaths_by_age = OrderedDict()
+
+    graph_in_isolation = ['in_isolation']
+    graph_released_from_isolation = ['released_from_isolation']
+
+    graph_hospitalizations = ['hospitalizations']
+    graph_icu = ['icu']
+    graph_hospitalized_residents = ['residents']
+
+    graph_snf_cur_patient_cases = ['current_patient_cases']
+    graph_snf_cur_staff_cases = ['current_staff_cases']
+    graph_snf_total_patient_deaths = ['total_patient_deaths']
+    graph_snf_total_staff_deaths = ['total_staff_deaths']
+    graph_snf_new_patient_deaths = ['new_patient_deaths']
+    graph_snf_new_staff_deaths = ['new_staff_deaths']
+
+    graph_jail_pop = ['jail_inmate_pop']
+    graph_jail_inmate_tests = ['jail_inmate_tests']
+    graph_jail_inmate_pos_results = ['jail_inmate_pos_results']
+    graph_jail_inmate_cur_cases = ['jail_inmate_cur_cases']
+    graph_jail_staff_tests = ['jail_staff_tests']
+    graph_jail_staff_total_cases = ['jail_staff_total_cases']
+
+    graph_notes = []
+
+    monitoring_tier = None
+
+    max_new_cases = 0
+    max_new_deaths = 0
+    max_total_cases = 0
+    max_total_deaths = 0
+    max_two_week_case_rate = 0
+    max_viral_tests = 0
+    max_hospitalizations_y = 0
+    max_new_snf_deaths = 0
+    max_cur_snf_cases = 0
+    max_seven_day_pos_rate = 0
+    max_jail_inmate_cur_cases = 0
+    max_jail_inmate_pop = 0
+    max_jail_staff_total_cases = 0
+
+    min_test_positivity_rate_date = '2020-04-10'
+    found_min_test_positivity_rate_date = False
+
+    latest_age_data_row_index = None
+    latest_cases_row_index = None
+    latest_county_hospital_row_index = None
+    latest_death_by_age_row_index = None
+    latest_deaths_row_index = None
+    latest_isolation_row_index = None
+    latest_jail_row_index = None
+    latest_per_hospital_row_index = None
+    latest_region_row_index = None
+    latest_state_hospital_row_index = None
+    latest_test_pos_rate_row_index = None
+    latest_tests_row_index = None
+    latest_vaccines_row_index = None
+
+    for key in AGE_RANGE_KEYS:
+        norm_key = f'age_{key}'
+
+        graph_cases_by_age[key] = [norm_key]
+        graph_deaths_by_age[key] = [norm_key]
+
+    for i, row in enumerate(rows):
+        date = row['date']
+        graph_dates.append(date)
+
+        confirmed_cases_data = row['confirmed_cases']
+        deaths_data = row['deaths']
+        viral_tests_data = row['viral_tests']
+        regions_data = row['regions']
+        cases_by_age_range_data = row['age_ranges_in_years']
+        deaths_by_age_range_data = deaths_data['age_ranges_in_years']
+        hospitalizations_data = row['hospitalizations']
+        county_hospital_data = hospitalizations_data['county_data']
+        state_hospital_data = hospitalizations_data['state_data']
+        snf_data = row['skilled_nursing_facilities']
+        county_jail_data = row['county_jail']
+        in_isolation_data = row['in_isolation']
+        monitoring_data = row['monitoring']
+        vaccines_data = row['vaccines']
+
+        prev_day_row = rows[i - 1]
+        week_ago_row = rows[i - 7]
+        two_weeks_ago_row = rows[i - 14]
+
+        # Confirmed cases
+        confirmed_cases_total = confirmed_cases_data['total']
+        delta_confirmed_cases = max(confirmed_cases_data['delta_total'] or 0,
+                                    0)
+
+        graph_total_cases.append(confirmed_cases_total)
+        graph_new_cases.append(delta_confirmed_cases)
+
+        max_new_cases = max(max_new_cases, delta_confirmed_cases or 0)
+        max_total_cases = max(max_total_cases, confirmed_cases_total or 0)
+
+        if confirmed_cases_total is not None:
+            latest_cases_row_index = i
+
+        # Deaths
+        deaths_total = deaths_data['total']
+        deaths_delta_total = deaths_data['delta_total']
+
+        graph_total_deaths.append(deaths_total)
+        graph_new_deaths.append(deaths_delta_total)
+
+        max_new_deaths = max(max_new_deaths, deaths_delta_total or 0)
+        max_total_deaths = max(max_total_deaths, deaths_total or 0)
+
+        if deaths_total is not None:
+            latest_deaths_row_index = i
+
+        # 14-Day New Case Rate
+        two_week_case_rate_i1 = i - 14
+        two_week_case_rate = None
+
+        if two_week_case_rate_i1 >= 0:
+            two_week_case_rate_row1 = rows[two_week_case_rate_i1]
+            two_week_case_rate_row2 = rows[i]
+            two_week_case_rate_total1 = \
+                two_week_case_rate_row1['confirmed_cases']['total']
+            two_week_case_rate_total2 = \
+                two_week_case_rate_row2['confirmed_cases']['total']
+
+            if (two_week_case_rate_total1 is not None and
+                two_week_case_rate_total2 is not None):
+                two_week_case_rate = (two_week_case_rate_total2 -
+                                      two_week_case_rate_total1)
+                max_two_week_case_rate = max(max_two_week_case_rate,
+                                             two_week_case_rate)
+
+        graph_two_week_new_case_rate.append(two_week_case_rate)
+
+        # Testing Data
+        viral_tests_total = viral_tests_data['total']
+        viral_tests_delta_total = viral_tests_data['delta_total']
+        viral_tests_results = viral_tests_data['results']
+
+        graph_total_tests.append(viral_tests_total)
+        graph_new_tests.append(viral_tests_delta_total)
+        graph_total_test_results.append(viral_tests_results)
+
+        if viral_tests_results and delta_confirmed_cases is not None:
+            graph_negative_results.append(viral_tests_results -
+                                          delta_confirmed_cases)
+            graph_positive_results.append(delta_confirmed_cases)
+        else:
+            graph_negative_results.append(0)
+            graph_positive_results.append(0)
+
+        if (viral_tests_total is not None and
+            viral_tests_delta_total is not None):
+            max_viral_tests = max(max_viral_tests, viral_tests_delta_total)
+
+        if viral_tests_results is not None and viral_tests_total is not None:
+            latest_tests_row_index = i
+
+        # Cases By Region
+        graph_cases_in_biggs_gridley.append(
+            regions_data['biggs_gridley']['cases'])
+        graph_cases_in_chico.append(regions_data['chico']['cases'])
+        graph_cases_in_durham.append(regions_data['durham']['cases'])
+        graph_cases_in_gridley.append(regions_data['gridley']['cases'])
+        graph_cases_in_oroville.append(regions_data['oroville']['cases'])
+        graph_cases_in_other.append(regions_data['other']['cases'])
+        graph_cases_in_ridge.append(regions_data['ridge']['cases'])
+
+        if regions_data['chico']['cases'] is not None:
+            latest_region_row_index = i
+
+        # Cases/Deaths By Age
+        found_case_by_age = False
+        found_death_by_age = False
+
+        for key in AGE_RANGE_KEYS:
+            source_key = AGE_RANGE_INFO_MAP[key]['source_key']
+            case_by_age = cases_by_age_range_data.get(source_key)
+            death_by_age = deaths_by_age_range_data.get(source_key)
+
+            graph_cases_by_age[key].append(case_by_age)
+            graph_deaths_by_age[key].append(death_by_age)
+
+            if case_by_age is not None:
+                found_case_by_age = True
+
+            if death_by_age is not None:
+                found_death_by_age = True
+
+        if found_case_by_age:
+            latest_age_data_row_index = i
+
+        if found_death_by_age:
+            latest_death_by_age_row_index = i
+
+        # People In Isolation
+        current_in_isolation = in_isolation_data['current']
+
+        graph_in_isolation.append(current_in_isolation)
+        graph_released_from_isolation.append(
+            in_isolation_data['total_released'])
+
+        if current_in_isolation is not None:
+            latest_isolation_row_index = i
+
+        # Hospitalizations
+        state_hospital_positive = state_hospital_data['positive']
+        county_hospital_positive = county_hospital_data['hospitalized']
+
+        graph_hospitalizations.append(state_hospital_positive)
+        graph_icu.append(state_hospital_data['icu_positive'])
+        graph_hospitalized_residents.append(county_hospital_positive)
+
+        max_hospitalizations_y = max(max_hospitalizations_y,
+                                     state_hospital_positive or 0,
+                                     county_hospital_positive or 0)
+
+        if county_hospital_positive is not None:
+            latest_county_hospital_row_index = i
+
+        if state_hospital_positive is not None:
+            latest_state_hospital_row_index = i
+
+        if state_hospital_data['enloe_hospital'] is not None:
+            latest_per_hospital_row_index = i
+
+        # Skilled Nursing Facilities
+        snf_cur_patient_cases = snf_data['current_patient_cases']
+        snf_cur_staff_cases = snf_data['current_staff_cases']
+        snf_total_patient_deaths = snf_data['total_patient_deaths']
+        snf_total_staff_deaths = snf_data['total_staff_deaths']
+
+        graph_snf_cur_patient_cases.append(snf_cur_patient_cases)
+        graph_snf_cur_staff_cases.append(snf_cur_staff_cases)
+        graph_snf_total_patient_deaths.append(snf_total_patient_deaths)
+        graph_snf_total_staff_deaths.append(snf_total_staff_deaths)
+
+        if (snf_cur_patient_cases is not None and
+            snf_cur_staff_cases is not None):
+            max_cur_snf_cases = max(
+                max_cur_snf_cases,
+                (snf_cur_patient_cases + snf_cur_staff_cases))
+
+        if (i > 0 and
+            snf_total_patient_deaths is not None and
+            snf_total_staff_deaths is not None):
+            prev_snf = prev_day_row['skilled_nursing_facilities']
+
+            snf_new_patient_deaths = (snf_total_patient_deaths -
+                                      (prev_snf['total_patient_deaths'] or 0))
+            snf_new_staff_deaths = (snf_total_staff_deaths -
+                                    (prev_snf['total_staff_deaths'] or 0))
+        else:
+            snf_new_patient_deaths = snf_total_patient_deaths
+            snf_new_staff_deaths = snf_total_staff_deaths
+
+        graph_snf_new_patient_deaths.append(snf_new_patient_deaths)
+        graph_snf_new_staff_deaths.append(snf_new_staff_deaths)
+
+        max_new_snf_deaths = max(
+            max_new_snf_deaths,
+            (snf_new_patient_deaths or 0) + (snf_new_staff_deaths or 0))
+
+        # 7-Day Test Positivity Rate
+        if (not found_min_test_positivity_rate_date and
+            date == min_test_positivity_rate_date):
+            found_min_test_positivity_rate_date = True
+
+        week_ago_confirmed_cases_total = \
+            week_ago_row['confirmed_cases']['total']
+        week_ago_viral_tests_total = \
+            week_ago_row['viral_tests']['total']
+
+        if (found_min_test_positivity_rate_date and
+            confirmed_cases_total is not None and
+            viral_tests_total is not None and
+            week_ago_confirmed_cases_total is not None and
+            week_ago_viral_tests_total is not None):
+            pos_rate = (
+                (confirmed_cases_total - week_ago_confirmed_cases_total) /
+                (viral_tests_total - week_ago_viral_tests_total) *
+                100.0)
+
+            graph_test_pos_rate.append(pos_rate)
+
+            max_seven_day_pos_rate = max(max_seven_day_pos_rate, pos_rate)
+            latest_test_pos_rate_row_index = i
+        else:
+            graph_test_pos_rate.append(None)
+
+        # Notable Events
+        note = row['note']
+
+        if note:
+            graph_notes.append({
+                'value': date,
+                'text': note,
+            })
+
+        # County Jail
+        jail_inmates_data = county_jail_data['inmates']
+        jail_staff_data = county_jail_data['staff']
+        jail_inmate_cur_cases = jail_inmates_data['current_cases']
+        jail_inmate_pop = jail_inmates_data['population']
+        jail_staff_total_cases = jail_staff_data['total_positive']
+
+        graph_jail_pop.append(jail_inmate_pop)
+        graph_jail_inmate_tests.append(jail_inmates_data['total_tests'])
+        graph_jail_inmate_pos_results.append(
+            jail_inmates_data['total_positive'])
+        graph_jail_inmate_cur_cases.append(jail_inmate_cur_cases)
+        graph_jail_staff_tests.append(jail_staff_data['total_tests'])
+        graph_jail_staff_total_cases.append(jail_staff_total_cases)
+
+        max_jail_inmate_cur_cases = max(max_jail_inmate_cur_cases,
+                                        jail_inmate_cur_cases or 0)
+        max_jail_inmate_pop = max(max_jail_inmate_pop,
+                                  jail_inmate_pop or 0)
+        max_jail_staff_total_cases = max(max_jail_staff_total_cases,
+                                         jail_staff_total_cases or 0)
+
+        if jail_inmate_pop is not None:
+            latest_jail_row_index = i
+
+        # Monitoring Tier
+        if monitoring_data and monitoring_data['tier']:
+            monitoring_tier = monitoring_data['tier']
+
+        # Vaccines
+        if vaccines_data and vaccines_data['allocated']:
+            latest_vaccines_row_index = i
+
+    latest_rows = {
+        'ages': latest_age_data_row_index,
+        'cases': latest_cases_row_index,
+        'countyHospitals': latest_county_hospital_row_index,
+        'deaths': latest_deaths_row_index,
+        'deathsByAge': latest_death_by_age_row_index,
+        'jail': latest_jail_row_index,
+        'isolation': latest_isolation_row_index,
+        'perHospital': latest_per_hospital_row_index,
+        'regions': latest_region_row_index,
+        'stateHospitals': latest_state_hospital_row_index,
+        'testPosRate': latest_test_pos_rate_row_index,
+        'tests': latest_tests_row_index,
+        'vaccines': latest_vaccines_row_index,
+    }
+
+    for key, index in latest_rows.items():
+        if index is None:
+            raise ParseError('Could not find latest row index for "%s"' % key)
+
+    latest_cases_row = rows[latest_cases_row_index]
+    latest_confirmed_cases = latest_cases_row['confirmed_cases']
+
+    result = {
+        'barGraphs': {
+            'byHospital': [
+                build_bar_graph_data(
+                    data_id=_info['key'],
+                    label=_info['label'],
+                    row_index=latest_per_hospital_row_index,
+                    get_value=lambda row: (
+                        row['hospitalizations']['state_data'][_info['key']]
+                    ))
+                for _info in HOSPTIALS
+            ],
+            'casesByAge': [
+                build_bar_graph_data(
+                    data_id=_key,
+                    label=_info.get('text', _key.replace('_', '-')),
+                    row_index=latest_death_by_age_row_index,
+                    get_value=lambda row: (
+                        row['age_ranges_in_years'].get(_info['source_key'])
+                    ))
+                for _key, _info in AGE_RANGE_INFO_MAP.items()
+                if not _info.get('legacy', False)
+            ],
+            'deathsByAge': [
+                build_bar_graph_data(
+                    data_id=_key,
+                    label=_info.get('text', _key.replace('_', '-')),
+                    row_index=latest_death_by_age_row_index,
+                    get_value=lambda row: (
+                        row['deaths']['age_ranges_in_years']
+                        .get(_info['source_key'])
+                    ))
+                for _key, _info in AGE_RANGE_INFO_MAP.items()
+                if not _info.get('legacy', False)
+            ],
+            'mortalityRate': [
+                build_bar_graph_data(
+                    data_id=_key,
+                    label=_info.get('text', _key.replace('_', '-')),
+                    row_index=latest_death_by_age_row_index,
+                    get_value=lambda row: (
+                        (row['deaths']['age_ranges_in_years']
+                         .get(_info['source_key'], 0)) /
+                        (row['age_ranges_in_years']
+                         .get(_info['source_key'], 0)) * 100
+                    ))
+                for _key, _info in AGE_RANGE_INFO_MAP.items()
+                if not _info.get('legacy', False)
+            ],
+            'casesByRegion': [
+                build_bar_graph_data(
+                    data_id=_info['key'],
+                    label=_info['label'],
+                    row_index=latest_region_row_index,
+                    get_value=lambda row: (
+                        row['regions'][_info['key']]['cases']
+                    ))
+                for _info in REGIONS
+            ],
+        },
+        'counters': {
+            'totalCases': build_counter_data(
+                row_index=latest_cases_row_index,
+                get_value=lambda row: (
+                    row['confirmed_cases']['total_as_of_report'] or
+                    row['confirmed_cases']['total']
+                ),
+                delta_days=[1, 7, 14, 30]),
+            'totalDeaths': build_counter_data(
+                row_index=latest_cases_row_index,
+                get_value=lambda row: (
+                    row['deaths']['total_as_of_report'] or
+                    row['deaths']['total']),
+                delta_days=[1, 7, 14, 30]),
+            'inIsolation': build_counter_data(
+                row_index=latest_isolation_row_index,
+                get_value=lambda row: row['in_isolation']['current'],
+                delta_days=[1, 7, 14, 30]),
+            'hospitalizedResidents': build_counter_data(
+                row_index=latest_county_hospital_row_index,
+                get_value=lambda row: (
+                    row['hospitalizations']['county_data']['hospitalized']
+                )),
+            'allHospitalized': build_counter_data(
+                row_index=latest_state_hospital_row_index,
+                get_value=lambda row: (
+                    row['hospitalizations']['state_data']['positive']
+                )),
+            'inICU': build_counter_data(
+                row_index=latest_state_hospital_row_index,
+                get_value=lambda row: (
+                    row['hospitalizations']['state_data']['icu_positive']
+                )),
+            'vaccinesAllocated': build_counter_data(
+                row_index=latest_vaccines_row_index,
+                get_value=lambda row: row['vaccines']['allocated'],
+                delta_days=[1, 7, 14]),
+            'vaccinesAdministered': build_counter_data(
+                row_index=latest_vaccines_row_index,
+                get_value=lambda row: row['vaccines']['administered'],
+                delta_days=[1, 7, 14]),
+            'vaccinesOrdered1': build_counter_data(
+                row_index=latest_vaccines_row_index,
+                get_value=lambda row: row['vaccines']['first_doses_ordered'],
+                delta_days=[1, 7, 14]),
+            'vaccinesOrdered2': build_counter_data(
+                row_index=latest_vaccines_row_index,
+                get_value=lambda row: row['vaccines']['second_doses_ordered'],
+                delta_days=[1, 7, 14]),
+            'vaccinesReceived': build_counter_data(
+                row_index=latest_vaccines_row_index,
+                get_value=lambda row: row['vaccines']['received'],
+                delta_days=[1, 7, 14]),
+            'totalTests': build_counter_data(
+                row_index=latest_tests_row_index,
+                get_value=lambda row: row['viral_tests']['total']),
+            'positiveTestResults': build_counter_data(
+                row_index=latest_cases_row_index,
+                get_value=lambda row: row['confirmed_cases']['total']),
+            'positiveTestRate': {
+                'value': (
+                    # Offset by 1 due to the ID at the start of the graph.
+                    graph_test_pos_rate[latest_test_pos_rate_row_index + 1]
+                ),
+                'relativeValues': [
+                    graph_test_pos_rate[latest_test_pos_rate_row_index],
+                ],
+            },
+            'jailInmatePop': build_counter_data(
+                row_index=latest_jail_row_index,
+                get_value=lambda row: (
+                    row['county_jail']['inmates']['population']
+                )),
+            'jailInmateTotalTests': build_counter_data(
+                row_index=latest_jail_row_index,
+                get_value=lambda row: (
+                    row['county_jail']['inmates']['total_tests']
+                )),
+            'jailInmateCurCases': build_counter_data(
+                row_index=latest_jail_row_index,
+                get_value=lambda row: (
+                    row['county_jail']['inmates']['current_cases']
+                )),
+            'jailInmatePosRate': {
+                'value': (
+                    # Offset by 1 due to the ID at the start of the graph.
+                    graph_jail_inmate_cur_cases[latest_jail_row_index + 1] /
+                    graph_jail_pop[latest_jail_row_index + 1] * 100
+                ),
+                'relativeValues': [
+                    graph_jail_inmate_cur_cases[latest_jail_row_index] /
+                    graph_jail_pop[latest_jail_row_index] * 100
+                ],
+            },
+            'jailStaffTotalTests': build_counter_data(
+                row_index=latest_jail_row_index,
+                get_value=lambda row: (
+                    row['county_jail']['staff']['total_tests']
+                )),
+            'jailStaffTotalCases': build_counter_data(
+                row_index=latest_jail_row_index,
+                get_value=lambda row: (
+                    row['county_jail']['staff']['total_positive']
+                )),
+        },
+        'dates': {
+            'first': rows[0]['date'],
+            'last': rows[-1]['date'],
+            'rows': {
+                _key: rows[_index]['date']
+                for _key, _index in latest_rows.items()
+            },
+        },
+        'latestRows': latest_rows,
+        'maxValues': {
+            'jailInmateCurCases': max_jail_inmate_cur_cases,
+            'jailInmatePopulation': max_jail_inmate_pop,
+            'jailStaffTotalCases': max_jail_staff_total_cases,
+            'newCases': max_new_cases,
+            'newDeaths': max_new_deaths,
+            'totalCases': max_total_cases,
+            'totalDeaths': max_total_deaths,
+            'hospitalizations': max_hospitalizations_y,
+            'snf': max_cur_snf_cases,
+            'newSNFDeaths': max_new_snf_deaths,
+            'sevenDayPosRate': max_seven_day_pos_rate,
+            'twoWeekCaseRate': max_two_week_case_rate,
+            'viralTests': max_viral_tests,
+        },
+        'monitoringTier': monitoring_tier,
+        'reportTimestamp': timeline['timestamp'],
+        'timelineGraphs': {
+            'ageRanges': list(graph_cases_by_age.values()),
+            'cases': {
+                'newCases': graph_new_cases,
+                'totalCases': graph_total_cases,
+                'twoWeekNewCaseRate': graph_two_week_new_case_rate,
+            },
+            'dates': graph_dates,
+            'deaths': {
+                'byAge': graph_deaths_by_age,
+                'newDeaths': graph_new_deaths,
+                'totalDeaths': graph_total_deaths,
+            },
+            'hospitalizations': {
+                'icu': graph_icu,
+                'residents': graph_hospitalized_residents,
+                'total': graph_hospitalizations,
+            },
+            'isolation': {
+                'current': graph_in_isolation,
+                'released': graph_released_from_isolation,
+            },
+            'jail': {
+                'inmateCurCases': graph_jail_inmate_cur_cases,
+                'inmatePopulation': graph_jail_pop,
+                'inmatePosResults': graph_jail_inmate_pos_results,
+                'inmateTests': graph_jail_inmate_tests,
+                'staffTests': graph_jail_staff_tests,
+                'staffTotalCases': graph_jail_staff_total_cases,
+            },
+            'notes': graph_notes,
+            'regions': {
+                'biggsGridley': graph_cases_in_biggs_gridley,
+                'chico': graph_cases_in_chico,
+                'durham': graph_cases_in_durham,
+                'gridley': graph_cases_in_gridley,
+                'oroville': graph_cases_in_oroville,
+                'other': graph_cases_in_other,
+                'ridge': graph_cases_in_ridge,
+            },
+            'snf': {
+                'curPatientCases': graph_snf_cur_patient_cases,
+                'curStaffCases': graph_snf_cur_staff_cases,
+                'totalPatientDeaths': graph_snf_total_patient_deaths,
+                'totalStaffDeaths': graph_snf_total_staff_deaths,
+                'newPatientDeaths': graph_snf_new_patient_deaths,
+                'newStaffDeaths': graph_snf_new_staff_deaths,
+            },
+            'viralTests': {
+                'negativeResults': graph_negative_results,
+                'newTests': graph_new_tests,
+                'positiveResults': graph_positive_results,
+                'results': graph_total_test_results,
+                'testPositivityRate': graph_test_pos_rate,
+                'total': graph_total_tests,
+            },
+        },
+    }
+
+    with safe_open_for_write(out_filename) as fp:
+        json.dump(result,
+                  fp,
+                  sort_keys=True,
+                  indent=2)
+
+    min_filename = os.path.join(os.path.dirname(out_filename),
+                                info['min_filename'])
+
+    with safe_open_for_write(min_filename) as fp:
+        json.dump(result,
+                  fp,
+                  sort_keys=True,
+                  separators=(',', ':'))
+
+    return True
+
+
+DATASETS = [
+    {
+        'filename': 'bc19-dashboard.json',
+        'min_filename': 'bc19-dashboard.%s.min.json' % DATASET_VERSION,
+        'format': 'json',
+        'local_source': {
+            'filename': 'timeline.json',
+            'format': 'json',
+        },
+        'parser': build_dataset,
+    },
+]
