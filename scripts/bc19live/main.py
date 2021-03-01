@@ -24,6 +24,9 @@ DATASET_MODULE_NAMES = [
     'state_resources',
     'state_tiers',
     'stay_at_home',
+    'vaccination_stats',
+
+    # This must be last.
     'timeline',
 ]
 

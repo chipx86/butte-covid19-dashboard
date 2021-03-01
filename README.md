@@ -43,6 +43,7 @@ BC19.live's data is compiled from the following sources:
 * [State Cases - All Countes (CSV)](https://data.ca.gov/dataset/590188d5-8545-4c93-a9a0-e230f0db7290/resource/926fd08f-cc91-4828-af38-bd45de97f8c3/download/statewide_cases.csv)
 * [State Cases - All Countes (Data Viewer)](https://data.ca.gov/dataset/covid-19-cases/resource/926fd08f-cc91-4828-af38-bd45de97f8c3)
 * [State Monitoring Tier Status (Dashboard)](https://covid19.ca.gov/safer-economy/#reopening-data)
+* [State Vaccine Statistics - Butte County (Dashboard)](https://covid19.ca.gov/vaccines/)
 
 Additional datasets can be found on the [COVID-19
 Section](https://data.ca.gov/group/covid-19) of the [California Open Data
@@ -76,3 +77,4 @@ The following data is made available for others to use:
 * [State Resources - Butte County Only (JSON)](https://bc19.live/data/json/state-resources.json)
 * [State Monitoring Tier Status - Butte County Only (CSV)](https://bc19.live/data/csv/state-tiers-v2.csv)
 * [State Monitoring Tier Status - Butte County Only (JSON)](https://bc19.live/data/json/state-tiers.json)
+* [State Vaccine Statistics - Butte County Only (JSON)](https://bc19.live/data/json/vaccination-stats.json)
