@@ -66,7 +66,7 @@ def build_dataset(session, responses, out_filename, **kwargs):
 
 DATASETS = [
     {
-        'filename': 'vaccination_stats.json',
+        'filename': 'vaccination-stats.json',
         'format': 'json',
         'urls': {
             'age': (
