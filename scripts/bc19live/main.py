@@ -87,59 +87,83 @@ def main():
         if parser is None and info['format'] == 'csv':
             parser = parse_csv
 
-        if 'url' in info:
-            url = info['url']
+        try:
+            if 'url' in info:
+                url = info['url']
 
-            session, response = \
-                http_get(url, allow_cache=os.path.exists(out_filename))
+                session, response = \
+                    http_get(url, allow_cache=os.path.exists(out_filename))
 
-            if response.status_code == 200:
-                try:
+                if response.status_code == 200:
                     result = parser(info=info,
                                     response=response,
                                     out_filename=out_filename,
                                     session=session)
-                except ParseError as e:
-                    sys.stderr.write('Data parse error while building %s: %s\n'
-                                     % (filename, e))
+                elif response.status_code == 304:
+                    up_to_date = True
+                else:
+                    sys.stderr.write('HTTP error %s while fetching %s: %s'
+                                     % (response.status_code, filename,
+                                        response.text))
                     continue
-                except Exception as e:
-                    sys.stderr.write('Unexpected error while building %s: %s\n'
-                                     % (filename, e))
-                    traceback.print_exc()
+            elif 'urls' in info:
+                urls = info['urls']
+                session = None
+                responses = {}
+                urls_up_to_date = {}
+
+                for url_name, url in urls.items():
+                    session, response = \
+                        http_get(url,
+                                 allow_cache=os.path.exists(out_filename),
+                                 session=session)
+
+                    if response.status_code == 200:
+                        urls_up_to_date[url_name] = False
+                    elif response.status_code == 304:
+                        urls_up_to_date[url_name] = True
+                    else:
+                        sys.stderr.write('HTTP error %s while fetching %s: %s'
+                                         % (response.status_code, filename,
+                                            response.text))
+                        continue
+
+                    responses[url_name] = response
+
+                if len(responses) != len(urls):
+                    # One of them failed. Bail.
                     continue
-            elif response.status_code == 304:
-                up_to_date = True
-            else:
-                sys.stderr.write('HTTP error %s while fetching %s: %s'
-                                 % (response.status_code, filename,
-                                    response.text))
-                continue
-        elif 'local_source' in info:
-            local_source = info['local_source']
-            source_filename = os.path.join(DATA_DIR, local_source['format'],
-                                           local_source['filename'])
+                elif all(urls_up_to_date.values()):
+                    up_to_date = True
+                else:
+                    result = parser(info=info,
+                                    responses=responses,
+                                    out_filename=out_filename,
+                                    session=session)
+            elif 'local_source' in info:
+                local_source = info['local_source']
+                source_filename = os.path.join(DATA_DIR, local_source['format'],
+                                               local_source['filename'])
 
-            if not os.path.exists(source_filename):
-                with open(source_filename, 'w') as out_fp:
-                    out_fp.write('[]')
+                if not os.path.exists(source_filename):
+                    with open(source_filename, 'w') as out_fp:
+                        out_fp.write('[]')
 
-            with open(source_filename, 'r') as in_fp:
-                try:
+                with open(source_filename, 'r') as in_fp:
                     result = parser(info=info,
                                     in_fp=in_fp,
                                     out_filename=out_filename)
-                except ParseError as e:
-                    sys.stderr.write('Data parse error while building %s: %s\n'
-                                     % (filename, e))
-                    continue
-                except Exception as e:
-                    sys.stderr.write('Unexpected error while building %s: %s\n'
-                                     % (filename, e))
-                    traceback.print_exc()
-                    continue
-        else:
-            sys.stderr.write('Invalid feed entry: %r\n' % info)
+            else:
+                sys.stderr.write('Invalid feed entry: %r\n' % info)
+                continue
+        except ParseError as e:
+            sys.stderr.write('Data parse error while building %s: %s\n'
+                             % (filename, e))
+            continue
+        except Exception as e:
+            sys.stderr.write('Unexpected error while building %s: %s\n'
+                             % (filename, e))
+            traceback.print_exc()
             continue
 
         skipped = (result is False)

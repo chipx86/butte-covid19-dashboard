@@ -34,7 +34,7 @@ def write_http_cache():
         json.dump(http_cache, fp)
 
 
-def http_get(url, allow_cache=True):
+def http_get(url, allow_cache=True, session=None):
     """Perform a HTTP GET request to a server.
 
     This will handle looking up and storing cache details, along with setting
@@ -47,6 +47,9 @@ def http_get(url, allow_cache=True):
         allow_cache (bool, optional):
             Whether to allow HTTP cache management.
 
+        session (requests.Session, optional):
+            An existing session to use. If not provided, one will be created.
+
     Returns:
         tuple:
         A 2-tuple containing:
@@ -54,7 +57,9 @@ def http_get(url, allow_cache=True):
         1. The requests session.
         2. The response.
     """
-    session = requests.Session()
+    if session is None:
+        session = requests.Session()
+
     session.headers['User-Agent'] = USER_AGENT
 
     headers = {}
