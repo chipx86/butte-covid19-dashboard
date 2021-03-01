@@ -95,6 +95,42 @@ def add_nested_key(d, full_key, value):
     d[keys[-1]] = value
 
 
+def get_nested_key(d, full_key, must_resolve=True):
+    """Return the value from a dictionary using a nested key path.
+
+    This takes a ``.``-separated key path and uses it to retrieve a value
+    at the provided dictionary.
+
+    Args:
+        d (dict):
+            The dictionary to retrieve the key from.
+
+        full_key (str):
+            The ``.``-separated key path.
+
+        must_resolve (bool, optional):
+            Raise an exception if the key could not be fully resolved.
+
+    Returns:
+        object:
+        The value stored at the key.
+
+    Raises:
+        KeyError:
+            The key could not be found, and ``must_resolve`` is ``True``.
+    """
+    for path in paths:
+        try:
+            d = d[path]
+        except KeyError:
+            if must_resolve:
+                raise
+
+            break
+
+    return d
+
+
 def parse_int(value, allow_blank=False):
     """Parse an integer from a string.
 
@@ -362,15 +398,6 @@ def convert_json_to_csv(info, in_fp, out_filename, **kwargs):
         **kwargs (dict, unused):
             Unused keyword arguments passed to this parser.
     """
-    def _get_key_value(d, paths):
-        for path in paths:
-            d = d.get(path)
-
-            if d is None:
-                break
-
-        return d
-
     key_map = info['key_map']
     dataset = json.load(in_fp) or {}
 
@@ -385,7 +412,7 @@ def convert_json_to_csv(info, in_fp, out_filename, **kwargs):
 
         for row in dataset.get('dates', []):
             csv_writer.writerow({
-                key: _get_key_value(row, paths)
+                key: get_nested_key(row, paths, must_resolve=False)
                 for key, paths in key_map
             })
 
