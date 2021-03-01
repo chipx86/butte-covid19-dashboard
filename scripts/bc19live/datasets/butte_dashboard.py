@@ -129,11 +129,12 @@ def build_dataset(response, out_filename, **kwargs):
             return None
 
         try:
-            return int(value.replace(',', ''))
+            return int(re.sub(r'[, ]+', '', value))
         except Exception:
-            raise ParseError('Expected value %r for entity %s to be int, '
+            raise ParseError('Expected value %r for entity %s (%s) to be int, '
                              'got %s'
-                             % (value, entity_id, type(value)))
+                             % (value, entity_id, ', '.join(expected_labels),
+                                type(value)))
 
     def get_chart_info(entity_id, label_col=0, value_col=1):
         """Return information from a chart.
