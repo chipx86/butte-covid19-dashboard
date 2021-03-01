@@ -29,3 +29,7 @@ cp $SOURCE_DIR/htdocs/js/*.js $BUILD_DIR/htdocs/js
 cp $SOURCE_DIR/htdocs/*.html $BUILD_DIR/htdocs
 cp $SOURCE_DIR/scripts/*.py $BUILD_DIR/scripts
 cp $SOURCE_DIR/scripts/*.sh $BUILD_DIR/scripts
+cp -a $SOURCE_DIR/scripts/bc19live $BUILD_DIR/scripts
+find $SOURCE_DIR/scripts/bc19live -name '*.pyc' | xargs rm
+find $SOURCE_DIR/scripts/bc19live -name '__pycache__' | xargs rm
+find $SOURCE_DIR/scripts/bc19live -name '.*.sw*' | xargs rm
