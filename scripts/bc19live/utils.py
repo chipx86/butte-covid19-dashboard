@@ -119,13 +119,14 @@ def get_nested_key(d, full_key, must_resolve=True):
         KeyError:
             The key could not be found, and ``must_resolve`` is ``True``.
     """
-    for path in paths:
+    for path in full_key:
         try:
             d = d[path]
         except KeyError:
             if must_resolve:
                 raise
 
+            d = None
             break
 
     return d
