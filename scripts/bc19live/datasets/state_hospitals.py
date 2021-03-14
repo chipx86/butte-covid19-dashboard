@@ -2,7 +2,7 @@ DATASETS = [
     {
         'filename': 'state-hospitals-v3.csv',
         'format': 'csv',
-        'url': 'https://data.ca.gov/dataset/529ac907-6ba1-4cb7-9aae-8966fc96aeef/resource/42d33765-20fd-44b8-a978-b083b7542225/download/hospitals_by_county.csv',
+        'url': 'https://data.chhs.ca.gov/dataset/2df3e19e-9ee4-42a6-a087-9761f82033f6/resource/47af979d-8685-4981-bced-96a6b79d3ed5/download/covid19hospitalbycounty.csv',
         'csv': {
             'match_row': lambda row: row['county'] == 'Butte',
             'validator': lambda results: results[0]['date'] == '2020-03-29',
