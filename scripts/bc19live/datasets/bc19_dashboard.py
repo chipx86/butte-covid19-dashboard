@@ -282,7 +282,7 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
     latest_vaccines_row_index = None
 
     for key in AGE_RANGE_KEYS:
-        norm_key = f'age_{key}'
+        norm_key = 'age_%s' % key
 
         graph_cases_by_age[key] = [norm_key]
         graph_deaths_by_age[key] = [norm_key]
