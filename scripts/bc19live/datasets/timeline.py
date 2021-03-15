@@ -8,18 +8,18 @@ from bc19live.utils import add_nested_key, safe_open_for_write
 
 
 def build_dataset(info, in_fp, out_filename, **kwargs):
-    """Parse the Google Sheets CSV export and build JSON data for the website.
+    """Parse the Google Sheets CSV export and build JSON data.
 
     This takes all the consolidated information from the main "Timeline Data"
-    sheet in Google Sheets and generates a new JSON file for consumption by
-    the https://bc19.live dashboard.
+    sheet in Google Sheets and generates a new JSON file used by the
+    ```bc19_dashboard`` dataset for the https://bc19.live dashboard.
 
     Each header in the Google Sheets CSV file is expected to be a
     ``.``-delimited nested key path, which will be used when setting the
     appropriate key in the JSON file.
 
-    Both a ``.json`` and a ``.min.json`` (actually used by the website) will
-    be generated.
+    Both a ``.json`` and a ``.min.json`` will be generated. The ``.min.json``
+    is deprecated.
 
     Args:
         info (dict):

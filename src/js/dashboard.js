@@ -9,25 +9,6 @@ window.BC19 = {
         VERY_SMALL: 5,
     },
 
-    minDates: {
-        testPositivityRate: '2020-04-10',
-    },
-
-    maxValues: {
-        hospitalizations: 0,
-        jailInmateCurCases: 0,
-        jailInmatePopulation: 0,
-        jailStaffTotalCases: 0,
-        newCases: 0,
-        newDeaths: 0,
-        newSNFDeaths: 0,
-        sevenDayPosRate: 0,
-        totalCases: 0,
-        totalDeaths: 0,
-        tests: 0,
-        twoWeekPosRate: 0,
-    },
-
     graphSizes: {
         VERY_TALL: 380,
         STANDARD: 240,
@@ -78,51 +59,7 @@ window.BC19 = {
     },
 
     els: {},
-
-    ageRangeInfo: {
-        '0_4': {sourceKey: '0-4'},
-        '5-12': {sourceKey: '5-12'},
-        '13-17': {sourceKey: '13-17'},
-        '18_24': {sourceKey: '18-24'},
-        '25_34': {sourceKey: '25-34'},
-        '35_44': {sourceKey: '35-44'},
-        '45_54': {sourceKey: '45-54'},
-        '55_64': {sourceKey: '55-64'},
-        '65_74': {sourceKey: '65-74'},
-        '75_plus': {
-            text: '75+',
-            sourceKey: '75_plus',
-        },
-
-        // Legacy data, unpublished as of December 9, 2020.
-        '0-17': {
-            legacy: true,
-            sourceKey: '0-17',
-        },
-
-        // Legacy data, unpublished as of July 9, 2020.
-        '18-49': {
-            legacy: true,
-            sourceKey: '18-49',
-        },
-        '50-64': {
-            legacy: true,
-            sourceKey: '50-64',
-        },
-        '65_plus': {
-            legacy: true,
-            text: '65+',
-            sourceKey: '65_plus',
-        },
-    },
-    allAgeRanges: [],
-    visibleAgeRanges: [],
-
-    reportTimestamp: null,
     graphs: [],
-    graphsData: {},
-    latestRows: {},
-    monitoringTier: null,
 
     commonTimelineOptions: {
         bar: {
@@ -150,6 +87,17 @@ window.BC19 = {
     },
 
     defaultTimelineDomain: null,
+
+    /* Data loaded in from the dashboard JSON file. */
+    barGraphsData: null,
+    firstMDate: null,
+    graphData: null,
+    lastMDate: null,
+    latestRowDates: null,
+    latestRowIndexes: null,
+    maxValues: null,
+    monitoringTier: null,
+    reportTimestamp: null,
 };
 
 
@@ -201,553 +149,38 @@ BC19.getDayText = function(date) {
 
 
 /**
- * Return a normalized number relative to another number.
+ * Process the downloaded dashboard data.
  *
- * The relative value is the difference between the value and the previous
- * value.
- *
- * Args:
- *     value (number):
- *         The "new" value.
- *
- *     prevValue (number):
- *         The previous value that ``value`` is relative to. If ``null``,
- *         this function will simply return 0.
- *
- *     hideNegative (boolean, optional):
- *         Whether to turn negative results into 0. By default, negative
- *         results will be returned as-is.
- *
- * Returns:
- *     number:
- *     The relative value, or 0 if either ``prevValue`` is ``null`` or
- *     the relative value is negative and ``hideNegative=true``.
- */
-BC19.normRelValue = function(value, prevValue, hideNegative) {
-    if (prevValue === null || (hideNegative && value < prevValue)) {
-        return 0;
-    }
-
-    return value - prevValue;
-};
-
-
-/**
- * Process the downloaded timeline data.
- *
- * This is the main function used by the website to compute data for display.
- * It parses the ``timeline.min.json`` data feed, computing information for
- * all the graphs and counters on the page, as well as the variables in
- * the :js:data:`BC19` namespace at the top of this file.
+ * This is the main function used by the website to load data for display.
+ * It parses the ``bc19-dashboard.*.min.json`` data feed, loading the
+ * information for the graphs and counters on the page, as well as the
+ * variables in the :js:data:`BC19` namespace at the top of this file.
  *
  * Args:
- *     timeline (object):
- *         The deserialized timeline data.
+ *     data (object):
+ *         The deserialized dashboard data.
  */
-BC19.processTimelineData = function(timeline) {
-    const rows = timeline.dates;
-    const graphDates = ['date'];
-
-    const graphTotalCases = ['cases'];
-    const graphNewCases = ['new_cases'];
-    const graphTotalDeaths = ['total_deaths'];
-    const graphNewDeaths = ['new_deaths'];
-    const graphTwoWeekNewCaseRate = ['new_case_rate'];
-
-    const graphTotalTests = ['total_tests'];
-    const graphNewTests = ['new_tests'];
-    const graphTotalTestResults = ['test_results'];
-    const graphNegativeResults = ['neg_results'];
-    const graphPositiveResults = ['pos_results'];
-    const graphTestPositivityRate = ['test_pos_rate'];
-
-    const graphCasesInBiggsGridley = ['biggs_gridley'];
-    const graphCasesInChico = ['chico'];
-    const graphCasesInDurham = ['durham'];
-    const graphCasesInGridley = ['gridley'];
-    const graphCasesInOroville = ['oroville'];
-    const graphCasesInRidge = ['ridge'];
-    const graphCasesInOtherRegion = ['other'];
-
-    const ageRangeInfo = BC19.ageRangeInfo;
-    const ageRangeKeys = Object.keys(ageRangeInfo);
-    const graphCasesByAge = {};
-    const graphDeathsByAge = {};
-
-    const graphInIsolation = ['in_isolation'];
-    const graphReleasedFromIsolation = ['released_from_isolation'];
-
-    const graphHospitalizations = ['hospitalizations'];
-    const graphICU = ['icu'];
-    const graphHospitalizedResidents = ['residents'];
-
-    const graphNursingCurPatientCases = ['current_patient_cases'];
-    const graphNursingCurStaffCases = ['current_staff_cases'];
-    const graphNursingTotalPatientDeaths = ['total_patient_deaths'];
-    const graphNursingTotalStaffDeaths = ['total_staff_deaths'];
-    const graphNursingNewPatientDeaths = ['new_patient_deaths'];
-    const graphNursingNewStaffDeaths = ['new_staff_deaths'];
-
-    const graphJailPop = ['jail_inmate_pop'];
-    const graphJailInmateTests = ['jail_inmate_tests'];
-    const graphJailInmatePosResults = ['jail_inmate_pos_results'];
-    const graphJailInmateCurCases = ['jail_inmate_cur_cases'];
-    const graphJailStaffTests = ['jail_staff_tests'];
-    const graphJailStaffTotalCases = ['jail_staff_total_cases'];
-
-    const graphNotes = [];
-
-    let maxJailInmateCurCases = 0;
-    let maxJailInmatePopulation = 0;
-    let maxJailStaffTotalCases = 0;
-    let maxNewCases = 0;
-    let maxNewDeaths = 0;
-    let maxHospitalizationsY = 0;
-    let maxCurrentSNFCases = 0;
-    let maxNewSNFDeaths = 0;
-    let maxTwoWeekCaseRate = 0;
-    let maxSevenDayPosRate = 0;
-    let maxViralTests = 0;
-
-    let latestAgeDataRow;
-    let latestCasesRow;
-    let latestCountyHospitalDataRow;
-    let latestDeathsRow;
-    let latestDeathsByAgeDataRow;
-    let latestIsolationDataRow;
-    let latestJailRow;
-    let latestPerHospitalDataRow;
-    let latestRegionDataRow;
-    let latestStateHospitalsRow;
-    let latestTestPosDataRow;
-    let latestTestsDataRow;
-    let latestVaccinesDataRow;
-
-    const minTestPositivityRateDate = BC19.minDates.testPositivityRate;
-    let foundMinTestPositivityRateDate = false;
-
-    let monitoringTier;
-
-    ageRangeKeys.forEach(key => {
-        const normKey = key.replace('-', '_');
-
-        graphCasesByAge[key] = [`age_${normKey}`];
-        graphDeathsByAge[key] = [`age_${normKey}`];
-    });
-
-    for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-
-        row.i = i;
-        graphDates.push(row.date);
-
-        const confirmedCases = row.confirmed_cases;
-        const deltaConfirmedCases = Math.max(confirmedCases.delta_total, 0);
-        const viralTests = row.viral_tests;
-        const viralTestResults = viralTests.results;
-        const regions = row.regions;
-        const casesByAgeRange = row.age_ranges_in_years;
-        const deathsByAgeRange = row.deaths.age_ranges_in_years;
-        const countyHospital = row.hospitalizations.county_data;
-        const stateHospital = row.hospitalizations.state_data;
-        const snf = row.skilled_nursing_facilities;
-        const prevDay = rows[i - 1];
-        const twoWeeksAgo = rows[i - 14];
-        const sevenDaysAgo = rows[i - 7];
-
-
-        /* Confirmed Csses */
-        graphTotalCases.push(confirmedCases.total);
-        graphNewCases.push(deltaConfirmedCases);
-
-        if (confirmedCases.total !== null) {
-            latestCasesRow = row;
-        }
-
-
-        /* Deaths */
-        graphTotalDeaths.push(row.deaths.total);
-        graphNewDeaths.push(row.deaths.delta_total);
-
-        maxNewDeaths = Math.max(maxNewDeaths, row.deaths.delta_total);
-
-        if (deltaConfirmedCases && deltaConfirmedCases > maxNewCases) {
-            maxNewCases = confirmedCases.delta_total;
-        }
-
-        if (row.deaths.total !== null) {
-            latestDeathsRow = row;
-        }
-
-
-        /* 14-Day New Case Rate */
-        const twoWeekCaseRateI1 = i - 14;
-        let twoWeekCaseRate = null;
-
-        if (twoWeekCaseRateI1 >= 0) {
-            const twoWeekCaseRateRow1 = rows[twoWeekCaseRateI1];
-            const twoWeekCaseRateRow2 = rows[i];
-            const twoWeekCaseRateTotal1 =
-                twoWeekCaseRateRow1.confirmed_cases.total;
-            const twoWeekCaseRateTotal2 =
-                twoWeekCaseRateRow2.confirmed_cases.total;
-
-            if (twoWeekCaseRateTotal1 !== null &&
-                twoWeekCaseRateTotal2 !== null) {
-                twoWeekCaseRate = twoWeekCaseRateTotal2 -
-                                  twoWeekCaseRateTotal1;
-                maxTwoWeekCaseRate = Math.max(maxTwoWeekCaseRate,
-                                              twoWeekCaseRate);
-            }
-        }
-
-        graphTwoWeekNewCaseRate.push(twoWeekCaseRate);
-
-
-        /* Testing Data */
-        graphTotalTests.push(viralTests.total);
-        graphNewTests.push(viralTests.delta_total);
-        graphTotalTestResults.push(viralTests.results);
-
-        if (viralTestResults && deltaConfirmedCases !== null) {
-            graphNegativeResults.push(viralTestResults - deltaConfirmedCases);
-            graphPositiveResults.push(deltaConfirmedCases);
-        } else {
-            graphNegativeResults.push(0);
-            graphPositiveResults.push(0);
-        }
-
-        if (viralTestResults !== null && viralTests.total !== null) {
-            latestTestsDataRow = row;
-        }
-
-        if (viralTests.total !== null) {
-            maxViralTests = Math.max(maxViralTests, viralTests.delta_total);
-        }
-
-        if (viralTestResults !== null) {
-            maxViralTests = Math.max(maxViralTests, viralTestResults);
-        }
-
-
-        /* Cases By Region */
-        graphCasesInBiggsGridley.push(regions.biggs_gridley.cases);
-        graphCasesInChico.push(regions.chico.cases);
-        graphCasesInDurham.push(regions.durham.cases);
-        graphCasesInOroville.push(regions.oroville.cases);
-        graphCasesInRidge.push(regions.ridge.cases);
-        graphCasesInGridley.push(regions.gridley.cases);
-        graphCasesInOtherRegion.push(regions.other.cases);
-
-        if (regions.chico.cases !== null) {
-            latestRegionDataRow = row;
-        }
-
-
-        /* Cases and Deaths By Age */
-        let foundCaseByAge = false;
-        let foundDeathByAge = false;
-
-        ageRangeKeys.forEach(key => {
-            const caseByAge = casesByAgeRange[ageRangeInfo[key].sourceKey];
-            const deathByAge = deathsByAgeRange[ageRangeInfo[key].sourceKey];
-
-            graphCasesByAge[key].push(caseByAge);
-            graphDeathsByAge[key].push(deathByAge);
-
-            if (caseByAge !== null) {
-                foundCaseByAge = true;
-            }
-
-            if (deathByAge !== null) {
-                foundDeathByAge = true;
-            }
-        });
-
-        if (foundCaseByAge) {
-            latestAgeDataRow = row;
-        }
-
-        if (foundDeathByAge) {
-            latestDeathByAgeDataRow = row;
-        }
-
-
-        /* People In Isolation */
-        graphInIsolation.push(row.in_isolation.current);
-        graphReleasedFromIsolation.push(row.in_isolation.total_released);
-
-        if (row.in_isolation.current !== null) {
-            latestIsolationDataRow = row;
-        }
-
-
-        /* Hospitalizations */
-        graphHospitalizations.push(stateHospital.positive);
-        graphICU.push(stateHospital.icu_positive);
-        graphHospitalizedResidents.push(countyHospital.hospitalized);
-
-        maxHospitalizationsY = Math.max(maxHospitalizationsY,
-                                        stateHospital.positive,
-                                        countyHospital.hospitalized);
-
-        if (countyHospital.hospitalized !== null) {
-            latestCountyHospitalDataRow = row;
-        }
-
-        if (stateHospital.positive !== null) {
-            latestStateHospitalsRow = row;
-        }
-
-        if (stateHospital.enloe_hospital !== null) {
-            latestPerHospitalDataRow = row;
-        }
-
-
-        /* Skilled Nursing Facilities */
-        graphNursingCurPatientCases.push(snf.current_patient_cases);
-        graphNursingCurStaffCases.push(snf.current_staff_cases);
-        graphNursingTotalPatientDeaths.push(snf.total_patient_deaths);
-        graphNursingTotalStaffDeaths.push(snf.total_staff_deaths);
-
-        let newSNFPatientDeaths;
-        let newSNFStaffDeaths;
-
-        if (i > 0 &&
-            snf.total_patient_deaths !== null &&
-            snf.total_staff_deaths !== null) {
-            const prevSNF = prevDay.skilled_nursing_facilities;
-            newSNFPatientDeaths =
-                snf.total_patient_deaths - (prevSNF.total_patient_deaths || 0);
-            newSNFStaffDeaths =
-                snf.total_staff_deaths - (prevSNF.total_staff_deaths || 0);
-        } else {
-            newSNFPatientDeaths = snf.total_patient_deaths;
-            newSNFStaffDeaths = snf.total_staff_deaths;
-        }
-
-        graphNursingNewPatientDeaths.push(newSNFPatientDeaths);
-        graphNursingNewStaffDeaths.push(newSNFStaffDeaths);
-
-        if (newSNFStaffDeaths !== null && newSNFStaffDeaths !== null) {
-            maxNewSNFDeaths = Math.max(maxNewSNFDeaths,
-                                       newSNFPatientDeaths + newSNFStaffDeaths);
-        }
-
-        if (snf.current_patient_cases !== null &&
-            snf.current_staff_cases !== null) {
-            maxCurrentSNFCases = Math.max(
-                maxCurrentSNFCases,
-                (snf.current_patient_cases + snf.current_staff_cases));
-        }
-
-
-        /* 7-Day Test Positivity Rate */
-        if (!foundMinTestPositivityRateDate &&
-            row.date === minTestPositivityRateDate) {
-            foundMinTestPositivityRateDate = true;
-        }
-
-        if (foundMinTestPositivityRateDate &&
-            confirmedCases.total !== null &&
-            viralTests.total !== null &&
-            sevenDaysAgo.confirmed_cases.total !== null &&
-            sevenDaysAgo.viral_tests.total !== null &&
-            graphTestPositivityRate[i + 1] !== null) {
-            const posRate =
-                (confirmedCases.total - sevenDaysAgo.confirmed_cases.total) /
-                (viralTests.total - sevenDaysAgo.viral_tests.total) *
-                100.0;
-
-            graphTestPositivityRate.push(posRate);
-
-            maxSevenDayPosRate = Math.max(maxSevenDayPosRate, posRate);
-            latestTestPosDataRow = row;
-        } else {
-            graphTestPositivityRate.push(null);
-        }
-
-
-        /* Notable Event */
-        if (row.note) {
-            graphNotes.push({
-                value: row.date,
-                text: row.note,
-            });
-        }
-
-
-        /* County Jail */
-        const jailInmateCurCases = row.county_jail.inmates.current_cases;
-        const jailInmatePopulation = row.county_jail.inmates.population
-        const jailStaffTotalCases = row.county_jail.staff.total_positive;
-        graphJailPop.push(jailInmatePopulation);
-        graphJailInmateTests.push(row.county_jail.inmates.total_tests);
-        graphJailInmatePosResults.push(row.county_jail.inmates.total_positive);
-        graphJailInmateCurCases.push(jailInmateCurCases);
-        graphJailStaffTests.push(row.county_jail.staff.total_tests);
-        graphJailStaffTotalCases.push(jailStaffTotalCases);
-
-        if (jailInmateCurCases !== null) {
-            maxJailInmateCurCases = Math.max(maxJailInmateCurCases,
-                                             jailInmateCurCases);
-        }
-
-        if (jailInmatePopulation !== null) {
-            maxJailInmatePopulation = Math.max(maxJailInmatePopulation,
-                                               jailInmatePopulation);
-        }
-
-        if (jailStaffTotalCases !== null) {
-            maxJailStaffTotalCases = Math.max(maxJailStaffTotalCases,
-                                              jailStaffTotalCases);
-        }
-
-        if (row.county_jail.inmates.population !== null) {
-            latestJailRow = row;
-        }
-
-
-        /* Monitoring Tier */
-        if (row.monitoring && row.monitoring.tier) {
-            monitoringTier = row.monitoring.tier;
-        }
-
-
-        /* Vaccines */
-        if (row.vaccines && row.vaccines.allocated != null) {
-            latestVaccinesDataRow = row;
-        }
-    }
-
-    /*
-     * Validate the results, so that we can display a message to the user
-     * to bug me if something is somehow missing.
-     */
-    if (latestCasesRow === null) {
-        throw new Error(
-            "Oh no! The latest COVID-19 case data couldn't be " +
-            "found! Please report this :)");
-    }
-
-    if (latestStateHospitalsRow === null) {
-        throw new Error(
-            "Oh no! The latest COVID-19 hospitals data couldn't be " +
-            "found! Please report this :)");
-    }
-
-    if (latestJailRow === null) {
-        throw new Error(
-            "Oh no! The latest COVID-19 jail data couldn't be " +
-            "found! Please report this :)");
-    }
-
-    /* Set all the state for the graphs, counters, and calculations. */
-    BC19.latestRows = {
-        ages: latestAgeDataRow,
-        cases: latestCasesRow,
-        countyHospitals: latestCountyHospitalDataRow,
-        deaths: latestDeathsRow,
-        deathsByAge: latestDeathByAgeDataRow,
-        jail: latestJailRow,
-        isolation: latestIsolationDataRow,
-        perHospital: latestPerHospitalDataRow,
-        regions: latestRegionDataRow,
-        stateHospitals: latestStateHospitalsRow,
-        testPosRate: latestTestPosDataRow,
-        tests: latestTestsDataRow,
-        vaccines: latestVaccinesDataRow,
-    };
-
-    BC19.firstMDate = BC19.parseMDate(timeline.dates[0].date);
-    BC19.lastMDate = BC19.parseMDate(timeline.dates[rows.length - 1].date);
-    BC19.timeline = timeline;
-    BC19.monitoringTier = monitoringTier;
-    BC19.reportTimestamp = BC19.parseMDate(timeline.timestamp,
+BC19.processDashboardData = function(data) {
+    BC19.firstMDate = BC19.parseMDate(data.dates.first);
+    BC19.lastMDate = BC19.parseMDate(data.dates.last);
+    BC19.reportTimestamp = BC19.parseMDate(data.reportTimestamp,
                                            'YYYY-MM-DD hh:mm:ss Z')
 
-    BC19.allAgeRanges = ageRangeKeys;
-    BC19.visibleAgeRanges = ageRangeKeys.filter(
-        key => !BC19.ageRangeInfo[key].legacy);
+    BC19.latestRowIndexes = data.latestRows;
+    BC19.latestRowDates = Object.fromEntries(
+        Object.entries(data.dates.rows).map(
+            pair => [pair[0], BC19.parseMDate(pair[1])]));
+
+    BC19.barGraphsData = data.barGraphs;
+    BC19.countersData = data.counters;
+    BC19.graphData = data.timelineGraphs;
+    BC19.maxValues = data.maxValues;
+    BC19.monitoringTier = data.monitoringTier;
 
     BC19.defaultTimelineDomain = [
         moment(BC19.lastMDate).subtract(120, 'days').format('YYYY-MM-DD'),
         moment(BC19.lastMDate).add(1, 'days').format('YYYY-MM-DD'),
     ];
-
-    BC19.maxValues = {
-        jailInmateCurCases: maxJailInmateCurCases,
-        jailInmatePopulation: maxJailInmatePopulation,
-        jailStaffTotalCases: maxJailStaffTotalCases,
-        newCases: maxNewCases,
-        newDeaths: maxNewDeaths,
-        totalCases: latestCasesRow.confirmed_cases.total,
-        totalDeaths: latestCasesRow.deaths.total,
-        hospitalizations: maxHospitalizationsY,
-        snf: maxCurrentSNFCases,
-        newSNFDeaths: maxNewSNFDeaths,
-        sevenDayPosRate: maxSevenDayPosRate,
-        twoWeekCaseRate: maxTwoWeekCaseRate,
-        viralTests: maxViralTests,
-    };
-
-    BC19.graphData = {
-        dates: graphDates,
-        notes: graphNotes,
-        deaths: {
-            totalDeaths: graphTotalDeaths,
-            newDeaths: graphNewDeaths,
-            byAge: graphDeathsByAge,
-        },
-        cases: {
-            totalCases: graphTotalCases,
-            newCases: graphNewCases,
-            twoWeekNewCaseRate: graphTwoWeekNewCaseRate,
-        },
-        jail: {
-            inmatePopulation: graphJailPop,
-            inmateTests: graphJailInmateTests,
-            inmatePosResults: graphJailInmatePosResults,
-            inmateCurCases: graphJailInmateCurCases,
-            staffTests: graphJailStaffTests,
-            staffTotalCases: graphJailStaffTotalCases,
-        },
-        viralTests: {
-            total: graphTotalTests,
-            results: graphTotalTestResults,
-            newTests: graphNewTests,
-            negativeResults: graphNegativeResults,
-            positiveResults: graphPositiveResults,
-            testPositivityRate: graphTestPositivityRate,
-        },
-        regions: {
-            biggsGridley: graphCasesInBiggsGridley,
-            chico: graphCasesInChico,
-            durham: graphCasesInDurham,
-            gridley: graphCasesInGridley,
-            oroville: graphCasesInOroville,
-            ridge: graphCasesInRidge,
-            other: graphCasesInOtherRegion,
-        },
-        ageRanges: graphCasesByAge,
-        isolation: {
-            current: graphInIsolation,
-            released: graphReleasedFromIsolation,
-        },
-        hospitalizations: {
-            total: graphHospitalizations,
-            icu: graphICU,
-            residents: graphHospitalizedResidents,
-        },
-        snf: {
-            curPatientCases: graphNursingCurPatientCases,
-            curStaffCases: graphNursingCurStaffCases,
-            totalPatientDeaths: graphNursingTotalPatientDeaths,
-            totalStaffDeaths: graphNursingTotalStaffDeaths,
-            newPatientDeaths: graphNursingNewPatientDeaths,
-            newStaffDeaths: graphNursingNewStaffDeaths,
-        },
-    };
 };
 
 
@@ -908,12 +341,19 @@ BC19.setupBBGraph = function(options) {
  *
  *     pct (boolean, optional):
  *         Whether to show a percentage beside the bar.
+ *
+ *     skipIfZero (boolean, optional):
+ *         Skip the bar if the value is 0.
  */
 BC19.setupBarGraph = function(graph, options={}, data) {
     const showPct = !!options.pct;
     const formatValue = options.formatValue || function(value) {
         return value.toLocaleString();
     };
+
+    if (options.skipIfZero) {
+        data = data.filter(item => (item.value > 0));
+    }
 
     const total = d3.sum(data, d => d.value);
     const x = d3.scaleLinear()
@@ -1059,199 +499,30 @@ BC19.setCounter = function(elID, options) {
 
 
 /**
- * Set a counter based on rows of timeline data.
- *
- * Args:
- *     elID (string):
- *         The ID of the element for the counter component.
- *
- *     options (object):
- *         Options for the counter's display.
- *
- * Option Args:
- *     deltaDays (number):
- *         The number of days between the latest row and the previous row.
- *
- *     getValue (function):
- *         A function to return the value from a row. This takes the row
- *         of data to return the value from.
- *
- *     latestRow (object):
- *         The latest row from the timeline data.
- */
-BC19.setCounterFromRows = function(elID, options) {
-    const latestRow = options.latestRow;
-    const rowI = latestRow.i;
-    const deltaDays = options.deltaDays;
-    const getValue = options.getValue;
-    const dates = BC19.timeline.dates;
-    const relativeValues = [];
-
-    deltaDays.forEach(numDays => {
-        relativeValues.push(getValue(dates[rowI - numDays]));
-    });
-
-    BC19.setCounter(elID, {
-        value: getValue(latestRow),
-        relativeValues: relativeValues,
-    });
-};
-
-
-/**
- * Set up all the counters on the page, based on timeline data.
- *
- * This will set up the following counters:
- *
- *     * Total Cases
- *     * Total Deaths
- *     * In Isolation
- *     * Total Hospitalized
- *     * Total In ICU
- *     * County Patients
- *     * Vaccines Allocated
- *     * Vaccines Administered
- *     * Vaccines First Doses Ordered
- *     * Vaccines Second Doses Ordered
- *     * Vaccines Received
- *     * Total Tests
- *     * Positive Test Results
- *     * 7-Day Test Positivity Rate
- *     * Inmate Population
- *     * Total Inmate Tests
- *     * Current Inmate Tests
- *     * % of Inmates Positive
- *     * Total Staff Tests
- *     * Total Staff Cases
+ * Set up all the counters on the page.
  */
 BC19.setupCounters = function() {
-    const casesRow = BC19.latestRows.cases;
-    const isolationRow = BC19.latestRows.isolation;
-    const stateHospitalsRow = BC19.latestRows.stateHospitals;
-    const jailRow = BC19.latestRows.jail;
-    const vaccinesRow = BC19.latestRows.vaccines;
-    const testsRow = BC19.latestRows.tests;
-    const testPosRateRow = BC19.latestRows.testPosRate;
-    const jailI = jailRow.i;
-    const testPosRateI = testPosRateRow.i;
-    const totalTests = testsRow.viral_tests.total;
+    const data = BC19.countersData;
 
-    BC19.setCounterFromRows(
-        'total-cases-counter',
+    BC19.setCounter('total-cases-counter', data.totalCases);
+    BC19.setCounter('deaths-counter', data.totalDeaths);
+    BC19.setCounter('in-isolation-counter', data.inIsolation);
+    BC19.setCounter('hospitalized-residents-counter',
+                    data.hospitalizedResidents);
+    BC19.setCounter('hospitalized-counter', data.allHospitalized);
+    BC19.setCounter('icu-counter', data.inICU);
+    BC19.setCounter('vaccines-allocated-counter', data.vaccinesAllocated);
+    BC19.setCounter('vaccines-administered-counter',
+                    data.vaccinesAdministered);
+    BC19.setCounter('vaccines-ordered1-counter', data.vaccinesOrdered1);
+    BC19.setCounter('vaccines-ordered2-counter', data.vaccinesOrdered2);
+    BC19.setCounter('vaccines-received-counter', data.vaccinesReceived);
+    BC19.setCounter('total-tests-counter', data.totalTests);
+    BC19.setCounter('positive-test-results-counter', data.positiveTestResults);
+    BC19.setCounter('positive-test-rate-counter',
         {
-            latestRow: casesRow,
-            getValue: row => (row.confirmed_cases.total_as_of_report ||
-                              row.confirmed_cases.total),
-            deltaDays: [1, 7, 14, 30],
-        });
-
-    BC19.setCounterFromRows(
-        'deaths-counter',
-        {
-            latestRow: casesRow,
-            getValue: row => {
-                return (row.deaths.total_as_of_report ||
-                              row.deaths.total);
-            },
-            deltaDays: [1, 7, 14, 30],
-        });
-
-    BC19.setCounterFromRows(
-        'in-isolation-counter',
-        {
-            latestRow: isolationRow,
-            getValue: row => row.in_isolation.current,
-            deltaDays: [1, 7, 14, 30],
-        });
-
-    BC19.setCounterFromRows(
-        'hospitalized-residents-counter',
-        {
-            latestRow: BC19.latestRows.countyHospitals,
-            getValue: row => row.hospitalizations.county_data.hospitalized,
-            deltaDays: [1],
-        });
-
-    BC19.setCounterFromRows(
-        'hospitalized-counter',
-        {
-            latestRow: stateHospitalsRow,
-            getValue: row => row.hospitalizations.state_data.positive,
-            deltaDays: [1],
-        });
-
-    BC19.setCounterFromRows(
-        'icu-counter',
-        {
-            latestRow: stateHospitalsRow,
-            getValue: row => row.hospitalizations.state_data.icu_positive,
-            deltaDays: [1],
-        });
-
-    BC19.setCounterFromRows(
-        'vaccines-allocated-counter',
-        {
-            latestRow: vaccinesRow,
-            getValue: row => row.vaccines.allocated,
-            deltaDays: [1, 7, 14],
-        });
-
-    BC19.setCounterFromRows(
-        'vaccines-administered-counter',
-        {
-            latestRow: vaccinesRow,
-            getValue: row => row.vaccines.administered,
-            deltaDays: [1, 7, 14],
-        });
-
-    BC19.setCounterFromRows(
-        'vaccines-ordered1-counter',
-        {
-            latestRow: vaccinesRow,
-            getValue: row => row.vaccines.first_doses_ordered,
-            deltaDays: [1, 7, 14],
-        });
-
-    BC19.setCounterFromRows(
-        'vaccines-ordered2-counter',
-        {
-            latestRow: vaccinesRow,
-            getValue: row => row.vaccines.second_doses_ordered,
-            deltaDays: [1, 7, 14],
-        });
-
-    BC19.setCounterFromRows(
-        'vaccines-received-counter',
-        {
-            latestRow: vaccinesRow,
-            getValue: row => row.vaccines.received,
-            deltaDays: [1, 7, 14],
-        });
-
-    BC19.setCounterFromRows(
-        'total-tests-counter',
-        {
-            latestRow: testsRow,
-            getValue: row => row.viral_tests.total,
-            deltaDays: [1],
-        });
-
-    BC19.setCounterFromRows(
-        'positive-test-results-counter',
-        {
-            latestRow: casesRow,
-            getValue: row => row.confirmed_cases.total,
-            deltaDays: [1],
-        });
-
-    BC19.setCounter(
-        'positive-test-rate-counter',
-        {
-            value: BC19.graphData.viralTests.testPositivityRate
-                [testPosRateI + 1],
-            relativeValues: [
-                BC19.graphData.viralTests.testPositivityRate[testPosRateI],
-            ],
+            value: data.positiveTestRate.value,
+            relativeValues: data.positiveTestRate.relativeValues,
             formatValue: value => value.toFixed(2) + '%',
             formatRelValues: [
                 (value, relValue) => {
@@ -1259,40 +530,13 @@ BC19.setupCounters = function() {
                 },
             ],
         });
-
-    BC19.setCounterFromRows(
-        'jail-inmate-pop-counter',
+    BC19.setCounter('jail-inmate-pop-counter', data.jailInmatePop);
+    BC19.setCounter('jail-inmate-total-tests', data.jailInmateTotalTests);
+    BC19.setCounter('jail-inmate-cur-cases', data.jailInmateCurCases);
+    BC19.setCounter('jail-inmate-pos-rate',
         {
-            latestRow: jailRow,
-            getValue: row => row.county_jail.inmates.population,
-            deltaDays: [1],
-        });
-
-    BC19.setCounterFromRows(
-        'jail-inmate-total-tests',
-        {
-            latestRow: jailRow,
-            getValue: row => row.county_jail.inmates.total_tests,
-            deltaDays: [1],
-        });
-
-    BC19.setCounterFromRows(
-        'jail-inmate-cur-cases',
-        {
-            latestRow: jailRow,
-            getValue: row => row.county_jail.inmates.current_cases,
-            deltaDays: [1],
-        });
-
-    BC19.setCounter(
-        'jail-inmate-pos-rate',
-        {
-            value: (BC19.graphData.jail.inmateCurCases[jailI + 1] /
-                    BC19.graphData.jail.inmatePopulation[jailI + 1]) * 100,
-            relativeValues: [
-                BC19.graphData.jail.inmateCurCases[jailI] /
-                BC19.graphData.jail.inmatePopulation[jailI] * 100,
-            ],
+            value: data.jailInmatePosRate.value,
+            relativeValues: data.jailInmatePosRate.relativeValues,
             formatValue: value => value.toFixed(2) + '%',
             formatRelValues: [
                 (value, relValue) => {
@@ -1300,174 +544,42 @@ BC19.setupCounters = function() {
                 },
             ],
         });
-
-    BC19.setCounterFromRows(
-        'jail-staff-total-tests',
-        {
-            latestRow: jailRow,
-            getValue: row => row.county_jail.staff.total_tests,
-            deltaDays: [1],
-        });
-
-    BC19.setCounterFromRows(
-        'jail-staff-total-cases',
-        {
-            latestRow: jailRow,
-            getValue: row => row.county_jail.staff.total_positive,
-            deltaDays: [1],
-        });
+    BC19.setCounter('jail-staff-total-tests', data.jailStaffTotalTests);
+    BC19.setCounter('jail-staff-total-cases', data.jailStaffTotalCases);
 };
 
 
 /**
- * Set up the Cases By Age bar graph.
+ * Set up the bar graphs.
  */
-BC19.setupByAgeGraph = function() {
-    const agesI = BC19.latestRows.ages.i + 1;
+BC19.setupBarGraphs = function() {
+    const data = BC19.barGraphsData;
 
     BC19.setupBarGraph(
         d3.select('#by_age_graph'),
         {
             pct: true,
         },
-        BC19.visibleAgeRanges.map(key => {
-            const ageRanges = BC19.graphData.ageRanges[key];
-            const ageRangeInfo = BC19.ageRangeInfo[key];
-            const value = ageRanges[agesI];
-
-            return {
-                data_id: key,
-                label: ageRangeInfo.text || key.replace('_', '-'),
-                value: value,
-                relValue: BC19.normRelValue(value, ageRanges[agesI - 1]),
-            };
-        }));
-};
-
-
-/**
- * Set up the Cases By Region bar graph.
- */
-BC19.setupByRegionGraph = function() {
-    const row = BC19.latestRows.regions;
-    const regions = row.regions;
-    const prevIndex = row.i - 1;
-    const prevRegions = BC19.timeline.dates[prevIndex].regions;
+        data.casesByAge);
 
     BC19.setupBarGraph(
         d3.select('#by_region_graph'),
         {
             pct: true,
         },
-        [
-            {
-                data_id: 'biggs_gridley',
-                label: 'Biggs, Gridley',
-                value: regions.biggs_gridley.cases,
-                relValue: BC19.normRelValue(regions.biggs_gridley.cases,
-                                            prevRegions.biggs_gridley.cases),
-            },
-            {
-                data_id: 'chico',
-                label: 'Chico',
-                value: regions.chico.cases,
-                relValue: BC19.normRelValue(regions.chico.cases,
-                                            prevRegions.chico.cases),
-            },
-            {
-                data_id: 'durham',
-                label: 'Durham',
-                value: regions.durham.cases,
-                relValue: BC19.normRelValue(regions.durham.cases,
-                                            prevRegions.durham.cases),
-            },
-            {
-                data_id: 'oroville',
-                label: 'Oroville',
-                value: regions.oroville.cases,
-                relValue: BC19.normRelValue(regions.oroville.cases,
-                                            prevRegions.oroville.cases),
-            },
-            {
-                data_id: 'ridge',
-                label: 'Paradise, Magalia...',
-                value: regions.ridge.cases,
-                relValue: BC19.normRelValue(regions.ridge.cases,
-                                            prevRegions.ridge.cases),
-            },
-            {
-                data_id: 'other',
-                label: 'Other',
-                value: regions.other.cases,
-                relValue: BC19.normRelValue(regions.other.cases,
-                                            prevRegions.other.cases,
-                                            true),
-            },
-        ]);
-};
-
-
-/**
- * Set up the Deaths By Age bar graph.
- */
-BC19.setupDeathsByAgeGraph = function() {
-    const agesI = BC19.latestRows.deathsByAge.i;
-    const data = [];
-
-    BC19.visibleAgeRanges.forEach(key => {
-        const ageRanges = BC19.graphData.deaths.byAge[key];
-        const ageRangeInfo = BC19.ageRangeInfo[key];
-        const value = ageRanges[agesI];
-
-        if (value > 0) {
-            data.push({
-                data_id: key,
-                label: ageRangeInfo.text || key.replace('_', '-'),
-                value: value,
-                relValue: BC19.normRelValue(value, ageRanges[agesI - 1]),
-            });
-        }
-    });
+        data.casesByRegion);
 
     BC19.setupBarGraph(
         d3.select('#deaths_by_age_graph'),
-        {},
-        data);
-};
-
-
-/**
- * Set up the Mortality Rates By Age bar graph.
- */
-BC19.setupMortalityRatesByAgeGraph = function() {
-    const agesI = BC19.latestRows.deathsByAge.i;
-    const data = [];
-
-    BC19.visibleAgeRanges.forEach(key => {
-        const casesAgeRanges = BC19.graphData.ageRanges[key];
-        const deathsAgeRanges = BC19.graphData.deaths.byAge[key];
-        const ageRangeInfo = BC19.ageRangeInfo[key];
-        const cases = casesAgeRanges[agesI];
-        const deaths = deathsAgeRanges[agesI];
-
-        if (cases && deaths) {
-            const value = deaths / cases * 100;
-            const relValue = BC19.normRelValue(
-                value,
-                deathsAgeRanges[agesI - 1] / casesAgeRanges[agesI - 1] * 100);
-
-            data.push({
-                data_id: key,
-                label: ageRangeInfo.text || key.replace('_', '-'),
-                value: value,
-                relValue: relValue,
-            });
-        }
-    });
+        {
+            skipIfZero: true,
+        },
+        data.deathsByAge);
 
     BC19.setupBarGraph(
         d3.select('#mortality_by_age_graph'),
         {
+            skipIfZero: true,
             formatValue: (value) => {
                 const normValue = value.toLocaleString(undefined, {
                     maximumFractionDigits: 2,
@@ -1476,46 +588,12 @@ BC19.setupMortalityRatesByAgeGraph = function() {
                 return normValue !== '0' ? `${normValue}%` : '';
             }
         },
-        data);
-};
-
-
-/**
- * Set up the Cases By Hospital bar graph.
- */
-BC19.setupByHospitalGraph = function() {
-    const row = BC19.latestRows.perHospital;
-    const prevIndex = row.i - 1;
-    const data = row.hospitalizations.state_data;
-    const prevData =
-        BC19.timeline.dates[prevIndex].hospitalizations.state_data;
+        data.mortalityRate);
 
     BC19.setupBarGraph(
         d3.select('#by_hospital_graph'),
         {},
-        [
-            {
-                data_id: 'enloe',
-                label: 'Enloe Hospital',
-                value: data.enloe_hospital,
-                relValue: BC19.normRelValue(data.enloe_hospital,
-                                            prevData.enloe_hospital),
-            },
-            {
-                data_id: 'oroville',
-                label: 'Oroville Hospital',
-                value: data.oroville_hospital,
-                relValue: BC19.normRelValue(data.oroville_hospital,
-                                            prevData.oroville_hospital),
-            },
-            {
-                data_id: 'orchard',
-                label: 'Orchard Hospital',
-                value: data.orchard_hospital,
-                relValue: BC19.normRelValue(data.orchard_hospital,
-                                            prevData.orchard_hospital),
-            },
-        ]);
+        data.byHospital);
 };
 
 
@@ -1542,13 +620,12 @@ BC19.setupByHospitalGraph = function() {
  *     * Current Inmate Cases
  *     * Total Staff Cases
  */
-BC19.setupMainTimelineGraphs = function() {
+BC19.setupTimelineGraphs = function() {
     const graphData = BC19.graphData;
     const maxValues = BC19.maxValues;
     const tickCounts = BC19.tickCounts;
     const isolationData = graphData.isolation;
-    const casesRow = BC19.latestRows.cases;
-    const casesI = casesRow.i;
+    const casesI = BC19.latestRowIndexes.cases;
 
     const axisX = {
         type: 'timeseries',
@@ -1756,7 +833,7 @@ BC19.setupMainTimelineGraphs = function() {
             colors: BC19.colors,
             columns: [
                 graphData.dates,
-            ].concat(Object.values(graphData.ageRanges)),
+            ].concat(graphData.ageRanges),
             names: {
                 age_0_4: '0-4',
                 age_5_12: '5-12',
@@ -2469,7 +1546,7 @@ BC19.setupElements = function() {
         const key = el.dataset.key;
 
         if (!datesMap.hasOwnProperty(key)) {
-            datesMap[key] = BC19.getDayText(BC19.latestRows[key].date);
+            datesMap[key] = BC19.getDayText(BC19.latestRowDates[key]);
         }
 
         el.innerText = datesMap[key];
@@ -2505,7 +1582,8 @@ BC19.setupElements = function() {
  * Any errors encountered will result in a log message and an alert.
  */
 BC19.init = function() {
-    fetch(new Request('data/json/timeline.min.json?' + moment().format('x')))
+    fetch(new Request('data/json/bc19-dashboard.1.min.json?' +
+                      moment().format('x')))
         .then(response => {
             if (response && response.status === 200) {
                 try {
@@ -2518,17 +1596,13 @@ BC19.init = function() {
                 "Oh no! The latest COVID-19 data couldn't be loaded! " +
                 "Please report this :)");
         })
-        .then(timeline => {
-            BC19.processTimelineData(timeline);
+        .then(dashboardData => {
+            BC19.processDashboardData(dashboardData);
 
             BC19.setupElements();
             BC19.setupCounters();
-            BC19.setupByAgeGraph();
-            BC19.setupDeathsByAgeGraph();
-            BC19.setupMortalityRatesByAgeGraph();
-            BC19.setupByRegionGraph();
-            BC19.setupByHospitalGraph();
-            BC19.setupMainTimelineGraphs();
+            BC19.setupBarGraphs();
+            BC19.setupTimelineGraphs();
         })
         .catch(msg => {
             console.error(msg);
