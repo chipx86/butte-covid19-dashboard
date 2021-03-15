@@ -12,7 +12,7 @@
   <meta property="og:image" content="./images/preview.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Preview of the COVID-19 Statistics">
+  <meta property="og:image:alt" content="Detailed trends and information on the COVID-19 situation in Butte County.">
   <meta property="og:site_name" content="Unofficial Butte County COVID-19 Dashboard">
   <meta property="og:title" content="Unofficial Butte County COVID-19 Dashboard">
   <meta property="og:type" content="website">
@@ -21,7 +21,7 @@
   <meta property="twitter:image" content="./images/preview.png">
   <meta property="twitter:image:width" content="1200">
   <meta property="twitter:image:height" content="630">
-  <meta property="twitter:image:alt" content="Preview of the COVID-19 Statistics">
+  <meta property="twitter:image:alt" content="Detailed trends and information on the COVID-19 situation in Butte County.">
   <meta property="twitter:site" content="@chipx86">
   <meta property="twitter:title" content="Unofficial Butte County COVID-19 Dashboard">
 
@@ -44,6 +44,7 @@
     <a href="https://twitter.com/bc19live">Twitter</a>.
    </p>
 -->
+
    <header class="bc19-c-dashboard__header -is-intro"
            aria-label="Dashboard introduction">
     <img class="bc19-c-dashboard__logo"
@@ -56,15 +57,13 @@
      <p>
       Data assembled by <a href="https://twitter.com/chipx86">
       Christian Hammond</a> based on the
-      <a href="https://infogram.com/1pe66wmyjnmvkrhm66x9362kp3al60r57ex">Butte
-      County dashboard</a>,
-      <a href="https://public.tableau.com/views/COVID-19HospitalsDashboard/Hospitals?:embed=y&:showVizHome=no&COUNTY=Butte">California hospital data</a>,
-      and <a href="https://github.com/chipx86/butte-covid19-dashboard">other
-      data feeds</a>.
+      <a href="https://infogram.com/1pe66wmyjnmvkrhm66x9362kp3al60r57ex">Butte County dashboard</a> and
+      <a href="https://github.com/chipx86/butte-covid19-dashboard">other data
+      feeds</a>.
      </p>
      <p>
-      County data is updated on weekdays by 4PM, and other
-      data is updated as it becomes available (but is generally one day behind).
+      Updated weekdays by 4PM. Data generally represents the previous business
+      day.
      </p>
      <p>
       Learn more in the <a href="https://www.notion.so/Frequently-Asked-Questions-98c9989c090c41a88f767830af845462">Frequently Asked Questions</a> and
@@ -89,27 +88,27 @@
     <span id="monitoring-tier"></span>
    </section>
 
-   <section class="bc19-c-dashboard__section -has-counters
-                   -is-case-counters"
+   <section class="bc19-c-dashboard__section -has-counters -is-case-counters"
+            id="case-counters-section"
             aria-label="General case-related counts">
     <figure class="bc19-c-counter -up-is-bad" id="total-cases-counter">
      <h3 class="bc19-c-counter__title">Total Cases</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       <span class="bc19-o-update-day" data-key="cases"></span>
+      <span class="bc19-c-counter__relative-value">0</span>
+      <span class="bc19-o-update-day" data-key="cases"></span>
      </div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       last 7 days
+      <span class="bc19-c-counter__relative-value">0</span>
+      last 7 days
      </div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       last 14 days
+      <span class="bc19-c-counter__relative-value">0</span>
+      last 14 days
      </div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       last 30 days
+      <span class="bc19-c-counter__relative-value">0</span>
+      last 30 days
      </div>
     </figure>
 
@@ -117,20 +116,20 @@
      <h3 class="bc19-c-counter__title">Total Deaths</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       <span class="bc19-o-update-day" data-key="deaths"></span>
+      <span class="bc19-c-counter__relative-value">0</span>
+      <span class="bc19-o-update-day" data-key="deaths"></span>
      </div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       last 7 days
+      <span class="bc19-c-counter__relative-value">0</span>
+      last 7 days
      </div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       last 14 days
+      <span class="bc19-c-counter__relative-value">0</span>
+      last 14 days
      </div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       last 30 days
+      <span class="bc19-c-counter__relative-value">0</span>
+      last 30 days
      </div>
     </figure>
 
@@ -138,20 +137,20 @@
      <h3 class="bc19-c-counter__title">In Isolation</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       <span class="bc19-o-update-day" data-key="isolation"></span>
+      <span class="bc19-c-counter__relative-value">0</span>
+      <span class="bc19-o-update-day" data-key="isolation"></span>
      </div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       last 7 days
+      <span class="bc19-c-counter__relative-value">0</span>
+      last 7 days
      </div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       last 14 days
+      <span class="bc19-c-counter__relative-value">0</span>
+      last 14 days
      </div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       last 30 days
+      <span class="bc19-c-counter__relative-value">0</span>
+      last 30 days
      </div>
     </figure>
 
@@ -161,8 +160,8 @@
      <h3 class="bc19-c-counter__title">Total Hospitalized</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       <span class="bc19-o-update-day" data-key="stateHospitals"></span>
+      <span class="bc19-c-counter__relative-value">0</span>
+      <span class="bc19-o-update-day" data-key="stateHospitals"></span>
      </div>
     </figure>
 
@@ -170,24 +169,24 @@
      <h3 class="bc19-c-counter__title">Total In ICU</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       <span class="bc19-o-update-day" data-key="stateHospitals"></span>
+      <span class="bc19-c-counter__relative-value">0</span>
+      <span class="bc19-o-update-day" data-key="stateHospitals"></span>
      </div>
     </figure>
 
-    <figure class="bc19-c-counter -up-is-bad"
-            id="hospitalized-residents-counter">
+    <figure class="bc19-c-counter -up-is-bad" id="hospitalized-residents-counter">
      <h3 class="bc19-c-counter__title">County Patients</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       <span class="bc19-o-update-day" data-key="countyHospitals"></span>
+      <span class="bc19-c-counter__relative-value">0</span>
+      <span class="bc19-o-update-day" data-key="countyHospitals"></span>
      </div>
     </figure>
    </section>
 
    <section class="bc19-c-dashboard__section -is-cases-breakdown"
-            aria-label="Breakdown of Cases">
+            id="cases-section"
+            aria-label="Breakdown of cases">
     <figure class="bc19-c-bar-graph -is-horiz" id="by_age_graph">
      <h3 class="bc19-c-bar-graph__title">Total Cases By Age Group</h3>
      <h4 class="bc19-c-bar-graph__subtitle">Updated <span class="bc19-o-update-day" data-key="ages"></span></h4>
@@ -214,11 +213,13 @@
     </figure>
    </section>
 
-   <section class="bc19-c-dashboard__section -is-case-graphs">
+   <section class="bc19-c-dashboard__section -is-case-graphs"
+            aria-label="Case graphs">
     <figure class="bc19-c-timeline-graph">
-     <h3 class="bc19-c-timeline-graph__title">Total Confirmed Cases</h3>
-     <div id="total_cases_graph"></div>
-
+     <h3 class="bc19-c-timeline-graph__title"
+         id="total_cases_graph_label">Total Confirmed Cases</h3>
+     <div id="total_cases_graph"
+          aria-labelled-by="total_cases_graph_label"></div>
      <figcaption class="bc19-c-dashboard__note">
       <p>
        <strong>Note:</strong> The timeline above includes some notable
@@ -235,42 +236,47 @@
     </figure>
 
     <figure class="bc19-c-timeline-graph">
-     <h3 class="bc19-c-timeline-graph__title">New Cases</h3>
-     <div id="new_cases_graph"></div>
+     <h3 class="bc19-c-timeline-graph__title"
+         id="new_cases_graph_label">New Cases</h3>
+     <div id="new_cases_graph"
+          aria-labelled-by="new_cases_graph_label"></div>
     </figure>
 
     <figure class="bc19-c-timeline-graph">
-     <h3 class="bc19-c-timeline-graph__title">14-Day New Case Rate</h3>
+     <h3 class="bc19-c-timeline-graph__title"
+         id="two_week_new_case_rate_graph_label">14-Day New Case Rate</h3>
      <h4 class="bc19-c-timeline-graph__subtitle">
       New cases over a 14-day period, based on available date information
      </h4>
-     <h4 class="bc19-c-timeline-graph__subtitle">
-      The state tracks this differently for the purposes of
-      reopening/monitoring &mdash; consider this a <em>very</em> rough
-      idea of what they're seeing
-     </h4>
-     <div id="two_week_new_case_rate_graph"></div>
+
+     <div id="two_week_new_case_rate_graph"
+          aria-labelled-by="two_week_new_case_rate_graph_label"></div>
     </figure>
 
     <figure class="bc19-c-timeline-graph">
-     <h3 class="bc19-c-timeline-graph__title">Total Deaths</h3>
-     <div id="total_deaths_graph"></div>
+     <h3 class="bc19-c-timeline-graph__title"
+         id="total_deaths_graph_label">Total Deaths</h3>
+     <div id="total_deaths_graph"
+          aria-labelled-by="total_deaths_graph_label"></div>
     </figure>
 
     <figure class="bc19-c-timeline-graph">
-     <h3 class="bc19-c-timeline-graph__title">New Deaths</h3>
-     <div id="new_deaths_graph"></div>
+     <h3 class="bc19-c-timeline-graph__title"
+         id="new_deaths_graph_label">New Deaths</h3>
+     <div id="new_deaths_graph"
+          aria-labelled-by="new_deaths_graph_label"></div>
     </figure>
    </section>
 
    <header class="bc19-c-dashboard__header -is-demographics-header"
-           aria-label="Demographics Header">
+           id="demographics"
+           aria-label="Demographics header">
     <h2>Demographics</h2>
     <p>
      Growth of the spread by age group and region, based on county data.
     </p>
     <p class="bc19-c-dashboard__sources">
-     <strong>Sources:</strong>
+     <strong>Source:</strong>
      <a href="https://infogram.com/1pe66wmyjnmvkrhm66x9362kp3al60r57ex">Butte County Dashboard</a>
     </p>
    </header>
@@ -279,27 +285,25 @@
             aria-label="Demographics graphs">
     <figure class="bc19-c-timeline-graph">
      <h3 class="bc19-c-timeline-graph__title"
-         id="cases_by_age_timeline_graph_label">
-      Cases By Age
-     </h3>
+         id="cases_by_age_timeline_graph_label">Cases By Age</h3>
      <h4 class="bc19-c-timeline-graph__subtitle">
-       More age ranges introduced July 9th, 2020
+      More age ranges introduced July 9th, 2020
      </h4>
+
      <div id="cases_by_age_timeline_graph"
           aria-labelled-by="cases_by_age_timeline_graph_label"></div>
     </figure>
 
     <figure class="bc19-c-timeline-graph">
      <h3 class="bc19-c-timeline-graph__title"
-         id="cases_by_region_timeline_graph_label">
-      Cases By Region
-     </h3>
+         id="cases_by_region_timeline_graph_label">Cases By Region</h3>
      <div id="cases_by_region_timeline_graph"
           aria-labelled-by="cases_by_region_timeline_graph_label"></div>
     </figure>
    </section>
 
    <header class="bc19-c-dashboard__header -is-vaccine-intro"
+           id="vaccines"
            aria-label="Vaccines introduction">
     <h2>Vaccines</h2>
     <p>
@@ -308,13 +312,12 @@
      delayed several days.
     </p>
     <p class="bc19-c-dashboard__sources">
-     <strong>Sources:</strong>
+     <strong>Source:</strong>
      <a href="https://infogram.com/1pe66wmyjnmvkrhm66x9362kp3al60r57ex">Butte County Dashboard</a>
     </p>
    </header>
 
-   <section class="bc19-c-dashboard__section -has-counters
-                   -is-vaccine-counters"
+   <section class="bc19-c-dashboard__section -has-counters -is-vaccine-counters"
             aria-label="Vaccine information">
     <figure class="bc19-c-counter" id="vaccines-allocated-counter">
      <h3 class="bc19-c-counter__title">Total Allocated</h3>
@@ -403,6 +406,7 @@
    </section>
 
    <header class="bc19-c-dashboard__header -is-viral-testing-intro"
+           id="testing"
            aria-label="Viral tests introduction">
     <h2>Viral Testing</h2>
     <p>
@@ -411,31 +415,28 @@
      of <strong>people</strong> tested.
     </p>
     <p class="bc19-c-dashboard__sources">
-     <strong>Sources:</strong>
-     <a href="https://infogram.com/1pe66wmyjnmvkrhm66x9362kp3al60r57ex">Butte County Dashboard</a>,
-     <a href="https://www.cdph.ca.gov/Programs/CID/DCDC/Pages/COVID-19/CountyMonitoringDataStep1.aspx">County Data Monitoring</a>
+     <strong>Source:</strong>
+     <a href="https://infogram.com/1pe66wmyjnmvkrhm66x9362kp3al60r57ex">Butte County Dashboard</a>
     </p>
    </header>
 
-   <section class="bc19-c-dashboard__section -has-counters
-                   -is-viral-test-counters"
+   <section class="bc19-c-dashboard__section -has-counters -is-viral-test-counters"
             aria-label="Viral test statistics">
     <figure class="bc19-c-counter" id="total-tests-counter">
      <h3 class="bc19-c-counter__title">Total Tests (NOT People!)</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       <span class="bc19-o-update-day" data-key="tests"></span>
+      <span class="bc19-c-counter__relative-value">0</span>
+      <span class="bc19-o-update-day" data-key="tests"></span>
      </div>
     </figure>
 
-    <figure class="bc19-c-counter -is-bad -up-is-bad"
-         id="positive-test-results-counter">
+    <figure class="bc19-c-counter -is-bad -up-is-bad" id="positive-test-results-counter">
      <h3 class="bc19-c-counter__title">Positive Test Results</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       <span class="bc19-o-update-day" data-key="tests"></span>
+      <span class="bc19-c-counter__relative-value">0</span>
+      <span class="bc19-o-update-day" data-key="tests"></span>
      </div>
     </figure>
 
@@ -443,8 +444,8 @@
      <h3 class="bc19-c-counter__title">7-Day Test Positivity Rate</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       <span class="bc19-o-update-day" data-key="testPosRate"></span>
+      <span class="bc19-c-counter__relative-value">0</span>
+      <span class="bc19-o-update-day" data-key="testPosRate"></span>
      </div>
     </figure>
    </section>
@@ -452,43 +453,46 @@
    <section class="bc19-c-dashboard__section -is-viral-test-graphs"
             aria-label="Viral testing graphs">
     <figure class="bc19-c-timeline-graph">
-     <h3 class="bc19-c-timeline-graph__title">
-       7-Day Test Positivity Rate
-     </h3>
+     <h3 class="bc19-c-timeline-graph__title"
+         id="test_positivity_rate_graph_label">7-Day Test Positivity Rate</h3>
      <h4 class="bc19-c-timeline-graph__subtitle">
       Positivity rate over a 7-day period, based on available date information
      </h4>
+
      <h4 class="bc19-c-timeline-graph__subtitle">
-      The state tracks this differently for the purposes of
-      reopening/monitoring &mdash; consider this a <em>very</em> rough
-      idea of what they're seeing
+      The state tracks this differently for the purposes of reopening/monitoring &mdash; consider this a <em>very</em> rough idea of what they're seeing
      </h4>
-     <div id="test_positivity_rate_graph"></div>
+
+     <div id="test_positivity_rate_graph"
+          aria-labelled-by="test_positivity_rate_graph_label"></div>
     </figure>
 
     <figure class="bc19-c-timeline-graph">
-     <h3 class="bc19-c-timeline-graph__title">
-       % of Cases In Each Batch of Test Results
-     </h3>
+     <h3 class="bc19-c-timeline-graph__title"
+         id="cases_in_test_results_graph_label">% of Cases In Each Batch of Test Results</h3>
      <h4 class="bc19-c-timeline-graph__subtitle">
-       Most early historical data is unavailable
+      Most early historical data is unavailable
      </h4>
-     <div id="cases_in_test_results_graph"></div>
+
+     <div id="cases_in_test_results_graph"
+          aria-labelled-by="cases_in_test_results_graph_label"></div>
     </figure>
 
     <figure class="bc19-c-timeline-graph">
-     <h3 class="bc19-c-timeline-graph__title">
-       Test Results
-     </h3>
+     <h3 class="bc19-c-timeline-graph__title"
+         id="test_results_graph_label">Test Results</h3>
      <h4 class="bc19-c-timeline-graph__subtitle">
-       Most early historical data is unavailable
+      Most early historical data is unavailable
      </h4>
-     <div id="test_results_graph"></div>
+
+     <div id="test_results_graph"
+          aria-labelled-by="test_results_graph_label"></div>
     </figure>
    </section>
 
    <header class="bc19-c-dashboard__header -is-hospitalizations-header"
-           aria-label="Hospitalizations and isolation info">
+           id="hospitalizations"
+           aria-label="Hospitalizations and isolation information">
     <h2>Hospitalizations, Isolation, Care</h2>
     <p>
      <strong>NOTE:</strong> Hospital/ICU information comes from the state,
@@ -498,77 +502,70 @@
      <strong>Sources:</strong>
      <a href="https://infogram.com/1pe66wmyjnmvkrhm66x9362kp3al60r57ex">Butte County Dashboard</a>,
      <a href="https://public.tableau.com/views/COVID-19HospitalsDashboard/Hospitals?:embed=y&:showVizHome=no&COUNTY=Butte">State Hospitals Dashboard</a>,
-     <a href="https://github.com/chipx86/butte-covid19-dashboard">State Skilled Nursing Facilities</a>
+     <a href="https://www.cdph.ca.gov/Programs/CID/DCDC/Pages/COVID-19/SNFsCOVID_19.aspx">State Skilled Nursing Facilities</a>
     </p>
    </header>
 
    <section class="bc19-c-dashboard__section -is-hospitalizations-graphs"
             aria-label="Hospitalizations and isolation graphs">
-     <figure class="bc19-c-timeline-graph">
-      <h3 class="bc19-c-timeline-graph__title"
-          id="hospitalizations_icu_timeline_graph_label">
-       Total Hospitalizations vs. ICU
-      </h3>
-      <h4 class="bc19-c-timeline-graph__subtitle">
-        Includes non-county residents &mdash;
-        most early historical data is unavailable
-      </h4>
-      <div id="hospitalizations_icu_timeline_graph"
-           aria-labelled-by="hospitalizations_icu_timeline_graph_label"></div>
-     </figure>
+    <figure class="bc19-c-timeline-graph">
+     <h3 class="bc19-c-timeline-graph__title"
+         id="hospitalizations_icu_timeline_graph_label">Total Hospitalizations vs. ICU</h3>
+     <h4 class="bc19-c-timeline-graph__subtitle">
+      Includes non-county residents &mdash; most early historical data is unavailable
+     </h4>
 
-     <figure class="bc19-c-timeline-graph">
-      <h3 class="bc19-c-timeline-graph__title"
-          id="hospitalized_residents_timeline_graph_label">
-       Hospitalized Butte County Residents
-      </h3>
-      <h4 class="bc19-c-timeline-graph__subtitle">
-        Most early historical data is unavailable
-      </h4>
-      <div id="hospitalized_residents_timeline_graph"
-           aria-labelled-by="hospitalized_residents_timeline_graph_label"></div>
-     </figure>
+     <div id="hospitalizations_icu_timeline_graph"
+          aria-labelled-by="hospitalizations_icu_timeline_graph_label"></div>
+    </figure>
 
-     <figure class="bc19-c-timeline-graph">
-      <h3 class="bc19-c-timeline-graph__title"
-          id="isolation_timeline_graph_label">
-       People In Isolation
-      </h3>
-      <h4 class="bc19-c-timeline-graph__subtitle">
-        Most early historical data is unavailable
-      </h4>
-      <div id="isolation_timeline_graph"
-           aria-labelled-by="isolation_timeline_graph_label"></div>
-     </figure>
+    <figure class="bc19-c-timeline-graph">
+     <h3 class="bc19-c-timeline-graph__title"
+         id="hospitalized_residents_timeline_graph_label">Hospitalized Butte County Residents</h3>
+     <h4 class="bc19-c-timeline-graph__subtitle">
+      Most early historical data is unavailable
+     </h4>
 
-     <figure class="bc19-c-timeline-graph">
-      <h3 class="bc19-c-timeline-graph__title"
-          id="skilled_nursing_graph_label">
-       Skilled Nursing Facility Cases
-      </h3>
-      <h4 class="bc19-c-timeline-graph__subtitle">
-        Tracking 9 facilities &mdash; Staff/patient cases &lt; 11 at a facility
-        may each be reported as "1", and may be higher
-      </h4>
-      <div id="skilled_nursing_graph"
-           aria-labelled-by="skilled_nursing_graph_label"></div>
-     </figure>
+     <div id="hospitalized_residents_timeline_graph"
+          aria-labelled-by="hospitalized_residents_timeline_graph_label"></div>
+    </figure>
 
-     <figure class="bc19-c-timeline-graph">
-      <h3 class="bc19-c-timeline-graph__title"
-          id="skilled_nursing_deaths_graph_label">
-       Skilled Nursing Facility Deaths
-      </h3>
-      <div id="skilled_nursing_deaths_graph"
-           aria-labelled-by="skilled_nursing_deaths_graph_label"></div>
-     </figure>
+    <figure class="bc19-c-timeline-graph">
+     <h3 class="bc19-c-timeline-graph__title"
+         id="isolation_timeline_graph_label">People In Isolation</h3>
+     <h4 class="bc19-c-timeline-graph__subtitle">
+      Most early historical data is unavailable
+     </h4>
+
+     <div id="isolation_timeline_graph"
+          aria-labelled-by="isolation_timeline_graph_label"></div>
+    </figure>
+
+    <figure class="bc19-c-timeline-graph">
+     <h3 class="bc19-c-timeline-graph__title"
+         id="skilled_nursing_graph_label">Skilled Nursing Facility Cases</h3>
+     <h4 class="bc19-c-timeline-graph__subtitle">
+      Tracking 9 facilities &mdash; Staff/patient cases &lt; 11 at a facility may each be reported as "1", and may be higher
+     </h4>
+
+     <div id="skilled_nursing_graph"
+          aria-labelled-by="skilled_nursing_graph_label"></div>
+    </figure>
+
+    <figure class="bc19-c-timeline-graph">
+     <h3 class="bc19-c-timeline-graph__title"
+         id="skilled_nursing_deaths_graph_label">Skilled Nursing Facility Deaths</h3>
+     <div id="skilled_nursing_deaths_graph"
+          aria-labelled-by="skilled_nursing_deaths_graph_label"></div>
+    </figure>
    </section>
 
    <header class="bc19-c-dashboard__header -is-jail-header"
-           aria-label="County jail info">
+           id="jail"
+           aria-label="County jail information">
     <h2>Butte County Jail</h2>
-    <p>
-    <strong>Source:</strong>
+    <p class="bc19-c-dashboard__sources">
+     <strong>Source:</strong>
      <a href="https://www.buttecounty.net/sheriffcoroner/Covid-19">Butte County Jail COVID-19 Page</a>
     </p>
    </header>
@@ -579,8 +576,8 @@
      <h3 class="bc19-c-counter__title">Inmate Population</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       <span class="bc19-o-update-day" data-key="jail"></span>
+      <span class="bc19-c-counter__relative-value">0</span>
+      <span class="bc19-o-update-day" data-key="jail"></span>
      </div>
     </figure>
 
@@ -588,8 +585,8 @@
      <h3 class="bc19-c-counter__title">Total Inmate Tests</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       <span class="bc19-o-update-day" data-key="jail"></span>
+      <span class="bc19-c-counter__relative-value">0</span>
+      <span class="bc19-o-update-day" data-key="jail"></span>
      </div>
     </figure>
 
@@ -597,8 +594,8 @@
      <h3 class="bc19-c-counter__title">Current Inmate Cases</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       <span class="bc19-o-update-day" data-key="jail"></span>
+      <span class="bc19-c-counter__relative-value">0</span>
+      <span class="bc19-o-update-day" data-key="jail"></span>
      </div>
     </figure>
 
@@ -606,8 +603,8 @@
      <h3 class="bc19-c-counter__title">% of Inmates Positive</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       <span class="bc19-o-update-day" data-key="jail"></span>
+      <span class="bc19-c-counter__relative-value">0</span>
+      <span class="bc19-o-update-day" data-key="jail"></span>
      </div>
     </figure>
 
@@ -615,8 +612,8 @@
      <h3 class="bc19-c-counter__title">Total Staff Tests</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       <span class="bc19-o-update-day" data-key="jail"></span>
+      <span class="bc19-c-counter__relative-value">0</span>
+      <span class="bc19-o-update-day" data-key="jail"></span>
      </div>
     </figure>
 
@@ -624,37 +621,34 @@
      <h3 class="bc19-c-counter__title">Total Staff Cases</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
-       <span class="bc19-c-counter__relative-value">0</span>
-       <span class="bc19-o-update-day" data-key="jail"></span>
+      <span class="bc19-c-counter__relative-value">0</span>
+      <span class="bc19-o-update-day" data-key="jail"></span>
      </div>
     </figure>
 
     <figure class="bc19-c-timeline-graph">
      <h3 class="bc19-c-timeline-graph__title"
-         id="jail_inmates_cur_cases_timeline_graph_label">
-      Current Inmate Cases
-     </h3>
+         id="jail_inmates_cur_cases_timeline_graph_label">Current Inmate Cases</h3>
      <h4 class="bc19-c-timeline-graph__subtitle">
-       Only current cases are available. Unlike staff numbers, total cases
-       are not provided by the county.
+      Only current cases are available. Unlike staff numbers, total cases are not provided by the county.
      </h4>
+
      <div id="jail_inmates_cur_cases_timeline_graph"
           aria-labelled-by="jail_inmates_cur_cases_timeline_graph_label"></div>
     </figure>
 
     <figure class="bc19-c-timeline-graph">
      <h3 class="bc19-c-timeline-graph__title"
-         id="jail_staff_total_cases_timeline_graph_label">
-      Total Staff Cases
-     </h3>
+         id="jail_staff_total_cases_timeline_graph_label">Total Staff Cases</h3>
      <h4 class="bc19-c-timeline-graph__subtitle">
-       Only total cases are available. Unlike inmate numbers, current
-       cases are not provided by the county.
+      Only total cases are available. Unlike inmate numbers, current cases are not provided by the county.
      </h4>
+
      <div id="jail_staff_total_cases_timeline_graph"
           aria-labelled-by="jail_staff_total_cases_timeline_graph_label"></div>
     </figure>
    </section>
+
 
    <footer class="bc19-c-dashboard__footer">
     <nav>
@@ -695,7 +689,6 @@
   <script src="https://d3js.org/d3.v5.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/1.12.10/billboard.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/1.12.10/plugin/billboardjs-plugin-textoverlap.min.js"></script>
-  <!-- <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script> -->
 
   <script async src="https://www.googletagmanager.com/gtag/js?id=UA-1584268-5"></script>
   <script>
@@ -711,3 +704,4 @@ window.onload = function() {
   </script>
  </body>
 </html>
+
