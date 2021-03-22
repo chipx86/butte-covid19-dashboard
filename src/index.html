@@ -53,33 +53,38 @@
          alt="Site logo">
     <div class="bc19-c-dashboard__intro-info">
      <h1><a href="https://bc19.live/">BC19.live</a></h1>
-     <h2>(Unofficial) Butte County COVID-19 Dashboard</h2>
-     <p>
-      Data assembled by <a href="https://twitter.com/chipx86">
-      Christian Hammond</a> based on the
-      <a href="https://infogram.com/1pe66wmyjnmvkrhm66x9362kp3al60r57ex">Butte County dashboard</a> and
-      <a href="https://github.com/chipx86/butte-covid19-dashboard">other data
-      feeds</a>.
+     <h2>Unofficial Butte County COVID-19 Dashboard</h2>
+     <p id="report-timestamp-container">
+      Updated <span id="report-timestamp"></span>
+      by <a href="https://twitter.com/chipx86">Christian Hammond</a>
      </p>
-     <p>
-      Updated weekdays by 4PM. Data generally represents the previous business
-      day.
-     </p>
-     <p>
-      Learn more in the <a href="https://www.notion.so/Frequently-Asked-Questions-98c9989c090c41a88f767830af845462">Frequently Asked Questions</a> and
-      follow the updates on
-      <a href="https://www.facebook.com/bc19.live/">Facebook</a> and
-      <a href="https://twitter.com/bc19live">Twitter</a>.
-     </p>
+     <nav class="bc19-c-dashboard__nav" aria-label="Navigation"
+          id="nav">
+      <dl class="bc19-c-dashboard__nav-section">
+       <dt>Weekday Reports</dt>
+       <dd><a href="https://facebook.com/bc19.live">Facebook</a></dd>
+       <dd><a href="https://twitter.com/bc19live">Twitter</a></dd>
+       <dd><a href="https://www.notion.so/6b6b4635f8f84896873664eb42ba58ca?v=861aa8fd432e4a82a3f33fa6fb9b7c91">Archives</a></dd>
+      </dl>
+
+      <dl class="bc19-c-dashboard__nav-section">
+       <dt>Dashboard</dt>
+       <dd><a href="#cases">Cases</a></dd>
+       <dd><a href="#demographics">Demographics</a></dd>
+       <dd><a href="#vaccines">Vaccines</a></dd>
+       <dd><a href="#testing">Viral Testing</a></dd>
+       <dd><a href="#hospitalizations">Hospitalizations/Care</a></dd>
+       <dd><a href="#jail">Butte County Jail</a></dd>
+      </dl>
+
+      <dl class="bc19-c-dashboard__nav-section">
+       <dt>Information</dt>
+       <dd><a href="https://www.notion.so/Frequently-Asked-Questions-98c9989c090c41a88f767830af845462">Frequently Asked Questions</a></dd>
+       <dd><a href="https://github.com/chipx86/butte-covid19-dashboard">Sources/Datasets</a></dd>
+      </dl>
+     </nav>
     </div>
    </header>
-
-   <section class="bc19-c-dashboard__section -is-report-timestamp"
-            id="report-timestamp-section"
-            aria-label="Report updated date/time">
-    <strong>Updated:</strong>
-    <span id="report-timestamp"></span>
-   </section>
 
    <section class="bc19-c-dashboard__section -is-monitoring-tier"
             id="monitoring-tier-section"
@@ -89,7 +94,7 @@
    </section>
 
    <section class="bc19-c-dashboard__section -has-counters -is-case-counters"
-            id="case-counters-section"
+            id="cases"
             aria-label="General case-related counts">
     <figure class="bc19-c-counter -up-is-bad" id="total-cases-counter">
      <h3 class="bc19-c-counter__title">Total Cases</h3>
