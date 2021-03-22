@@ -1357,6 +1357,139 @@ BC19.setupTimelineGraphs = function() {
         },
     });
 
+    const adultSeniorCareGraph = BC19.setupBBGraph({
+        bindto: '#adult_senior_care_graph',
+        size: {
+            height: BC19.graphSizes.MEDIUM,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                graphData.dates,
+                graphData.adultSeniorCare.curPatientCases,
+                graphData.adultSeniorCare.curStaffCases,
+            ],
+            names: {
+                current_patient_cases: 'Current Patient Cases',
+                current_staff_cases: 'Current Staff Cases',
+                total_patient_deaths: 'Total Patient Deaths',
+                total_staff_deaths: 'Total Staff Deaths',
+            },
+            order: null,
+            types: {
+                current_patient_cases: 'bar',
+                current_staff_cases: 'bar',
+                total_patient_deaths: 'step',
+                total_staff_deaths: 'step',
+            },
+            groups: [
+                ['current_patient_cases', 'current_staff_cases'],
+            ],
+        },
+        legend: {
+            show: true,
+        },
+        tooltip: {
+            format: {
+                value: (value, ratio, id, index) => {
+                    const fmtValue = `${value} or more`;
+
+                    if (index > 0) {
+                        const prevValue = adultSeniorCareGraph.data(id)[0]
+                            .values[index - 1].value;
+                        const fmtRelValue = Math.abs(value - prevValue);
+
+                        if (prevValue > value) {
+                            return `${fmtValue} (-${fmtRelValue})`;
+                        } else if (prevValue < value) {
+                            return `${fmtValue} (+${fmtRelValue})`;
+                        }
+                    }
+
+                    return fmtValue;
+                },
+            },
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: BC19.getMaxY(maxValues.adultSeniorCare, tickCounts.MEDIUM),
+                padding: 0,
+                tick: {
+                    stepSize: BC19.getStepSize(maxValues.adultSeniorCare,
+                                               tickCounts.MEDIUM),
+                },
+            },
+        },
+    });
+
+    const adultSeniorCareDeathsGraph = BC19.setupBBGraph({
+        bindto: '#adult_senior_care_deaths_graph',
+        size: {
+            height: BC19.graphSizes.SMALL,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                graphData.dates,
+                graphData.adultSeniorCare.newPatientDeaths,
+                graphData.adultSeniorCare.newStaffDeaths,
+            ],
+            names: {
+                new_patient_deaths: 'New Patient Deaths',
+                new_staff_deaths: 'New Staff Deaths',
+            },
+            order: null,
+            types: {
+                new_patient_deaths: 'bar',
+                new_staff_deaths: 'bar',
+            },
+            groups: [
+                ['new_patient_deaths', 'new_staff_deaths'],
+            ],
+        },
+        legend: {
+            show: true,
+        },
+        tooltip: {
+            format: {
+                value: (value, ratio, id, index) => {
+                    const fmtValue = `${value} or more`;
+
+                    if (index > 0) {
+                        const prevValue =
+                            adultSeniorCareDeathsGraph.data(id)[0]
+                            .values[index - 1].value;
+                        const fmtRelValue = Math.abs(value - prevValue);
+
+                        if (prevValue > value) {
+                            return `${fmtValue} (-${fmtRelValue})`;
+                        } else if (prevValue < value) {
+                            return `${fmtValue} (+${fmtRelValue})`;
+                        }
+                    }
+
+                    return fmtValue;
+                },
+            },
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: BC19.getMaxY(maxValues.newAdultSeniorCareDeaths,
+                                  tickCounts.SMALL),
+                padding: 0,
+                tick: {
+                    stepSize: BC19.getStepSize(
+                        maxValues.newAdultSeniorCareDeaths,
+                        tickCounts.SMALL),
+                },
+            },
+        },
+    });
+
     const maxInmateCasesValue = Math.max(maxValues.jailInmateCurCases,
                                          maxValues.jailInmatePopulation);
     BC19.setupBBGraph({

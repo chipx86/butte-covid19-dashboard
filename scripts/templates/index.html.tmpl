@@ -499,6 +499,20 @@
         data_id='skilled_nursing_deaths_graph',
         title='Skilled Nursing Facility Deaths',
     )}}
+
+    {{timeline_graph(
+        data_id='adult_senior_care_graph',
+        title='Adult/Senior Care Cases',
+        subtitles=[
+            'Tracking 9 facilities &mdash; Staff/patient cases &lt; 11 at a '
+            'facility may each be reported as "1", and may be higher',
+        ]
+    )}}
+
+    {{timeline_graph(
+        data_id='adult_senior_care_deaths_graph',
+        title='Adult/Senior Care Deaths',
+    )}}
 {%- endcall -%}
 
 
