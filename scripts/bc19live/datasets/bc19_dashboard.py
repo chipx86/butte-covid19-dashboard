@@ -239,6 +239,13 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
     graph_snf_new_patient_deaths = ['new_patient_deaths']
     graph_snf_new_staff_deaths = ['new_staff_deaths']
 
+    graph_asc_cur_patient_cases = ['current_patient_cases']
+    graph_asc_cur_staff_cases = ['current_staff_cases']
+    graph_asc_total_patient_deaths = ['total_patient_deaths']
+    graph_asc_total_staff_deaths = ['total_staff_deaths']
+    graph_asc_new_patient_deaths = ['new_patient_deaths']
+    graph_asc_new_staff_deaths = ['new_staff_deaths']
+
     graph_jail_pop = ['jail_inmate_pop']
     graph_jail_inmate_tests = ['jail_inmate_tests']
     graph_jail_inmate_pos_results = ['jail_inmate_pos_results']
@@ -259,6 +266,8 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
     max_hospitalizations_y = 0
     max_new_snf_deaths = 0
     max_cur_snf_cases = 0
+    max_new_asc_deaths = 0
+    max_cur_asc_cases = 0
     max_seven_day_pos_rate = 0
     max_jail_inmate_cur_cases = 0
     max_jail_inmate_pop = 0
@@ -301,6 +310,7 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
         county_hospital_data = hospitalizations_data['county_data']
         state_hospital_data = hospitalizations_data['state_data']
         snf_data = row['skilled_nursing_facilities']
+        asc_data = row['adult_senior_care']
         county_jail_data = row['county_jail']
         in_isolation_data = row['in_isolation']
         monitoring_data = row['monitoring']
@@ -486,6 +496,43 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
         max_new_snf_deaths = max(
             max_new_snf_deaths,
             (snf_new_patient_deaths or 0) + (snf_new_staff_deaths or 0))
+
+        # Adult/Senior Care Facilities
+        asc_cur_patient_cases = asc_data['current_patient_cases']
+        asc_cur_staff_cases = asc_data['current_staff_cases']
+        asc_total_patient_deaths = asc_data['total_patient_deaths']
+        asc_total_staff_deaths = asc_data['total_staff_deaths']
+
+        graph_asc_cur_patient_cases.append(asc_cur_patient_cases)
+        graph_asc_cur_staff_cases.append(asc_cur_staff_cases)
+        graph_asc_total_patient_deaths.append(asc_total_patient_deaths)
+        graph_asc_total_staff_deaths.append(asc_total_staff_deaths)
+
+        if (asc_cur_patient_cases is not None and
+            asc_cur_staff_cases is not None):
+            max_cur_asc_cases = max(
+                max_cur_asc_cases,
+                (asc_cur_patient_cases + asc_cur_staff_cases))
+
+        if (i > 0 and
+            asc_total_patient_deaths is not None and
+            asc_total_staff_deaths is not None):
+            prev_asc = prev_day_row['adult_senior_care']
+
+            asc_new_patient_deaths = (asc_total_patient_deaths -
+                                      (prev_asc['total_patient_deaths'] or 0))
+            asc_new_staff_deaths = (asc_total_staff_deaths -
+                                    (prev_asc['total_staff_deaths'] or 0))
+        else:
+            asc_new_patient_deaths = asc_total_patient_deaths
+            asc_new_staff_deaths = asc_total_staff_deaths
+
+        graph_asc_new_patient_deaths.append(asc_new_patient_deaths)
+        graph_asc_new_staff_deaths.append(asc_new_staff_deaths)
+
+        max_new_asc_deaths = max(
+            max_new_asc_deaths,
+            (asc_new_patient_deaths or 0) + (asc_new_staff_deaths or 0))
 
         # 7-Day Test Positivity Rate
         if (not found_min_test_positivity_rate_date and
@@ -764,6 +811,8 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
             'hospitalizations': max_hospitalizations_y,
             'snf': max_cur_snf_cases,
             'newSNFDeaths': max_new_snf_deaths,
+            'adultSeniorCareCases': max_cur_snf_cases,
+            'newAdultSeniorCareDeaths': max_new_snf_deaths,
             'sevenDayPosRate': max_seven_day_pos_rate,
             'twoWeekCaseRate': max_two_week_case_rate,
             'viralTests': max_viral_tests,
@@ -771,6 +820,12 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
         'monitoringTier': monitoring_tier,
         'reportTimestamp': timeline['timestamp'],
         'timelineGraphs': {
+            'adultSeniorCare': {
+                'curPatientCases': graph_asc_cur_patient_cases,
+                'curStaffCases': graph_asc_cur_staff_cases,
+                'newPatientDeaths': graph_asc_new_patient_deaths,
+                'newStaffDeaths': graph_asc_new_staff_deaths,
+            },
             'ageRanges': list(graph_cases_by_age.values()),
             'cases': {
                 'newCases': graph_new_cases,
@@ -813,8 +868,6 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
             'snf': {
                 'curPatientCases': graph_snf_cur_patient_cases,
                 'curStaffCases': graph_snf_cur_staff_cases,
-                'totalPatientDeaths': graph_snf_total_patient_deaths,
-                'totalStaffDeaths': graph_snf_total_staff_deaths,
                 'newPatientDeaths': graph_snf_new_patient_deaths,
                 'newStaffDeaths': graph_snf_new_staff_deaths,
             },
