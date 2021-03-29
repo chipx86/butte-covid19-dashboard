@@ -72,6 +72,11 @@ window.BC19 = {
                 show: true,
             },
         },
+        interaction: {
+            inputType: {
+                touch: false,
+            },
+        },
         legend: {
             show: false,
         },
