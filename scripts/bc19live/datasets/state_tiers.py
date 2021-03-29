@@ -1,7 +1,7 @@
 import codecs
 import csv
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from bc19live.tableau import TableauLoader
 from bc19live.utils import (convert_json_to_csv,
@@ -61,28 +61,55 @@ def build_dataset(session, responses, out_filename, **kwargs):
         if row['county'] == 'Butte'
     }
 
+    prev_date = None
     prev_tier = None
+    tier_effective_date = None
+    prev_info = None
 
     for metric_row in metric_rows:
-        date = metric_row['date']
-        prev_tier = tiers_by_date.get(date, prev_tier)
+        date_str = metric_row['date']
+        date = datetime.strptime(date_str, '%Y-%m-%d')
 
-        results.append({
-            'date': date,
-            'cases_per_100k': parse_real(
-                metric_row['percapita_case_rate'],
-                allow_blank=True),
+        if prev_date is not None:
+            for day in range(1, (date - prev_date).days):
+                results.append(dict({
+                    'date': (prev_date +
+                             timedelta(days=day)).strftime('%Y-%m-%d'),
+                    'effective_date': tier_effective_date.strftime('%Y-%m-%d'),
+                }, **prev_info))
+
+        prev_tier = tiers_by_date.get(date_str, prev_tier)
+
+        equity_index = parse_real(metric_row['equity_index'],
+                                  allow_blank=True)
+
+        if equity_index:
+            equity_index = equity_index / 100.0
+
+        info = {
             'adjusted_cases_per_100k': parse_real(
                 metric_row['adjusted_case_rate'],
                 allow_blank=True),
+            'cases_per_100k': parse_real(
+                metric_row['percapita_case_rate'],
+                allow_blank=True),
+            'equity_index': equity_index,
             'pos_rate': parse_real(
                 metric_row['positivity_rate'],
                 allow_blank=True),
-            'equity_index': parse_real(
-                metric_row['equity_index'],
-                allow_blank=True),
             'status': tiers[prev_tier - 1],
-        })
+        }
+
+        if info != prev_info:
+            tier_effective_date = date
+
+        results.append(dict({
+            'date': date.strftime('%Y-%m-%d'),
+            'effective_date': tier_effective_date.strftime('%Y-%m-%d'),
+        }, **info))
+
+        prev_info = info
+        prev_date = date
 
     with safe_open_for_write(out_filename) as fp:
         json.dump(
