@@ -66,6 +66,42 @@ def build_dataset(session, responses, out_filename, **kwargs):
 
 DATASETS = [
     {
+        'filename': 'chhs-vaccinations-administered.csv',
+        'format': 'csv',
+        'url': (
+            'https://data.chhs.ca.gov/dataset/'
+            'e283ee5a-cf18-4f20-a92c-ee94a2866ccd/resource/'
+            '130d7ba2-b6eb-438d-a412-741bde207e1c/download/'
+            'covid19vaccinesbycounty.csv'
+        ),
+        'csv': {
+            'match_row': lambda row: row['county'] == 'Butte',
+            'sort_by': 'date',
+            'columns': [
+                {
+                    'name': 'date',
+                    'source_column': 'administered_date',
+                    'type': 'date',
+                    'format': '%Y-%m-%d',
+                },
+                {'name': 'total_doses'},
+                {'name': 'cumulative_total_doses'},
+                {'name': 'pfizer_doses'},
+                {'name': 'cumulative_pfizer_doses'},
+                {'name': 'moderna_doses'},
+                {'name': 'cumulative_moderna_doses'},
+                {'name': 'jj_doses'},
+                {'name': 'cumulative_jj_doses'},
+                {'name': 'partially_vaccinated'},
+                {'name': 'total_partially_vaccinated'},
+                {'name': 'fully_vaccinated'},
+                {'name': 'cumulative_fully_vaccinated'},
+                {'name': 'at_least_one_dose'},
+                {'name': 'cumulative_at_least_one_dose'},
+            ],
+        },
+    },
+    {
         'filename': 'vaccination-stats.json',
         'format': 'json',
         'urls': {
