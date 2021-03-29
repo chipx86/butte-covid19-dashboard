@@ -24,9 +24,9 @@ window.BC19 = {
         total_deaths: '#A81010',
         new_deaths: '#981000',
 
-        neg_results: '#A8D6F1',
+        neg_results: '#E0EDFD',
         pos_results: '#D85040',
-        new_tests: '#C7DAFA',
+        new_tests: '#979ACA',
         test_results: '#3BA859',
         test_pos_rate: '#883333',
 
@@ -80,6 +80,9 @@ window.BC19 = {
         },
         padding: {
             right: 10,
+        },
+        point: {
+            show: false,
         },
         svg: {
             classname: 'bb-graph-svg',
@@ -657,7 +660,7 @@ BC19.setupTimelineGraphs = function() {
                 cases: 'Total Cases',
             },
             types: {
-                cases: 'bar',
+                cases: 'area-step',
             },
         },
         grid: {
@@ -777,7 +780,7 @@ BC19.setupTimelineGraphs = function() {
                 total_deaths: 'Total Deaths',
             },
             types: {
-                total_deaths: 'bar',
+                total_deaths: 'area-step',
             },
         },
         axis: {
@@ -826,7 +829,7 @@ BC19.setupTimelineGraphs = function() {
     BC19.setupBBGraph({
         bindto: '#cases_by_age_timeline_graph',
         size: {
-            height: BC19.graphSizes.STANDARD,
+            height: BC19.graphSizes.VERY_TALL,
         },
         data: {
             x: 'date',
@@ -852,23 +855,7 @@ BC19.setupTimelineGraphs = function() {
                 age_65_plus: '65+ (Historical)',
             },
             order: null,
-            types: {
-                age_0_4: 'bar',
-                age_5_12: 'bar',
-                age_13_17: 'bar',
-                age_18_24: 'bar',
-                age_25_34: 'bar',
-                age_35_44: 'bar',
-                age_45_54: 'bar',
-                age_55_64: 'bar',
-                age_65_74: 'bar',
-                age_75_plus: 'bar',
-
-                age_0_17: 'bar',
-                age_18_49: 'bar',
-                age_50_64: 'bar',
-                age_65_plus: 'bar',
-            },
+            type: 'area-step',
             groups: [
                 [
                     'age_0_4',
@@ -892,11 +879,11 @@ BC19.setupTimelineGraphs = function() {
         axis: {
             x: axisX,
             y: {
-                max: BC19.getMaxY(maxValues.totalCases, tickCounts.STANDARD),
+                max: BC19.getMaxY(maxValues.totalCases, tickCounts.VERY_TALL),
                 padding: 0,
                 tick: {
                     stepSize: BC19.getStepSize(maxValues.totalCases,
-                                               tickCounts.STANDARD),
+                                               tickCounts.VERY_TALL),
                 },
             },
         },
@@ -908,7 +895,7 @@ BC19.setupTimelineGraphs = function() {
     BC19.setupBBGraph({
         bindto: '#cases_by_region_timeline_graph',
         size: {
-            height: BC19.graphSizes.STANDARD,
+            height: BC19.graphSizes.VERY_TALL,
         },
         data: {
             x: 'date',
@@ -933,7 +920,7 @@ BC19.setupTimelineGraphs = function() {
                 ridge: 'Paradise/Magalia/Ridge Communities',
             },
             order: null,
-            type: 'bar',
+            type: 'area-step',
             groups: [
                 [
                     'oroville', 'gridley', 'biggs_gridley', 'other', 'chico',
@@ -944,11 +931,11 @@ BC19.setupTimelineGraphs = function() {
         axis: {
             x: axisX,
             y: {
-                max: BC19.getMaxY(maxValues.totalCases, tickCounts.STANDARD),
+                max: BC19.getMaxY(maxValues.totalCases, tickCounts.VERY_TALL),
                 padding: 0,
                 tick: {
                     stepSize: BC19.getStepSize(maxValues.totalCases,
-                                               tickCounts.STANDARD),
+                                               tickCounts.VERY_TALL),
                 },
             },
         },
@@ -978,10 +965,7 @@ BC19.setupTimelineGraphs = function() {
             stack: {
                 normalize: true,
             },
-            types: {
-                neg_results: 'bar',
-                pos_results: 'bar',
-            },
+            type: 'bar',
         },
         axis: {
             x: axisX,
@@ -989,6 +973,11 @@ BC19.setupTimelineGraphs = function() {
                 tick: {
                     stepSize: 25,
                 },
+            },
+        },
+        bar: {
+            width: {
+                ratio: 2,
             },
         },
         legend: {
@@ -1024,7 +1013,7 @@ BC19.setupTimelineGraphs = function() {
             },
             types: {
                 test_results: 'bar',
-                new_tests: 'bar',
+                new_tests: 'area-step',
             },
         },
         axis: {
@@ -1036,6 +1025,11 @@ BC19.setupTimelineGraphs = function() {
                     stepSize: BC19.getStepSize(maxValues.viralTests,
                                                tickCounts.STANDARD),
                 },
+            },
+        },
+        bar: {
+            width: {
+                ratio: 1.5,
             },
         },
         legend: {
@@ -1392,12 +1386,7 @@ BC19.setupTimelineGraphs = function() {
                 total_staff_deaths: 'Total Staff Deaths',
             },
             order: null,
-            types: {
-                current_patient_cases: 'bar',
-                current_staff_cases: 'bar',
-                total_patient_deaths: 'step',
-                total_staff_deaths: 'step',
-            },
+            type: 'area-step',
             groups: [
                 ['current_patient_cases', 'current_staff_cases'],
             ],
@@ -1522,12 +1511,7 @@ BC19.setupTimelineGraphs = function() {
                 total_staff_deaths: 'Total Staff Deaths',
             },
             order: null,
-            types: {
-                current_patient_cases: 'bar',
-                current_staff_cases: 'bar',
-                total_patient_deaths: 'step',
-                total_staff_deaths: 'step',
-            },
+            type: 'area-step',
             groups: [
                 ['current_patient_cases', 'current_staff_cases'],
             ],
