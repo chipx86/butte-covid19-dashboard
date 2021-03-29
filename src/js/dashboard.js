@@ -637,8 +637,10 @@ BC19.setupTimelineGraphs = function() {
             position: 'outer-left',
         },
         tick: {
+            culling: true,
             fit: false,
-            format: '%B %d',
+            format: '%b %d',
+            multiline: true,
         },
         min: BC19.defaultTimelineDomain[0],
         max: BC19.defaultTimelineDomain[1],
