@@ -253,6 +253,16 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
     graph_jail_staff_tests = ['jail_staff_tests']
     graph_jail_staff_total_cases = ['jail_staff_total_cases']
 
+    graph_vaccines_1st_dose = ['vaccines_1st_dose']
+    graph_vaccines_1st_dose_pct = ['vaccines_1st_dose_pct']
+    graph_vaccines_full_doses = ['vaccines_full_doses']
+    graph_vaccines_full_doses_pct = ['vaccines_full_doses_pct']
+
+    graph_vaccines_administered_total = ['vaccines_administered_total']
+    graph_vaccines_administered_pfizer = ['vaccines_administered_pfizer']
+    graph_vaccines_administered_moderna = ['vaccines_administered_moderna']
+    graph_vaccines_administered_jj = ['vaccines_administered_jj']
+
     graph_notes = []
 
     monitoring_tier = None
@@ -272,6 +282,7 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
     max_jail_inmate_cur_cases = 0
     max_jail_inmate_pop = 0
     max_jail_staff_total_cases = 0
+    max_vaccines_by_type = 0
 
     min_test_positivity_rate_date = '2020-04-10'
     found_min_test_positivity_rate_date = False
@@ -288,7 +299,7 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
     latest_state_hospital_row_index = None
     latest_test_pos_rate_row_index = None
     latest_tests_row_index = None
-    latest_vaccines_row_index = None
+    latest_vaccines_county_row_index = None
 
     for key in AGE_RANGE_KEYS:
         norm_key = 'age_%s' % key
@@ -600,8 +611,40 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
             monitoring_tier = monitoring_data['tier']
 
         # Vaccines
+        vaccines_administered = vaccines_data['chhs']['administered']
+        one_or_more_doses = vaccines_administered['1_or_more_doses']
+        one_or_more_doses_pct = vaccines_administered['1_or_more_doses_pct']
+        full_doses = vaccines_administered['fully']
+        full_doses_pct = vaccines_administered['fully_pct']
+
+        if one_or_more_doses_pct is not None:
+            one_or_more_doses_pct = round(one_or_more_doses_pct, 2)
+
+        if full_doses_pct is not None:
+            full_doses_pct = round(full_doses_pct, 2)
+
+        graph_vaccines_1st_dose.append(one_or_more_doses)
+        graph_vaccines_1st_dose_pct.append(one_or_more_doses_pct)
+        graph_vaccines_full_doses.append(full_doses)
+        graph_vaccines_full_doses_pct.append(full_doses_pct)
+
+        vaccines_administered_total = vaccines_administered['total']
+        vaccines_pfizer = vaccines_administered['pfizer']
+        vaccines_moderna = vaccines_administered['moderna']
+        vaccines_jj = vaccines_administered['j_and_j']
+
+        graph_vaccines_administered_total.append(vaccines_administered_total)
+        graph_vaccines_administered_pfizer.append(vaccines_pfizer)
+        graph_vaccines_administered_moderna.append(vaccines_moderna)
+        graph_vaccines_administered_jj.append(vaccines_jj)
+
+        max_vaccines_by_type = max(max_vaccines_by_type,
+                                   vaccines_pfizer or 0,
+                                   vaccines_moderna or 0,
+                                   vaccines_jj or 0)
+
         if vaccines_data and vaccines_data['allocated']:
-            latest_vaccines_row_index = i
+            latest_vaccines_county_row_index = i
 
     latest_rows = {
         'ages': latest_age_data_row_index,
@@ -616,7 +659,7 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
         'stateHospitals': latest_state_hospital_row_index,
         'testPosRate': latest_test_pos_rate_row_index,
         'tests': latest_tests_row_index,
-        'vaccines': latest_vaccines_row_index,
+        'vaccines': latest_vaccines_county_row_index,
     }
 
     for key, index in latest_rows.items():
@@ -720,23 +763,23 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
                     row['hospitalizations']['state_data']['icu_positive']
                 )),
             'vaccinesAllocated': build_counter_data(
-                row_index=latest_vaccines_row_index,
+                row_index=latest_vaccines_county_row_index,
                 get_value=lambda row: row['vaccines']['allocated'],
                 delta_days=[1, 7, 14]),
             'vaccinesAdministered': build_counter_data(
-                row_index=latest_vaccines_row_index,
+                row_index=latest_vaccines_county_row_index,
                 get_value=lambda row: row['vaccines']['administered'],
                 delta_days=[1, 7, 14]),
             'vaccinesOrdered1': build_counter_data(
-                row_index=latest_vaccines_row_index,
+                row_index=latest_vaccines_county_row_index,
                 get_value=lambda row: row['vaccines']['first_doses_ordered'],
                 delta_days=[1, 7, 14]),
             'vaccinesOrdered2': build_counter_data(
-                row_index=latest_vaccines_row_index,
+                row_index=latest_vaccines_county_row_index,
                 get_value=lambda row: row['vaccines']['second_doses_ordered'],
                 delta_days=[1, 7, 14]),
             'vaccinesReceived': build_counter_data(
-                row_index=latest_vaccines_row_index,
+                row_index=latest_vaccines_county_row_index,
                 get_value=lambda row: row['vaccines']['received'],
                 delta_days=[1, 7, 14]),
             'totalTests': build_counter_data(
@@ -815,6 +858,7 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
             'newAdultSeniorCareDeaths': max_new_snf_deaths,
             'sevenDayPosRate': max_seven_day_pos_rate,
             'twoWeekCaseRate': max_two_week_case_rate,
+            'vaccinesAdministeredByType': max_vaccines_by_type,
             'viralTests': max_viral_tests,
         },
         'monitoringTier': monitoring_tier,
@@ -870,6 +914,16 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
                 'curStaffCases': graph_snf_cur_staff_cases,
                 'newPatientDeaths': graph_snf_new_patient_deaths,
                 'newStaffDeaths': graph_snf_new_staff_deaths,
+            },
+            'vaccines': {
+                'firstDoses': graph_vaccines_1st_dose,
+                'fullDoses': graph_vaccines_full_doses,
+                'firstDosesPct': graph_vaccines_1st_dose_pct,
+                'fullDosesPct': graph_vaccines_full_doses_pct,
+                'administeredTotal': graph_vaccines_administered_total,
+                'administeredPfizer': graph_vaccines_administered_pfizer,
+                'administeredModerna': graph_vaccines_administered_moderna,
+                'administeredJJ': graph_vaccines_administered_jj,
             },
             'viralTests': {
                 'negativeResults': graph_negative_results,
