@@ -263,6 +263,26 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
     graph_vaccines_administered_moderna = ['vaccines_administered_moderna']
     graph_vaccines_administered_jj = ['vaccines_administered_jj']
 
+    graph_vaccines_gender_male = ['vaccines_male']
+    graph_vaccines_gender_female = ['vaccines_female']
+    graph_vaccines_gender_unknown = ['vaccines_unknown']
+
+    graph_vaccines_age_0_17 = ['vaccines_0_17']
+    graph_vaccines_age_18_49 = ['vaccines_18_49']
+    graph_vaccines_age_50_64 = ['vaccines_50_64']
+    graph_vaccines_age_65_plus = ['vaccines_65_plus']
+    graph_vaccines_age_unknown = ['vaccines_unknown']
+
+    graph_vaccines_ethnicity_ai_an = ['vaccines_ai_an']
+    graph_vaccines_ethnicity_asian_american = ['vaccines_asian_american']
+    graph_vaccines_ethnicity_black = ['vaccines_black']
+    graph_vaccines_ethnicity_latino = ['vaccines_latino']
+    graph_vaccines_ethnicity_white = ['vaccines_white']
+    graph_vaccines_ethnicity_nhpi = ['vaccines_nhpi']
+    graph_vaccines_ethnicity_multirace = ['vaccines_multirace']
+    graph_vaccines_ethnicity_other = ['vaccines_other']
+    graph_vaccines_ethnicity_unknown = ['vaccines_unknown']
+
     graph_notes = []
 
     monitoring_tier = None
@@ -643,6 +663,33 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
                                    vaccines_moderna or 0,
                                    vaccines_jj or 0)
 
+        vaccine_demographics = vaccines_data['demographics']
+        vaccine_gender = vaccine_demographics['gender']
+        vaccine_age = vaccine_demographics['age']
+        vaccine_ethnicity = vaccine_demographics['ethnicity']
+
+        graph_vaccines_gender_male.append(vaccine_gender['male'])
+        graph_vaccines_gender_female.append(vaccine_gender['female'])
+        graph_vaccines_gender_unknown.append(vaccine_gender['unknown'])
+
+        graph_vaccines_age_0_17.append(vaccine_age['0_17'])
+        graph_vaccines_age_18_49.append(vaccine_age['18_49'])
+        graph_vaccines_age_50_64.append(vaccine_age['50_64'])
+        graph_vaccines_age_65_plus.append(vaccine_age['65_plus'])
+        graph_vaccines_age_unknown.append(vaccine_age['unknown'])
+
+        graph_vaccines_ethnicity_ai_an.append(vaccine_ethnicity['ai_an'])
+        graph_vaccines_ethnicity_asian_american.append(
+            vaccine_ethnicity['asian_american'])
+        graph_vaccines_ethnicity_black.append(vaccine_ethnicity['black'])
+        graph_vaccines_ethnicity_latino.append(vaccine_ethnicity['latino'])
+        graph_vaccines_ethnicity_white.append(vaccine_ethnicity['white'])
+        graph_vaccines_ethnicity_nhpi.append(vaccine_ethnicity['nhpi'])
+        graph_vaccines_ethnicity_multirace.append(
+            vaccine_ethnicity['multi_race'])
+        graph_vaccines_ethnicity_other.append(vaccine_ethnicity['other'])
+        graph_vaccines_ethnicity_unknown.append(vaccine_ethnicity['unknown'])
+
         if vaccines_data and vaccines_data['allocated']:
             latest_vaccines_county_row_index = i
 
@@ -924,6 +971,30 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
                 'administeredPfizer': graph_vaccines_administered_pfizer,
                 'administeredModerna': graph_vaccines_administered_moderna,
                 'administeredJJ': graph_vaccines_administered_jj,
+                'age': {
+                    '0_17': graph_vaccines_age_0_17,
+                    '18_49': graph_vaccines_age_18_49,
+                    '50_64': graph_vaccines_age_50_64,
+                    '65_plus': graph_vaccines_age_65_plus,
+                    'unknown': graph_vaccines_age_unknown,
+                },
+                'ethnicity': {
+                    'aian': graph_vaccines_ethnicity_ai_an,
+                    'asianAmerican':
+                        graph_vaccines_ethnicity_asian_american,
+                    'black': graph_vaccines_ethnicity_black,
+                    'latino': graph_vaccines_ethnicity_latino,
+                    'multirace': graph_vaccines_ethnicity_multirace,
+                    'nhpi': graph_vaccines_ethnicity_nhpi,
+                    'other': graph_vaccines_ethnicity_other,
+                    'unknown': graph_vaccines_ethnicity_unknown,
+                    'white': graph_vaccines_ethnicity_white,
+                },
+                'gender': {
+                    'male': graph_vaccines_gender_male,
+                    'female': graph_vaccines_gender_female,
+                    'unknown': graph_vaccines_gender_unknown,
+                },
             },
             'viralTests': {
                 'negativeResults': graph_negative_results,

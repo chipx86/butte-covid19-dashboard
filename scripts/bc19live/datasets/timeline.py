@@ -522,6 +522,74 @@ DATASETS = [
                 {'name': 'adult_senior_care:current_staff_cases'},
                 {'name': 'adult_senior_care:total_patient_deaths'},
                 {'name': 'adult_senior_care:total_staff_deaths'},
+                {
+                    'name': 'vaccines:demographics:gender:male',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:gender:female',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:gender:unknown',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:age:0_17',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:age:18_49',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:age:50_64',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:age:65_plus',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:age:unknown',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:ethnicity:ai_an',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:ethnicity:asian_american',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:ethnicity:black',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:ethnicity:latino',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:ethnicity:nhpi',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:ethnicity:white',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:ethnicity:multi_race',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:ethnicity:other',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:ethnicity:unknown',
+                    'type': 'pct',
+                },
             ],
         },
     },
