@@ -715,7 +715,7 @@ BC19.setupTimelineGraphs = function() {
     const per1KPopRound = Math.round(per1KPop);
 
     BC19.setupBBGraph({
-        bindto: '#two_week_new_case_rate_graph',
+        bindto: '#one_week_new_case_rate_graph',
         size: {
             height: BC19.graphSizes.STANDARD,
         },
@@ -724,10 +724,10 @@ BC19.setupTimelineGraphs = function() {
             colors: BC19.colors,
             columns: [
                 graphData.dates,
-                graphData.cases.twoWeekNewCaseRate,
+                graphData.cases.oneWeekNewCaseRate,
             ],
             names: {
-                new_case_rate: 'New Cases Past 14 Days',
+                new_case_rate: 'New Cases Past 7 Days',
             },
             types: {
                 new_case_rate: 'area',
@@ -737,11 +737,11 @@ BC19.setupTimelineGraphs = function() {
             x: axisX,
             y: {
                 max: BC19.getMaxY(Math.max(per1KPopRound + 20,
-                                           maxValues.twoWeekCaseRate),
+                                           maxValues.oneWeekCaseRate),
                                   tickCounts.STANDARD),
                 padding: 0,
                 tick: {
-                    stepSize: BC19.getStepSize(maxValues.twoWeekCaseRate,
+                    stepSize: BC19.getStepSize(maxValues.oneWeekCaseRate,
                                                tickCounts.STANDARD),
                 },
             },

@@ -205,7 +205,7 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
     graph_new_cases = ['new_cases']
     graph_total_deaths = ['total_deaths']
     graph_new_deaths = ['new_deaths']
-    graph_two_week_new_case_rate = ['new_case_rate']
+    graph_one_week_new_case_rate = ['new_case_rate']
 
     graph_total_tests = ['total_tests']
     graph_new_tests = ['new_tests']
@@ -271,7 +271,7 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
     max_new_deaths = 0
     max_total_cases = 0
     max_total_deaths = 0
-    max_two_week_case_rate = 0
+    max_one_week_case_rate = 0
     max_viral_tests = 0
     max_hospitalizations_y = 0
     max_new_snf_deaths = 0
@@ -358,26 +358,26 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
         if deaths_total is not None:
             latest_deaths_row_index = i
 
-        # 14-Day New Case Rate
-        two_week_case_rate_i1 = i - 14
-        two_week_case_rate = None
+        # 7-Day New Case Rate
+        one_week_case_rate_i1 = i - 7
+        one_week_case_rate = None
 
-        if two_week_case_rate_i1 >= 0:
-            two_week_case_rate_row1 = rows[two_week_case_rate_i1]
-            two_week_case_rate_row2 = rows[i]
-            two_week_case_rate_total1 = \
-                two_week_case_rate_row1['confirmed_cases']['total']
-            two_week_case_rate_total2 = \
-                two_week_case_rate_row2['confirmed_cases']['total']
+        if one_week_case_rate_i1 >= 0:
+            one_week_case_rate_row1 = rows[one_week_case_rate_i1]
+            one_week_case_rate_row2 = rows[i]
+            one_week_case_rate_total1 = \
+                one_week_case_rate_row1['confirmed_cases']['total']
+            one_week_case_rate_total2 = \
+                one_week_case_rate_row2['confirmed_cases']['total']
 
-            if (two_week_case_rate_total1 is not None and
-                two_week_case_rate_total2 is not None):
-                two_week_case_rate = (two_week_case_rate_total2 -
-                                      two_week_case_rate_total1)
-                max_two_week_case_rate = max(max_two_week_case_rate,
-                                             two_week_case_rate)
+            if (one_week_case_rate_total1 is not None and
+                one_week_case_rate_total2 is not None):
+                one_week_case_rate = (one_week_case_rate_total2 -
+                                      one_week_case_rate_total1)
+                max_one_week_case_rate = max(max_one_week_case_rate,
+                                             one_week_case_rate)
 
-        graph_two_week_new_case_rate.append(two_week_case_rate)
+        graph_one_week_new_case_rate.append(one_week_case_rate)
 
         # Testing Data
         viral_tests_total = viral_tests_data['total']
@@ -857,7 +857,7 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
             'adultSeniorCareCases': max_cur_snf_cases,
             'newAdultSeniorCareDeaths': max_new_snf_deaths,
             'sevenDayPosRate': max_seven_day_pos_rate,
-            'twoWeekCaseRate': max_two_week_case_rate,
+            'oneWeekCaseRate': max_one_week_case_rate,
             'vaccinesAdministeredByType': max_vaccines_by_type,
             'viralTests': max_viral_tests,
         },
@@ -874,7 +874,7 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
             'cases': {
                 'newCases': graph_new_cases,
                 'totalCases': graph_total_cases,
-                'twoWeekNewCaseRate': graph_two_week_new_case_rate,
+                'oneWeekNewCaseRate': graph_one_week_new_case_rate,
             },
             'dates': graph_dates,
             'deaths': {
