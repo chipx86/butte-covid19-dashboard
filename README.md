@@ -81,4 +81,5 @@ The following data is made available for others to use:
 * [State Monitoring Tier Status - Butte County Only (CSV)](https://bc19.live/data/csv/state-tiers-v2.csv)
 * [State Monitoring Tier Status - Butte County Only (JSON)](https://bc19.live/data/json/state-tiers.json)
 * [State Vaccines Administered Statistics (CSV)](https://bc19.live/data/csv/chhs-vaccinations-administered.csv)
-* [State Vaccine Statistics - Butte County Only (JSON)](https://bc19.live/data/json/vaccination-stats.json)
+* [State Vaccine Demographics - Butte County Only (JSON)](https://bc19.live/data/json/vaccination-demographics.json)
+* [State Vaccine Demographics - Butte County Only (CSV)](https://bc19.live/data/json/vaccination-demographics.csv)

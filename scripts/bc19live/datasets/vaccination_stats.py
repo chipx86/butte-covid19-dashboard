@@ -1,11 +1,13 @@
 import json
 from datetime import datetime
 
-from bc19live.utils import add_or_update_json_date_row
+from bc19live.utils import (add_or_update_json_date_row,
+                            convert_json_to_csv)
 
 
-def build_dataset(session, responses, out_filename, **kwargs):
-    """Build JSON data for vaccination stats.
+def build_demographic_stats_json_dataset(session, responses, out_filename,
+                                         **kwargs):
+    """Build JSON data for vaccination demographic stats.
 
     This parses the datasets that make up https://covid19.ca.gov/vaccines/
     and creates a dataset with all stats for Butte County.
@@ -102,7 +104,7 @@ DATASETS = [
         },
     },
     {
-        'filename': 'vaccination-stats.json',
+        'filename': 'vaccination-demographics.json',
         'format': 'json',
         'urls': {
             'age': (
@@ -118,6 +120,38 @@ DATASETS = [
                 'vaccines_by_gender_butte.json'
             ),
         },
-        'parser': build_dataset,
+        'parser': build_demographic_stats_json_dataset,
+    },
+    {
+        'filename': 'vaccination-demographics.csv',
+        'format': 'csv',
+        'local_source': {
+            'filename': 'vaccination-demographics.json',
+            'format': 'json',
+        },
+        'parser': convert_json_to_csv,
+        'key_map': [
+            ('Date', ('date',)),
+            ('Gender: Female', ('genders', 'Female')),
+            ('Gender: Male', ('genders', 'Male')),
+            ('Gender: Unknown/Undifferentiated',
+             ('genders', 'Unknown/undifferentiated')),
+            ('Age: 0-17', ('age', '0-17')),
+            ('Age: 18-49', ('age', '18-49')),
+            ('Age: 50-64', ('age', '50-64')),
+            ('Age: 65+', ('age', '65+')),
+            ('Age: Unknown', ('age', 'Unknown')),
+            ('Ethnicity: American Indian/Alaska Native',
+             ('ethnicity', 'American Indian or Alaska Native (AI/AN)')),
+            ('Ethnicity: Asian American', ('ethnicity', 'Asian American')),
+            ('Ethnicity: Black', ('ethnicity', 'Black')),
+            ('Ethnicity: Latino', ('ethnicity', 'Latino')),
+            ('Ethnicity: Multi-race', ('ethnicity', 'Multi-race')),
+            ('Ethnicity: Native Hawaiian or Other Pacific Islander',
+             ('ethnicity', 'Native Hawaiian or Other Pacific Islander (NHPI)')),
+            ('Ethnicity: White', ('ethnicity', 'White')),
+            ('Ethnicity: Other', ('ethnicity', 'Other')),
+            ('Ethnicity: Unknown', ('ethnicity', 'Unknown')),
+        ],
     },
 ]
