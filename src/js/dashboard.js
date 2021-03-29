@@ -26,8 +26,8 @@ window.BC19 = {
 
         neg_results: '#E0EDFD',
         pos_results: '#D85040',
-        new_tests: '#979ACA',
-        test_results: '#3BA859',
+        new_tests: '#C7CA9A',
+        test_results: '#57A3FF',
         test_pos_rate: '#883333',
 
         in_isolation: '#DD0000',
@@ -984,7 +984,7 @@ BC19.setupTimelineGraphs = function() {
         },
         bar: {
             width: {
-                ratio: 2,
+                ratio: 1.5,
             },
         },
         legend: {
