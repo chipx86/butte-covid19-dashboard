@@ -1103,6 +1103,151 @@ BC19.setupTimelineGraphs = function() {
         },
     });
 
+    const vaccineDosesDataMap = {};
+    vaccineDosesDataMap[graphData.vaccines.firstDosesPct[0]] =
+        graphData.vaccines.firstDoses;
+    vaccineDosesDataMap[graphData.vaccines.fullDosesPct[0]] =
+        graphData.vaccines.fullDoses;
+
+    const vaccineDosesGraph = BC19.setupBBGraph({
+        bindto: '#vaccines_doses',
+        size: {
+            height: BC19.graphSizes.STANDARD,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                graphData.dates,
+                graphData.vaccines.firstDosesPct,
+                graphData.vaccines.fullDosesPct,
+            ],
+            type: 'step',
+            names: {
+                vaccines_1st_dose_pct: '1 or more doses',
+                vaccines_full_doses_pct: 'Fully vaccinated',
+            },
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: BC19.getMaxY(100, tickCounts.STANDARD),
+                padding: 0,
+                tick: {
+                    format: x => `${x.toFixed(1)}%`,
+                    stepSize: 25,
+                },
+            },
+        },
+        legend: {
+            show: true,
+        },
+        point: {
+            show: false,
+        },
+        tooltip: {
+            format: {
+                value: (value, ratio, id, index) => {
+                    const fmtValue = `${value.toFixed(2)}%`;
+
+                    if (index > 0) {
+                        const prevValue =
+                            vaccineDosesGraph.data(id)[0]
+                            .values[index - 1].value;
+                        const fmtRelValue =
+                            Math.abs(value - prevValue).toFixed(2) + '%';
+                        const relStr = (prevValue > value
+                                        ? `-${fmtRelValue}`
+                                        : `+${fmtRelValue}`);
+                        const numPeople = vaccineDosesDataMap[id][index + 1];
+                        const prevNumPeople = vaccineDosesDataMap[id][index];
+
+                        let tooltip = `${fmtValue} (${relStr}) - ` +
+                                      `${numPeople.toLocaleString()} people`;
+
+                        if (numPeople > prevNumPeople) {
+                            const relNumPeople =
+                                (numPeople - prevNumPeople)
+                                .toLocaleString();
+                            tooltip += ` (+${relNumPeople})`;
+                        }
+
+                        return tooltip;
+                    }
+
+                    return fmtValue;
+                },
+            },
+        },
+    });
+
+    const vaccineDosesByTypeGraph = BC19.setupBBGraph({
+        bindto: '#vaccine_doses_by_type',
+        size: {
+            height: BC19.graphSizes.STANDARD,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                graphData.dates,
+                graphData.vaccines.administeredJJ,
+                graphData.vaccines.administeredModerna,
+                graphData.vaccines.administeredPfizer,
+            ],
+            names: {
+                vaccines_administered_jj: 'Johnson & Johnson',
+                vaccines_administered_moderna: 'Moderna',
+                vaccines_administered_pfizer: 'Pfizer',
+                vaccines_administered_total: 'Total',
+            },
+            order: null,
+            type: 'area-step',
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: BC19.getMaxY(maxValues.vaccinesAdministeredByType,
+                                  tickCounts.STANDARD),
+                padding: 0,
+                tick: {
+                    stepSize: BC19.getStepSize(
+                        maxValues.vaccinesAdministeredByType,
+                        tickCounts.STANDARD),
+                },
+            },
+        },
+        legend: {
+            show: true,
+        },
+        point: {
+            show: false,
+        },
+        tooltip: {
+            format: {
+                value: (value, ratio, id, index) => {
+                    const fmtValue = `${value.toFixed(2)}%`;
+
+                    if (index > 0) {
+                        const prevValue =
+                            vaccineDosesByTypeGraph.data(id)[0]
+                            .values[index - 1].value;
+                        const fmtRelValue =
+                            Math.abs(value - prevValue).toFixed(2) + '%';
+
+                        if (prevValue > value) {
+                            return `${fmtValue} (-${fmtRelValue})`;
+                        } else if (prevValue < value) {
+                            return `${fmtValue} (+${fmtRelValue})`;
+                        }
+                    }
+
+                    return fmtValue;
+                },
+            },
+        },
+    });
+
     BC19.setupBBGraph({
         bindto: '#hospitalizations_icu_timeline_graph',
         size: {

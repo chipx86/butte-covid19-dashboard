@@ -384,6 +384,20 @@
 {%- endcall -%}
 
 
+{% call section(css_class='-is-vaccine-graphs',
+                aria_label='Vaccine graphs') -%}
+    {{timeline_graph(
+        data_id='vaccines_doses',
+        title='% of County Vaccinated'
+    )}}
+
+    {{timeline_graph(
+        data_id='vaccine_doses_by_type',
+        title='Vaccine Doses by Type'
+    )}}
+{%- endcall -%}
+
+
 {#- Viral Testing -#}
 {% call header(id='testing',
                title='Viral Testing',
