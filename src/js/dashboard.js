@@ -1249,6 +1249,241 @@ BC19.setupTimelineGraphs = function() {
         },
     });
 
+    const vaccinationsByGenderGraph = BC19.setupBBGraph({
+        bindto: '#vaccines_by_gender',
+        size: {
+            height: BC19.graphSizes.STANDARD,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                graphData.dates,
+                graphData.vaccines.gender.male,
+                graphData.vaccines.gender.female,
+                graphData.vaccines.gender.unknown,
+            ],
+            type: 'area-step',
+            stack: {
+                normalize: true,
+            },
+            groups: [[
+                'vaccines_male',
+                'vaccines_female',
+                'vaccines_unknown',
+            ]],
+            names: {
+                vaccines_male: 'Male',
+                vaccines_female: 'Female',
+                vaccines_unknown: 'Unknown/undifferentiated',
+            },
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: BC19.getMaxY(100, tickCounts.STANDARD),
+                padding: 0,
+                tick: {
+                    format: x => `${x.toFixed(1)}%`,
+                    stepSize: 25,
+                },
+            },
+        },
+        legend: {
+            show: true,
+        },
+        point: {
+            show: false,
+        },
+        tooltip: {
+            format: {
+                value: (value, ratio, id, index) => {
+                    const fmtValue = `${value.toFixed(2)}%`;
+
+                    if (index > 0) {
+                        const prevValue =
+                            vaccinationsByGenderGraph.data(id)[0]
+                            .values[index - 1].value;
+                        const fmtRelValue =
+                            Math.abs(value - prevValue).toFixed(2) + '%';
+                        const relStr = (prevValue > value
+                                        ? `-${fmtRelValue}`
+                                        : `+${fmtRelValue}`);
+
+                        return `${fmtValue} (${relStr})`;
+                    }
+
+                    return fmtValue;
+                },
+            },
+        },
+    });
+
+    const vaccinationsByAgeGraph = BC19.setupBBGraph({
+        bindto: '#vaccines_by_age',
+        size: {
+            height: BC19.graphSizes.STANDARD,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                graphData.dates,
+                graphData.vaccines.age['0_17'],
+                graphData.vaccines.age['18_49'],
+                graphData.vaccines.age['50_64'],
+                graphData.vaccines.age['65_plus'],
+                graphData.vaccines.age.unknown,
+            ],
+            order: null,
+            type: 'area-step',
+            stack: {
+                normalize: true,
+            },
+            groups: [[
+                'vaccines_0_17',
+                'vaccines_18_49',
+                'vaccines_50_64',
+                'vaccines_65_plus',
+                'vaccines_unknown',
+            ]],
+            names: {
+                vaccines_0_17: '0-17',
+                vaccines_18_49: '18-4',
+                vaccines_50_64: '50-64',
+                vaccines_65_plus: '65+',
+                vaccines_unknown: 'Unknown',
+            },
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: BC19.getMaxY(100, tickCounts.STANDARD),
+                padding: 0,
+                tick: {
+                    format: x => `${x.toFixed(1)}%`,
+                    stepSize: 25,
+                },
+            },
+        },
+        legend: {
+            show: true,
+        },
+        point: {
+            show: false,
+        },
+        tooltip: {
+            format: {
+                value: (value, ratio, id, index) => {
+                    const fmtValue = `${value.toFixed(2)}%`;
+
+                    if (index > 0) {
+                        const prevValue =
+                            vaccinationsByAgeGraph.data(id)[0]
+                            .values[index - 1].value;
+                        const fmtRelValue =
+                            Math.abs(value - prevValue).toFixed(2) + '%';
+                        const relStr = (prevValue > value
+                                        ? `-${fmtRelValue}`
+                                        : `+${fmtRelValue}`);
+
+                        return `${fmtValue} (${relStr})`;
+                    }
+
+                    return fmtValue;
+                },
+            },
+        },
+    });
+
+    const vaccinationsByEthnicityGraph = BC19.setupBBGraph({
+        bindto: '#vaccines_by_ethnicity',
+        size: {
+            height: BC19.graphSizes.STANDARD,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                graphData.dates,
+                graphData.vaccines.ethnicity.aian,
+                graphData.vaccines.ethnicity.asianAmerican,
+                graphData.vaccines.ethnicity.black,
+                graphData.vaccines.ethnicity.latino,
+                graphData.vaccines.ethnicity.nhpi,
+                graphData.vaccines.ethnicity.white,
+                graphData.vaccines.ethnicity.multirace,
+                graphData.vaccines.ethnicity.other,
+                graphData.vaccines.ethnicity.unknown,
+            ],
+            type: 'area-step',
+            stack: {
+                normalize: true,
+            },
+            groups: [[
+                'vaccines_ai_an',
+                'vaccines_asian_american',
+                'vaccines_black',
+                'vaccines_latino',
+                'vaccines_white',
+                'vaccines_nhpi',
+                'vaccines_multirace',
+                'vaccines_other',
+                'vaccines_unknown',
+            ]],
+            names: {
+                vaccines_ai_an: 'American Indian or Alaska Native',
+                vaccines_asian_american: 'Asian American',
+                vaccines_black: 'Black',
+                vaccines_latino: 'Latino',
+                vaccines_white: 'White',
+                vaccines_nhpi: 'Native Hawaiian or Other Pacific Islander',
+                vaccines_multirace: 'Multi-race',
+                vaccines_other: 'Other',
+                vaccines_unknown: 'Unknown',
+            },
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: BC19.getMaxY(100, tickCounts.STANDARD),
+                padding: 0,
+                tick: {
+                    format: x => `${x.toFixed(1)}%`,
+                    stepSize: 25,
+                },
+            },
+        },
+        legend: {
+            show: true,
+        },
+        point: {
+            show: false,
+        },
+        tooltip: {
+            format: {
+                value: (value, ratio, id, index) => {
+                    const fmtValue = `${value.toFixed(2)}%`;
+
+                    if (index > 0) {
+                        const prevValue =
+                            vaccinationsByEthnicityGraph.data(id)[0]
+                            .values[index - 1].value;
+                        const fmtRelValue =
+                            Math.abs(value - prevValue).toFixed(2) + '%';
+                        const relStr = (prevValue > value
+                                        ? `-${fmtRelValue}`
+                                        : `+${fmtRelValue}`);
+
+                        return `${fmtValue} (${relStr})`;
+                    }
+
+                    return fmtValue;
+                },
+            },
+        },
+    });
+
     BC19.setupBBGraph({
         bindto: '#hospitalizations_icu_timeline_graph',
         size: {
