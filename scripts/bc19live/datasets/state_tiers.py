@@ -55,11 +55,31 @@ def build_dataset(session, responses, out_filename, **kwargs):
     ]
     metric_rows.reverse()
 
-    tiers_by_date = {
-        row['date']: int(row['tier'])
-        for row in tiers_reader
-        if row['county'] == 'Butte'
-    }
+    # The data feed goes from most-recent date to least, and not every day
+    # is covered. It must be processed in that order, remembering the last
+    # tier found, and applying it to all days until we find a change.
+    prev_date = None
+    prev_tier = None
+    tiers_by_date = {}
+
+    for tier_row in tiers_reader:
+        if tier_row['county'] != 'Butte':
+            continue
+
+        date_str = tier_row['date']
+        date = datetime.strptime(date_str, '%Y-%m-%d')
+        tier = int(tier_row['tier'])
+
+        tiers_by_date[date_str] = tier
+
+        if prev_date is not None:
+            for day in range(1, (prev_date - date).days):
+                date_key = (prev_date -
+                            timedelta(days=day)).strftime('%Y-%m-%d')
+                tiers_by_date[date_key] = prev_tier
+
+        prev_tier = tier
+        prev_date = date
 
     prev_date = None
     prev_tier = None
@@ -78,7 +98,7 @@ def build_dataset(session, responses, out_filename, **kwargs):
                     'effective_date': tier_effective_date.strftime('%Y-%m-%d'),
                 }, **prev_info))
 
-        prev_tier = tiers_by_date.get(date_str, prev_tier)
+        prev_tier = tiers_by_date[date_str]
 
         equity_index = parse_real(metric_row['equity_index'],
                                   allow_blank=True)
