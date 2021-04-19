@@ -103,7 +103,8 @@ def build_dataset(response, out_filename, **kwargs):
             # find the label *in* the value.
             for label in expected_labels:
                 for i in (0, 1):
-                    if len(blocks) >= i and label in blocks[0]['text'].lower():
+                    if (len(blocks) >= i and
+                        label in blocks[0]['text'].strip().lower()):
                         value = (
                             blocks[0]['text']
                             .lower()
@@ -113,7 +114,7 @@ def build_dataset(response, out_filename, **kwargs):
 
             if value is None:
                 found_labels = [
-                    block['text'].lower()
+                    block['text'].strip().lower()
                     for block in blocks
                 ]
 
@@ -281,6 +282,11 @@ def build_dataset(response, out_filename, **kwargs):
             'labels': ['total administered vaccines*'],
             'entity_id': '74e76670-078b-40b9-8ec5-b61159126122',
         },
+        'vaccines_total_fully_vaccinated': {
+            'labels': ['total number of fully vaccinated butte county '
+                       'residents'],
+            'entity_id': 'b402bf81-a3db-4129-9be3-204449596cf0',
+        },
     }
 
     CHART_KEYS_TO_ENTITIES = {
@@ -443,6 +449,8 @@ def build_dataset(response, out_filename, **kwargs):
                     scraped_data['vaccines_total_first_doses_ordered'],
                 'total_second_doses_ordered':
                     scraped_data['vaccines_total_second_doses_ordered'],
+                'total_fully_vaccinated':
+                    scraped_data['vaccines_total_fully_vaccinated'],
                 'as_of_date': vaccines_datestamp.strftime('%Y-%m-%d'),
             },
         }
@@ -553,6 +561,8 @@ DATASETS = [
              ('vaccines', 'total_first_doses_ordered')),
             ('Vaccines - Total Second Doses Ordered',
              ('vaccines', 'total_second_doses_ordered')),
+            ('Vaccines - Total Fully-Vaccinated',
+             ('vaccines', 'total_fully_vaccinated')),
         ],
     },
 ]
