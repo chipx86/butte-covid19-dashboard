@@ -157,6 +157,41 @@ BC19.getDayText = function(date) {
 
 
 /**
+ * Format a number as a percentage.
+ *
+ * Args:
+ *     value (number):
+ *         The number to format.
+ *
+ * Returns:
+ *     string:
+ *     The formatted percentage.
+ */
+BC19.formatPct = function(value) {
+    return value.toFixed(2) + '%';
+};
+
+
+/**
+ * Format relative values as a percentage.
+ *
+ * Args:
+ *     value (number):
+ *         One number to include in the relative calculation.
+ *
+ *     relValue (number):
+ *         The other number to include in the relative calculation.
+ *
+ * Returns:
+ *     string:
+ *     The formatted percentage.
+ */
+BC19.formatPctRel = function(value, relValue) {
+    return BC19.formatPct(Math.abs(value - relValue));
+};
+
+
+/**
  * Process the downloaded dashboard data.
  *
  * This is the main function used by the website to load data for display.
@@ -447,6 +482,9 @@ BC19.setupBarGraph = function(graph, options={}, data) {
  *         A function to format the value for display. Defaults to showing
  *         the value in the current locale.
  *
+ *     isPct (boolean, optional):
+ *         Whether the values represent percentages.
+ *
  *     relativeValues (Array of number):
  *         An array of previous value that ``value`` is relative to.
  *
@@ -459,9 +497,25 @@ BC19.setupBarGraph = function(graph, options={}, data) {
 BC19.setCounter = function(elID, options) {
     const el = document.getElementById(elID);
     const value = options.value;
-    const formatValue = options.formatValue || function(value) {
-        return value.toLocaleString();
-    };
+    let formatValue = options.formatValue;
+
+    if (!formatValue && options.isPct) {
+        formatValue = BC19.formatPct;
+    } else {
+        formatValue = function(value) {
+            return value.toLocaleString();
+        }
+    }
+
+    let formatRelValue = options.formatRelValues;
+
+    if (!formatRelValue && options.isPct) {
+        formatRelValue = BC19.formatPctRel;
+    } else {
+        formatRelValue = function(value, relValue) {
+            return formatValue(Math.abs(value - relValue));
+        }
+    }
 
     el.querySelector('.bc19-c-counter__value').innerText = formatValue(value);
 
@@ -481,13 +535,6 @@ BC19.setCounter = function(elID, options) {
                 relValueEl.innerText = 'no data';
                 continue;
             }
-
-            const formatRelValue =
-                options.formatRelValues
-                ? options.formatRelValues[i]
-                : (value, relValue) => {
-                    return Math.abs(value - relValue).toLocaleString()
-                };
 
             relValueEl.innerText = formatRelValue(value, relValue);
             relEl.classList.remove('-is-up');
@@ -519,39 +566,16 @@ BC19.setupCounters = function() {
                     data.hospitalizedResidents);
     BC19.setCounter('hospitalized-counter', data.allHospitalized);
     BC19.setCounter('icu-counter', data.inICU);
-    BC19.setCounter('vaccines-allocated-counter', data.vaccinesAllocated);
-    BC19.setCounter('vaccines-administered-counter',
-                    data.vaccinesAdministered);
-    BC19.setCounter('vaccines-ordered1-counter', data.vaccinesOrdered1);
-    BC19.setCounter('vaccines-ordered2-counter', data.vaccinesOrdered2);
-    BC19.setCounter('vaccines-received-counter', data.vaccinesReceived);
+    BC19.setCounter('vaccines-1dose-pct-counter', data.vaccines1DosePct);
+    BC19.setCounter('vaccines-full-doses-pct-counter',
+                    data.vaccinesFullDosesPct);
     BC19.setCounter('total-tests-counter', data.totalTests);
     BC19.setCounter('positive-test-results-counter', data.positiveTestResults);
-    BC19.setCounter('positive-test-rate-counter',
-        {
-            value: data.positiveTestRate.value,
-            relativeValues: data.positiveTestRate.relativeValues,
-            formatValue: value => value.toFixed(2) + '%',
-            formatRelValues: [
-                (value, relValue) => {
-                    return Math.abs(value - relValue).toFixed(2) + '%';
-                },
-            ],
-        });
+    BC19.setCounter('positive-test-rate-counter', data.positiveTestRate);
     BC19.setCounter('jail-inmate-pop-counter', data.jailInmatePop);
     BC19.setCounter('jail-inmate-total-tests', data.jailInmateTotalTests);
     BC19.setCounter('jail-inmate-cur-cases', data.jailInmateCurCases);
-    BC19.setCounter('jail-inmate-pos-rate',
-        {
-            value: data.jailInmatePosRate.value,
-            relativeValues: data.jailInmatePosRate.relativeValues,
-            formatValue: value => value.toFixed(2) + '%',
-            formatRelValues: [
-                (value, relValue) => {
-                    return Math.abs(value - relValue).toFixed(2) + '%';
-                },
-            ],
-        });
+    BC19.setCounter('jail-inmate-pos-rate', data.jailInmatePosRate);
     BC19.setCounter('jail-staff-total-tests', data.jailStaffTotalTests);
     BC19.setCounter('jail-staff-total-cases', data.jailStaffTotalCases);
 };
@@ -1104,13 +1128,13 @@ BC19.setupTimelineGraphs = function() {
         },
     });
 
-    const vaccineDosesDataMap = {};
-    vaccineDosesDataMap[graphData.vaccines.firstDosesPct[0]] =
+    const vaccineDosesPctDataMap = {};
+    vaccineDosesPctDataMap[graphData.vaccines.firstDosesPct[0]] =
         graphData.vaccines.firstDoses;
-    vaccineDosesDataMap[graphData.vaccines.fullDosesPct[0]] =
+    vaccineDosesPctDataMap[graphData.vaccines.fullDosesPct[0]] =
         graphData.vaccines.fullDoses;
 
-    const vaccineDosesGraph = BC19.setupBBGraph({
+    const vaccineDosesPctGraph = BC19.setupBBGraph({
         bindto: '#vaccines_doses',
         size: {
             height: BC19.graphSizes.STANDARD,
@@ -1125,8 +1149,8 @@ BC19.setupTimelineGraphs = function() {
             ],
             type: 'step',
             names: {
-                vaccines_1st_dose_pct: '1 or more doses',
-                vaccines_full_doses_pct: 'Fully vaccinated',
+                vaccines_1st_dose_pct: '1 or More Doses',
+                vaccines_full_doses_pct: 'Fully Vaccinated',
             },
         },
         axis: {
@@ -1153,15 +1177,17 @@ BC19.setupTimelineGraphs = function() {
 
                     if (index > 0) {
                         const prevValue =
-                            vaccineDosesGraph.data(id)[0]
+                            vaccineDosesPctGraph.data(id)[0]
                             .values[index - 1].value;
                         const fmtRelValue =
                             Math.abs(value - prevValue).toFixed(2) + '%';
                         const relStr = (prevValue > value
                                         ? `-${fmtRelValue}`
                                         : `+${fmtRelValue}`);
-                        const numPeople = vaccineDosesDataMap[id][index + 1];
-                        const prevNumPeople = vaccineDosesDataMap[id][index];
+                        const numPeople =
+                            vaccineDosesPctDataMap[id][index + 1];
+                        const prevNumPeople =
+                            vaccineDosesPctDataMap[id][index];
 
                         let tooltip = `${fmtValue} (${relStr}) - ` +
                                       `${numPeople.toLocaleString()} people`;
@@ -1179,6 +1205,109 @@ BC19.setupTimelineGraphs = function() {
                     return fmtValue;
                 },
             },
+        },
+    });
+
+    const vaccineDosesGraph = BC19.setupBBGraph({
+        bindto: '#vaccines_doses_by_day',
+        size: {
+            height: BC19.graphSizes.STANDARD,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                graphData.dates,
+                graphData.vaccines.firstDoses,
+                graphData.vaccines.fullDoses,
+            ],
+            type: 'step',
+            names: {
+                vaccines_1st_dose: '1 or More Doses',
+                vaccines_full_doses: 'Fully Vaccinated',
+            },
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: BC19.getMaxY(maxValues.vaccinesDoses,
+                                  tickCounts.STANDARD),
+                padding: 0,
+                tick: {
+                    stepSize: BC19.getStepSize(maxValues.vaccinesDoses,
+                                               tickCounts.STANDARD),
+                },
+            },
+        },
+        legend: {
+            show: true,
+        },
+        point: {
+            show: false,
+        },
+        tooltip: {
+            format: {
+                value: (value, ratio, id, index) => {
+                    const fmtValue = value.toLocaleString();
+
+                    if (index > 0) {
+                        const prevValue =
+                            vaccineDosesGraph.data(id)[0]
+                            .values[index - 1].value;
+                        const fmtRelValue =
+                            Math.abs(value - prevValue).toLocaleString();
+                        const relStr = (prevValue > value
+                                        ? `-${fmtRelValue}`
+                                        : `+${fmtRelValue}`);
+
+                        return `${fmtValue} (${relStr})`;
+                    }
+
+                    return fmtValue;
+                },
+            },
+        },
+    });
+
+    BC19.setupBBGraph({
+        bindto: '#vaccines_one_week_rate_graph',
+        size: {
+            height: BC19.graphSizes.STANDARD,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                graphData.dates,
+                graphData.vaccines.oneWeek1DoseRate,
+                graphData.vaccines.oneWeekFullDosesRate,
+            ],
+            names: {
+                vaccines_1st_dose_rate: '1+ Doses The Past 7 Days',
+                vaccines_full_doses_rate: 'Fully-Vaccinated The Past 7 Days',
+            },
+            type: 'area',
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: BC19.getMaxY(maxValues.oneWeekVaccinesRate,
+                                  tickCounts.STANDARD),
+                padding: 0,
+                tick: {
+                    stepSize: BC19.getStepSize(maxValues.oneWeekVaccinesRate,
+                                               tickCounts.STANDARD),
+                },
+            },
+        },
+        legend: {
+            show: true,
+        },
+        point: {
+            show: false,
+        },
+        tooltip: {
+            linked: true,
         },
     });
 
@@ -1227,14 +1356,14 @@ BC19.setupTimelineGraphs = function() {
         tooltip: {
             format: {
                 value: (value, ratio, id, index) => {
-                    const fmtValue = `${value.toFixed(2)}%`;
+                    const fmtValue = value.toLocaleString();
 
                     if (index > 0) {
                         const prevValue =
                             vaccineDosesByTypeGraph.data(id)[0]
                             .values[index - 1].value;
                         const fmtRelValue =
-                            Math.abs(value - prevValue).toFixed(2) + '%';
+                            (value - prevValue).toLocaleString();
 
                         if (prevValue > value) {
                             return `${fmtValue} (-${fmtRelValue})`;

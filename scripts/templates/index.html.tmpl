@@ -349,36 +349,15 @@
                 aria_label='Vaccine information',
                 has_counters=True) -%}
     {{counter(
-        id='vaccines-allocated-counter',
-        title='Total Allocated',
+        id='vaccines-1dose-pct-counter',
+        title='% Partially Vaccinated',
         timestamp_key='vaccines',
         rel_days=[7, 14]
     )}}
 
     {{counter(
-        id='vaccines-administered-counter',
-        title='Total Administered',
-        timestamp_key='vaccines',
-        rel_days=[7, 14]
-    )}}
-
-    {{counter(
-        id='vaccines-ordered1-counter',
-        title='First Doses Ordered',
-        timestamp_key='vaccines',
-        rel_days=[7, 14]
-    )}}
-
-    {{counter(
-        id='vaccines-ordered2-counter',
-        title='Second Doses Ordered',
-        timestamp_key='vaccines',
-        rel_days=[7, 14]
-    )}}
-
-    {{counter(
-        id='vaccines-received-counter',
-        title='Received',
+        id='vaccines-full-doses-pct-counter',
+        title='% Fully Vaccinated',
         timestamp_key='vaccines',
         rel_days=[7, 14]
     )}}
@@ -390,6 +369,20 @@
     {{timeline_graph(
         data_id='vaccines_doses',
         title='% of County Vaccinated'
+    )}}
+
+    {{timeline_graph(
+        data_id='vaccines_doses_by_day',
+        title='Administered Doses Per Day',
+    )}}
+
+    {{timeline_graph(
+        data_id='vaccines_one_week_rate_graph',
+        title='7-Day Vaccination Dose Rates',
+        subtitles=[
+            'New vaccinations (1+ dose and fully vaccinated) over the past '
+            '7-days',
+        ]
     )}}
 
     {{timeline_graph(

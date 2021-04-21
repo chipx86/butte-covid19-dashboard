@@ -325,8 +325,8 @@
 
    <section class="bc19-c-dashboard__section -has-counters -is-vaccine-counters"
             aria-label="Vaccine information">
-    <figure class="bc19-c-counter" id="vaccines-allocated-counter">
-     <h3 class="bc19-c-counter__title">Total Allocated</h3>
+    <figure class="bc19-c-counter" id="vaccines-1dose-pct-counter">
+     <h3 class="bc19-c-counter__title">% Partially Vaccinated</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
       <span class="bc19-c-counter__relative-value">0</span>
@@ -342,59 +342,8 @@
      </div>
     </figure>
 
-    <figure class="bc19-c-counter" id="vaccines-administered-counter">
-     <h3 class="bc19-c-counter__title">Total Administered</h3>
-     <div class="bc19-c-counter__value">0</div>
-     <div class="bc19-c-counter__relative">
-      <span class="bc19-c-counter__relative-value">0</span>
-      <span class="bc19-o-update-day" data-key="vaccines"></span>
-     </div>
-     <div class="bc19-c-counter__relative">
-      <span class="bc19-c-counter__relative-value">0</span>
-      last 7 days
-     </div>
-     <div class="bc19-c-counter__relative">
-      <span class="bc19-c-counter__relative-value">0</span>
-      last 14 days
-     </div>
-    </figure>
-
-    <figure class="bc19-c-counter" id="vaccines-ordered1-counter">
-     <h3 class="bc19-c-counter__title">First Doses Ordered</h3>
-     <div class="bc19-c-counter__value">0</div>
-     <div class="bc19-c-counter__relative">
-      <span class="bc19-c-counter__relative-value">0</span>
-      <span class="bc19-o-update-day" data-key="vaccines"></span>
-     </div>
-     <div class="bc19-c-counter__relative">
-      <span class="bc19-c-counter__relative-value">0</span>
-      last 7 days
-     </div>
-     <div class="bc19-c-counter__relative">
-      <span class="bc19-c-counter__relative-value">0</span>
-      last 14 days
-     </div>
-    </figure>
-
-    <figure class="bc19-c-counter" id="vaccines-ordered2-counter">
-     <h3 class="bc19-c-counter__title">Second Doses Ordered</h3>
-     <div class="bc19-c-counter__value">0</div>
-     <div class="bc19-c-counter__relative">
-      <span class="bc19-c-counter__relative-value">0</span>
-      <span class="bc19-o-update-day" data-key="vaccines"></span>
-     </div>
-     <div class="bc19-c-counter__relative">
-      <span class="bc19-c-counter__relative-value">0</span>
-      last 7 days
-     </div>
-     <div class="bc19-c-counter__relative">
-      <span class="bc19-c-counter__relative-value">0</span>
-      last 14 days
-     </div>
-    </figure>
-
-    <figure class="bc19-c-counter" id="vaccines-received-counter">
-     <h3 class="bc19-c-counter__title">Received</h3>
+    <figure class="bc19-c-counter" id="vaccines-full-doses-pct-counter">
+     <h3 class="bc19-c-counter__title">% Fully Vaccinated</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
       <span class="bc19-c-counter__relative-value">0</span>
@@ -418,6 +367,24 @@
          id="vaccines_doses_label">% of County Vaccinated</h3>
      <div id="vaccines_doses"
           aria-labelled-by="vaccines_doses_label"></div>
+    </figure>
+
+    <figure class="bc19-c-timeline-graph">
+     <h3 class="bc19-c-timeline-graph__title"
+         id="vaccines_doses_by_day_label">Administered Doses Per Day</h3>
+     <div id="vaccines_doses_by_day"
+          aria-labelled-by="vaccines_doses_by_day_label"></div>
+    </figure>
+
+    <figure class="bc19-c-timeline-graph">
+     <h3 class="bc19-c-timeline-graph__title"
+         id="vaccines_one_week_rate_graph_label">7-Day Vaccination Dose Rates</h3>
+     <h4 class="bc19-c-timeline-graph__subtitle">
+      New vaccinations (1+ dose and fully vaccinated) over the past 7-days
+     </h4>
+
+     <div id="vaccines_one_week_rate_graph"
+          aria-labelled-by="vaccines_one_week_rate_graph_label"></div>
     </figure>
 
     <figure class="bc19-c-timeline-graph">
