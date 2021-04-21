@@ -184,16 +184,21 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
             'relValue': norm_rel_value(value, prev_value),
         }
 
-    def build_counter_data(row_index, get_value, delta_days=[1]):
+    def build_counter_data(row_index, get_value, delta_days=[1], is_pct=False):
         latest_row = rows[row_index]
 
-        return {
+        data = {
             'value': get_value(rows[row_index]),
             'relativeValues': [
                 get_value(rows[row_index - num_days])
                 for num_days in delta_days
             ],
         }
+
+        if is_pct:
+            data['isPct'] = True
+
+        return data
 
     timeline = json.loads(in_fp.read())
 
@@ -258,6 +263,9 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
     graph_vaccines_full_doses = ['vaccines_full_doses']
     graph_vaccines_full_doses_pct = ['vaccines_full_doses_pct']
 
+    graph_vaccines_1st_dose_rate = ['vaccines_1st_dose_rate']
+    graph_vaccines_full_doses_rate = ['vaccines_full_doses_rate']
+
     graph_vaccines_administered_total = ['vaccines_administered_total']
     graph_vaccines_administered_pfizer = ['vaccines_administered_pfizer']
     graph_vaccines_administered_moderna = ['vaccines_administered_moderna']
@@ -302,7 +310,9 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
     max_jail_inmate_cur_cases = 0
     max_jail_inmate_pop = 0
     max_jail_staff_total_cases = 0
+    max_vaccines_doses = 0
     max_vaccines_by_type = 0
+    max_one_week_vaccines_rate = 0
 
     min_test_positivity_rate_date = '2020-04-10'
     found_min_test_positivity_rate_date = False
@@ -320,6 +330,7 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
     latest_test_pos_rate_row_index = None
     latest_tests_row_index = None
     latest_vaccines_county_row_index = None
+    latest_vaccines_chhs_row_index = None
 
     for key in AGE_RANGE_KEYS:
         norm_key = 'age_%s' % key
@@ -643,6 +654,9 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
         if full_doses_pct is not None:
             full_doses_pct = round(full_doses_pct, 2)
 
+        if one_or_more_doses_pct is not None and full_doses_pct is not None:
+            latest_vaccines_chhs_row_index = i
+
         graph_vaccines_1st_dose.append(one_or_more_doses)
         graph_vaccines_1st_dose_pct.append(one_or_more_doses_pct)
         graph_vaccines_full_doses.append(full_doses)
@@ -657,6 +671,11 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
         graph_vaccines_administered_pfizer.append(vaccines_pfizer)
         graph_vaccines_administered_moderna.append(vaccines_moderna)
         graph_vaccines_administered_jj.append(vaccines_jj)
+
+        max_vaccines_doses = max(
+            max_vaccines_doses,
+            one_or_more_doses or 0,
+            full_doses or 0)
 
         max_vaccines_by_type = max(max_vaccines_by_type,
                                    vaccines_pfizer or 0,
@@ -692,6 +711,52 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
 
         if vaccines_data and vaccines_data['allocated']:
             latest_vaccines_county_row_index = i
+
+        # 7-Day Vaccines Rate
+        one_week_vaccines_rate_i1 = i - 7
+        one_week_vaccines_1_dose_rate = None
+        one_week_vaccines_full_doses_rate = None
+
+        if one_week_vaccines_rate_i1 >= 0:
+            one_week_vaccines_rate_row1 = rows[one_week_vaccines_rate_i1]
+            one_week_vaccines_rate_row2 = rows[i]
+            one_week_vaccines_rate_1_dose_total_1 = (
+                one_week_vaccines_rate_row1
+                ['vaccines']['chhs']['administered']['1_or_more_doses']
+            )
+            one_week_vaccines_rate_1_dose_total_2 = (
+                one_week_vaccines_rate_row2
+                ['vaccines']['chhs']['administered']['1_or_more_doses']
+            )
+            one_week_vaccines_rate_full_doses_total_1 = (
+                one_week_vaccines_rate_row1
+                ['vaccines']['chhs']['administered']['fully']
+            )
+            one_week_vaccines_rate_full_doses_total_2 = (
+                one_week_vaccines_rate_row2
+                ['vaccines']['chhs']['administered']['fully']
+            )
+
+            if (one_week_vaccines_rate_1_dose_total_1 is not None and
+                one_week_vaccines_rate_1_dose_total_2 is not None):
+                one_week_vaccines_1_dose_rate = (
+                    one_week_vaccines_rate_1_dose_total_2 -
+                    one_week_vaccines_rate_1_dose_total_1)
+
+            if (one_week_vaccines_rate_full_doses_total_1 is not None and
+                one_week_vaccines_rate_full_doses_total_2 is not None):
+                one_week_vaccines_full_doses_rate = (
+                    one_week_vaccines_rate_full_doses_total_2 -
+                    one_week_vaccines_rate_full_doses_total_1)
+
+            max_one_week_vaccines_rate = max(
+                max_one_week_vaccines_rate,
+                one_week_vaccines_1_dose_rate or 0,
+                one_week_vaccines_full_doses_rate or 0)
+
+        graph_vaccines_1st_dose_rate.append(one_week_vaccines_1_dose_rate)
+        graph_vaccines_full_doses_rate.append(
+            one_week_vaccines_full_doses_rate)
 
     latest_rows = {
         'ages': latest_age_data_row_index,
@@ -809,6 +874,21 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
                 get_value=lambda row: (
                     row['hospitalizations']['state_data']['icu_positive']
                 )),
+            'vaccines1DosePct': build_counter_data(
+                row_index=latest_vaccines_chhs_row_index,
+                get_value=lambda row: (
+                    row['vaccines']['chhs']['administered']
+                    ['1_or_more_doses_pct']
+                ),
+                delta_days=[1, 7, 14],
+                is_pct=True),
+            'vaccinesFullDosesPct': build_counter_data(
+                row_index=latest_vaccines_chhs_row_index,
+                get_value=lambda row: (
+                    row['vaccines']['chhs']['administered']['fully_pct']
+                ),
+                delta_days=[1, 7, 14],
+                is_pct=True),
             'vaccinesAllocated': build_counter_data(
                 row_index=latest_vaccines_county_row_index,
                 get_value=lambda row: row['vaccines']['allocated'],
@@ -834,7 +914,8 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
                 get_value=lambda row: row['viral_tests']['total']),
             'positiveTestResults': build_counter_data(
                 row_index=latest_cases_row_index,
-                get_value=lambda row: row['confirmed_cases']['total']),
+                get_value=lambda row: row['confirmed_cases']['total'],
+                is_pct=True),
             'positiveTestRate': {
                 'value': (
                     # Offset by 1 due to the ID at the start of the graph.
@@ -869,6 +950,7 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
                     graph_jail_inmate_cur_cases[latest_jail_row_index] /
                     graph_jail_pop[latest_jail_row_index] * 100
                 ],
+                'isPct': True,
             },
             'jailStaffTotalTests': build_counter_data(
                 row_index=latest_jail_row_index,
@@ -905,6 +987,8 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
             'newAdultSeniorCareDeaths': max_new_snf_deaths,
             'sevenDayPosRate': max_seven_day_pos_rate,
             'oneWeekCaseRate': max_one_week_case_rate,
+            'oneWeekVaccinesRate': max_one_week_vaccines_rate,
+            'vaccinesAdministered': max_vaccines_doses,
             'vaccinesAdministeredByType': max_vaccines_by_type,
             'viralTests': max_viral_tests,
         },
@@ -995,6 +1079,8 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
                     'female': graph_vaccines_gender_female,
                     'unknown': graph_vaccines_gender_unknown,
                 },
+                'oneWeek1DoseRate': graph_vaccines_1st_dose_rate,
+                'oneWeekFullDosesRate': graph_vaccines_full_doses_rate,
             },
             'viralTests': {
                 'negativeResults': graph_negative_results,

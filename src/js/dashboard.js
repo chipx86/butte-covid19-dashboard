@@ -1349,7 +1349,7 @@ BC19.setupTimelineGraphs = function() {
             ]],
             names: {
                 vaccines_0_17: '0-17',
-                vaccines_18_49: '18-4',
+                vaccines_18_49: '18-49',
                 vaccines_50_64: '50-64',
                 vaccines_65_plus: '65+',
                 vaccines_unknown: 'Unknown',
