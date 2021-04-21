@@ -1149,7 +1149,7 @@ BC19.setupTimelineGraphs = function() {
             ],
             type: 'step',
             names: {
-                vaccines_1st_dose_pct: '1 or More Doses',
+                vaccines_1st_dose_pct: 'Received 1 or More Doses',
                 vaccines_full_doses_pct: 'Fully Vaccinated',
             },
         },
@@ -1223,7 +1223,7 @@ BC19.setupTimelineGraphs = function() {
             ],
             type: 'step',
             names: {
-                vaccines_1st_dose: '1 or More Doses',
+                vaccines_1st_dose: 'Received 1 or More Doses',
                 vaccines_full_doses: 'Fully Vaccinated',
             },
         },

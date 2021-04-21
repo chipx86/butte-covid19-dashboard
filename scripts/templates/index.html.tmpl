@@ -350,7 +350,7 @@
                 has_counters=True) -%}
     {{counter(
         id='vaccines-1dose-pct-counter',
-        title='% Partially Vaccinated',
+        title='% Received 1 Or More Doses',
         timestamp_key='vaccines',
         rel_days=[7, 14]
     )}}
@@ -373,7 +373,7 @@
 
     {{timeline_graph(
         data_id='vaccines_doses_by_day',
-        title='Administered Doses Per Day',
+        title='Vaccinated People',
     )}}
 
     {{timeline_graph(
