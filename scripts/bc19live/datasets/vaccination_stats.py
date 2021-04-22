@@ -45,7 +45,7 @@ def build_demographic_stats_json_dataset(session, responses, out_filename,
 
     for key, response in responses.items():
         payload = json.loads(response.text)
-        date = datetime.strptime(payload['meta']['LATEST_ADMIN_DATE'],
+        date = datetime.strptime(payload['meta']['PUBLISHED_DATE'],
                                  '%Y-%m-%d')
 
         if (date > datetime.now() or
