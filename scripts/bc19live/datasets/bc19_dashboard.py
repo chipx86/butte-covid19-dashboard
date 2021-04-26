@@ -914,8 +914,7 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
                 get_value=lambda row: row['viral_tests']['total']),
             'positiveTestResults': build_counter_data(
                 row_index=latest_cases_row_index,
-                get_value=lambda row: row['confirmed_cases']['total'],
-                is_pct=True),
+                get_value=lambda row: row['confirmed_cases']['total']),
             'positiveTestRate': {
                 'value': (
                     # Offset by 1 due to the ID at the start of the graph.
@@ -924,6 +923,7 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
                 'relativeValues': [
                     graph_test_pos_rate[latest_test_pos_rate_row_index],
                 ],
+                'isPct': True,
             },
             'jailInmatePop': build_counter_data(
                 row_index=latest_jail_row_index,
