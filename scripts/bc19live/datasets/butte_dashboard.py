@@ -284,7 +284,7 @@ def build_dataset(response, out_filename, **kwargs):
         },
         'vaccines_total_fully_vaccinated': {
             'labels': ['total number of fully vaccinated butte county '
-                       'residents'],
+                       'residents*'],
             'entity_id': 'b402bf81-a3db-4129-9be3-204449596cf0',
         },
     }
