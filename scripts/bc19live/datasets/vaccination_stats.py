@@ -123,7 +123,7 @@ DATASETS = [
         'parser': build_demographic_stats_json_dataset,
     },
     {
-        'filename': 'vaccination-demographics.csv',
+        'filename': 'vaccination-demographics-v2.csv',
         'format': 'csv',
         'local_source': {
             'filename': 'vaccination-demographics.json',
@@ -136,7 +136,8 @@ DATASETS = [
             ('Gender: Male', ('genders', 'Male')),
             ('Gender: Unknown/Undifferentiated',
              ('genders', 'Unknown/undifferentiated')),
-            ('Age: 0-17', ('age', '0-17')),
+            ('Age: 0-11', ('age', '0-11')),
+            ('Age: 12-17', ('age', '12-17')),
             ('Age: 18-49', ('age', '18-49')),
             ('Age: 50-64', ('age', '50-64')),
             ('Age: 65+', ('age', '65+')),
