@@ -275,7 +275,8 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
     graph_vaccines_gender_female = ['vaccines_female']
     graph_vaccines_gender_unknown = ['vaccines_unknown']
 
-    graph_vaccines_age_0_17 = ['vaccines_0_17']
+    graph_vaccines_age_0_11 = ['vaccines_0_11']
+    graph_vaccines_age_12_17 = ['vaccines_12_17']
     graph_vaccines_age_18_49 = ['vaccines_18_49']
     graph_vaccines_age_50_64 = ['vaccines_50_64']
     graph_vaccines_age_65_plus = ['vaccines_65_plus']
@@ -691,7 +692,8 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
         graph_vaccines_gender_female.append(vaccine_gender['female'])
         graph_vaccines_gender_unknown.append(vaccine_gender['unknown'])
 
-        graph_vaccines_age_0_17.append(vaccine_age['0_17'])
+        graph_vaccines_age_0_11.append(vaccine_age['0_11'])
+        graph_vaccines_age_12_17.append(vaccine_age['12_17'])
         graph_vaccines_age_18_49.append(vaccine_age['18_49'])
         graph_vaccines_age_50_64.append(vaccine_age['50_64'])
         graph_vaccines_age_65_plus.append(vaccine_age['65_plus'])
@@ -1056,7 +1058,8 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
                 'administeredModerna': graph_vaccines_administered_moderna,
                 'administeredJJ': graph_vaccines_administered_jj,
                 'age': {
-                    '0_17': graph_vaccines_age_0_17,
+                    '0_11': graph_vaccines_age_0_11,
+                    '12_17': graph_vaccines_age_12_17,
                     '18_49': graph_vaccines_age_18_49,
                     '50_64': graph_vaccines_age_50_64,
                     '65_plus': graph_vaccines_age_65_plus,

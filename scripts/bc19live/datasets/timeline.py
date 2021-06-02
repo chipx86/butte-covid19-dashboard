@@ -535,7 +535,11 @@ DATASETS = [
                     'type': 'pct',
                 },
                 {
-                    'name': 'vaccines:demographics:age:0_17',
+                    'name': 'vaccines:demographics:age:0_11',
+                    'type': 'pct',
+                },
+                {
+                    'name': 'vaccines:demographics:age:12_17',
                     'type': 'pct',
                 },
                 {

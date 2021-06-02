@@ -1458,7 +1458,8 @@ BC19.setupTimelineGraphs = function() {
             colors: BC19.colors,
             columns: [
                 graphData.dates,
-                graphData.vaccines.age['0_17'],
+                graphData.vaccines.age['0_11'],
+                graphData.vaccines.age['12_17'],
                 graphData.vaccines.age['18_49'],
                 graphData.vaccines.age['50_64'],
                 graphData.vaccines.age['65_plus'],
@@ -1470,14 +1471,16 @@ BC19.setupTimelineGraphs = function() {
                 normalize: true,
             },
             groups: [[
-                'vaccines_0_17',
+                'vaccines_0_11',
+                'vaccines_12_17',
                 'vaccines_18_49',
                 'vaccines_50_64',
                 'vaccines_65_plus',
                 'vaccines_unknown',
             ]],
             names: {
-                vaccines_0_17: '0-17',
+                vaccines_0_11: '0-11',
+                vaccines_12_17: '12-17',
                 vaccines_18_49: '18-49',
                 vaccines_50_64: '50-64',
                 vaccines_65_plus: '65+',
