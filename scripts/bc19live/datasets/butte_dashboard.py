@@ -192,6 +192,8 @@ def build_dataset(response, out_filename, **kwargs):
 
         return result
 
+    # Sometimes the county reports the current day in the report, and sometimes
+    # the previous day. This flag dictates behavior around that.
     m = re.search(r'window.infographicData=(.*);</script>', response.text)
 
     if not m:
@@ -204,34 +206,11 @@ def build_dataset(response, out_filename, **kwargs):
                          '%s'
                          % e)
 
-    try:
-        entity = get_entity('7758d945-3baa-414b-8672-fb348d435436')
-    except KeyError:
-        raise ParseError('Unable to find datestamp entity in Butte Dashboard')
+    import pprint
+    with open('/tmp/dashboard.json', 'w') as fp:
+        fp.write(pprint.pformat(dashboard_data))
 
-    m = re.search(r'as of (\d+)/(\d+)/(\d{4})',
-                  entity['props']['content']['blocks'][0]['text'],
-                  re.I)
-
-    if not m:
-        raise ParseError('Unable to find datestamp in Butte Dashboard')
-
-    # Sometimes the county reports the current day in the report, and sometimes
-    # the previous day. This flag dictates behavior around that.
-    REPORT_USES_PREV_DAY = (os.environ.get('BCD_REPORT_USES_PREV_DAY') != '0')
-
-    datestamp = datetime(month=int(m.group(1)),
-                         day=int(m.group(2)),
-                         year=int(m.group(3)))
-
-    if not REPORT_USES_PREV_DAY:
-        datestamp -= timedelta(days=1)
-
-    if datestamp.date() != (datetime.now() - timedelta(days=1)).date():
-        # This is stale data not from today's report OR it might be new
-        # data but the county forgot to update the datestamp on it. So don't
-        # risk overwriting historical data, and instead bail.
-        return False
+    datestamp = (datetime.now() - timedelta(days=1)).date()
 
     COUNTER_KEYS_TO_ENTITIES = {
         'confirmed_cases': {
@@ -249,14 +228,6 @@ def build_dataset(response, out_filename, **kwargs):
         'deaths': {
             'labels': ['deaths confirmed by viral test'],
             'entity_id': '9c8d7a74-c196-40b5-a2e5-3bd643bbae8b',
-        },
-        'daily_viral_test_results': {
-            'labels': ['daily viral test results', 'daily viral tests'],
-            'entity_id': '50f7771c-d7fb-49bf-8fb6-604ff802d2d9',
-        },
-        'total_viral_tests': {
-            'labels': ['total viral tests'],
-            'entity_id': 'bdc32af3-587c-462b-b88a-367835d6bf8b',
         },
         'hospitalized': {
             'labels': ['currently hospitalized'],
@@ -308,23 +279,9 @@ def build_dataset(response, out_filename, **kwargs):
     })
 
     # Find the datestamp for vaccines.
-    try:
-        entity = get_entity('0ebe511f-988e-4b1f-a68d-9fc2f4be5901')
-    except KeyError:
-        raise ParseError('Unable to find vaccine datestamp entity in '
-                         'Butte Dashboard')
-
-    m = re.search(r'Updated (\d+)/(\d+)/(\d{4})',
-                  entity['props']['content']['blocks'][0]['text'],
-                  re.I)
-
-    if not m:
-        raise ParseError('Unable to parse vaccine datestamp entity in '
-                         'Butte Dashboard')
-
-    vaccines_datestamp = datetime(month=int(m.group(1)),
-                                  day=int(m.group(2)),
-                                  year=int(m.group(3)))
+    #
+    # XXX This is no longer available on the dashboard itself.
+    vaccines_datestamp = datestamp
 
     # We have two forms of dates being used on the dashboard.
     #
@@ -403,8 +360,8 @@ def build_dataset(response, out_filename, **kwargs):
                 'total_released': scraped_data['released_from_isolation'],
             },
             'viral_tests': {
-                'total': scraped_data['total_viral_tests'],
-                'results': scraped_data['daily_viral_test_results'],
+                'total': None,
+                'results': None,
             },
             'hospitalized': {
                 'current': scraped_data['hospitalized'],
