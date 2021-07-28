@@ -1,3 +1,4 @@
+import csv
 import json
 import os
 import re
@@ -5,7 +6,9 @@ from collections import OrderedDict
 from datetime import datetime, timedelta
 
 from bc19live.errors import ParseError
-from bc19live.utils import add_or_update_json_date_row, convert_json_to_csv
+from bc19live.utils import (add_or_update_json_date_row,
+                            convert_json_to_csv,
+                            safe_open_for_write)
 
 
 def build_dataset(response, out_filename, **kwargs):
@@ -192,6 +195,46 @@ def build_dataset(response, out_filename, **kwargs):
 
         return result
 
+    def get_chart_history(entity_id):
+        """Return history/timeline information from a chart.
+
+        This will extract the history data and perform date normalization,
+        handling the cases where the dashboard lacks year information.
+
+        Args:
+            entity_id (str):
+                The unique ID of the graph entity.
+
+        Returns:
+            dict:
+            A dictionary mapping chart labels to values.
+        """
+        entity = get_entity(entity_id)
+        history = []
+        year = 2020
+
+        for item in entity['props']['chartData']['data'][0][1:]:
+            parts = [
+                int(_i)
+                for _i in item[0].split('/')
+            ]
+
+            if parts[0] == 1 and parts[1] == 1:
+                year += 1
+
+            assert len(parts) == 2 or parts[2] + 2000 == year
+
+            key = '%d-%02d-%02d' % (year, parts[0], parts[1])
+
+            try:
+                value = int(item[2])
+            except ValueError:
+                value = None
+
+            history.append((key, value))
+
+        return history
+
     # Sometimes the county reports the current day in the report, and sometimes
     # the previous day. This flag dictates behavior around that.
     m = re.search(r'window.infographicData=(.*);</script>', response.text)
@@ -266,6 +309,12 @@ def build_dataset(response, out_filename, **kwargs):
         'probable_deaths_by_age': ('f744cc14-179a-428f-8125-e68421784ada', 2),
         'by_region': ('b26b9acd-b036-40bc-bbbe-68667dd338e4', 1),
         'probable_cases': ('7e36765a-23c2-4bc7-9fc1-ea4a927c8064', 2),
+    }
+
+    HISTORY_CHART_KEYS_TO_ENTITIES = {
+        'cases': '65c738a3-4a8f-4938-92c5-d282362a4a77',
+        'deaths': 'ee2d7dd8-d5b2-45c4-b866-6013db24ad19',
+        'probable_cases': '7e36765a-23c2-4bc7-9fc1-ea4a927c8064',
     }
 
     scraped_data = {
@@ -410,11 +459,52 @@ def build_dataset(response, out_filename, **kwargs):
                     scraped_data['vaccines_total_fully_vaccinated'],
                 'as_of_date': vaccines_datestamp.strftime('%Y-%m-%d'),
             },
+            'history': {
+                key: get_chart_history(entity_id)
+                for key, entity_id in HISTORY_CHART_KEYS_TO_ENTITIES.items()
+            }
         }
     except Exception as e:
         raise ParseError('Unable to build row data: %s' % e) from e
 
     add_or_update_json_date_row(out_filename, row_result)
+
+
+def build_history_dataset(in_fp, out_filename, **kwargs):
+    """Build a CSV dataset for Butte County Dashboard timeline histories.
+
+    This will contain the history of cases, probable cases, and deaths.
+
+    Args:
+        in_fp (file):
+            A file pointer to the JSON file being read.
+
+        out_filename (str):
+            The name of the outputted CSV file.
+
+        **kwargs (dict, unused):
+            Unused keyword arguments passed to this parser.
+    """
+    keys = ['cases', 'probable_cases', 'deaths']
+
+    dataset = json.load(in_fp)
+    history = dataset['dates'][-1]['history']
+
+    dates_to_values = {}
+
+    for key in keys:
+        for date, value in history[key]:
+            dates_to_values.setdefault(date, {})[key] = value
+
+    with safe_open_for_write(out_filename) as fp:
+        csv_writer = csv.DictWriter(fp, fieldnames=['date'] + keys)
+        csv_writer.writeheader()
+
+        for date, values in sorted(dates_to_values.items(),
+                                   key=lambda pair: pair[0]):
+            csv_writer.writerow(dict({
+                'date': date,
+            }, **values))
 
 
 DATASETS = [
@@ -521,5 +611,14 @@ DATASETS = [
             ('Vaccines - Total Fully-Vaccinated',
              ('vaccines', 'total_fully_vaccinated')),
         ],
+    },
+    {
+        'filename': 'butte-dashboard-history.csv',
+        'format': 'csv',
+        'local_source': {
+            'filename': 'butte-dashboard.json',
+            'format': 'json',
+        },
+        'parser': build_history_dataset,
     },
 ]
