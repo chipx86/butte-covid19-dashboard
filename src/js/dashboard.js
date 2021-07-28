@@ -100,6 +100,7 @@ window.BC19 = {
     barGraphsData: null,
     firstMDate: null,
     graphData: null,
+    scheduledGraphData: [],
     lastMDate: null,
     latestRowDates: null,
     latestRowIndexes: null,
@@ -317,6 +318,9 @@ BC19.getMaxY = function(maxValue, numTicks) {
  *     The graph object.
  */
 BC19.setupBBGraph = function(options) {
+    const columns = options.data.columns;
+    options.data.columns = [];
+
     options = Object.assign({}, BC19.commonTimelineOptions, options);
 
     const graph = bb.generate(options);
@@ -341,8 +345,26 @@ BC19.setupBBGraph = function(options) {
             }.bind(this, graph));
     }
 
+    BC19.scheduledGraphData.push([graph, columns]);
+
     return graph;
 };
+
+
+/**
+ * Render the next timeline graph on the page.
+ */
+BC19.renderNextGraphData = function() {
+    if (BC19.scheduledGraphData.length > 0) {
+        const info = BC19.scheduledGraphData.shift();
+
+        info[0].flow({
+            columns: info[1],
+        });
+
+        setTimeout(BC19.renderNextGraphData, 0);
+    }
+}
 
 
 /**
@@ -2239,6 +2261,7 @@ BC19.init = function() {
             BC19.setupCounters();
             BC19.setupBarGraphs();
             BC19.setupTimelineGraphs();
+            BC19.renderNextGraphData();
         })
         .catch(msg => {
             console.error(msg);
