@@ -101,6 +101,7 @@ window.BC19 = {
     firstMDate: null,
     graphData: null,
     scheduledGraphData: [],
+    scheduledGraphRangeUpdates: [],
     lastMDate: null,
     latestRowDates: null,
     latestRowIndexes: null,
@@ -222,7 +223,7 @@ BC19.processDashboardData = function(data) {
     BC19.monitoringTier = data.monitoringTier;
 
     BC19.defaultTimelineDomain = [
-        moment(BC19.lastMDate).subtract(120, 'days').format('YYYY-MM-DD'),
+        moment(BC19.lastMDate).subtract(240, 'days').format('YYYY-MM-DD'),
         moment(BC19.lastMDate).add(1, 'days').format('YYYY-MM-DD'),
     ];
 };
@@ -2133,7 +2134,14 @@ BC19.setDateRange = function(fromDate, toDate) {
         .add(dateRangeThreshold, 'days')
         .format('YYYY-MM-DD');
 
-    BC19.graphs.forEach(graph => {
+    BC19.scheduledGraphRangeUpdates = Array.from(BC19.graphs);
+    BC19.updateNextTimelineDateRanges(domain);
+};
+
+BC19.updateNextTimelineDateRanges = function(domain) {
+    if (BC19.scheduledGraphRangeUpdates.length > 0) {
+        const graph = BC19.scheduledGraphRangeUpdates.shift();
+
         graph.axis.range({
             min: {
                 x: domain[0],
@@ -2148,8 +2156,10 @@ BC19.setDateRange = function(fromDate, toDate) {
          * the internals.
          */
         graph.internal.resizeFunction();
-    });
-};
+
+        setTimeout(() => BC19.updateNextTimelineDateRanges(domain), 0);
+    }
+}
 
 
 BC19.setupElements = function() {
@@ -2295,22 +2305,8 @@ function _onDateSelectorChanged(value) {
 
     rangeEl.classList.remove('-is-shown');
 
-    if (value === 'days-7') {
-        fromMDate = moment().subtract(7, 'days');
-    } else if (value === 'days-14') {
-        fromMDate = moment().subtract(14, 'days');
-    } else if (value === 'days-30') {
-        fromMDate = moment().subtract(30, 'days');
-    } else if (value === 'days-60') {
-        fromMDate = moment().subtract(60, 'days');
-    } else if (value === 'days-90') {
-        fromMDate = moment().subtract(90, 'days');
-    } else if (value === 'days-120') {
-        fromMDate = moment().subtract(120, 'days');
-    } else if (value === 'days-180') {
-        fromMDate = moment().subtract(180, 'days');
-    } else if (value === 'days-365') {
-        fromMDate = moment().subtract(365, 'days');
+    if (value !== 'all') {
+        fromMDate = moment().subtract(value.split('-')[1], 'days');
     }
 
     BC19.setDateRange(moment.max(fromMDate, BC19.firstMDate).toDate(),
