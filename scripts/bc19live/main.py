@@ -23,6 +23,7 @@ DATASET_MODULE_NAMES = [
     'state_hospitals',
     'state_region_icu_pct',
     'state_resources',
+    'state_tests',
     'state_tiers',
     'stay_at_home',
     'vaccination_stats',

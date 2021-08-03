@@ -231,6 +231,12 @@ DATASETS = [
                     'type': 'delta',
                     'delta_from': 'viral_tests:results',
                 },
+                {'name': 'viral_tests:positive_results'},
+                {
+                    'name': 'viral_tests:delta_positive_results',
+                    'type': 'delta',
+                    'delta_from': 'viral_tests:positive_results',
+                },
                 {'name': 'viral_tests:pending'},
                 {
                     'name': 'viral_tests:delta_pending',
