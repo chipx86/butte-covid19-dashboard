@@ -415,15 +415,18 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
         viral_tests_total = viral_tests_data['total']
         viral_tests_delta_total = viral_tests_data['delta_total']
         viral_tests_results = viral_tests_data['results']
+        viral_tests_pos_results = viral_tests_data['positive_results']
+        viral_tests_delta_pos_results = \
+            viral_tests_data['delta_positive_results']
 
         graph_total_tests.append(viral_tests_total)
         graph_new_tests.append(viral_tests_delta_total)
         graph_total_test_results.append(viral_tests_results)
 
-        if viral_tests_results and delta_confirmed_cases is not None:
+        if viral_tests_results and viral_tests_pos_results is not None:
             graph_negative_results.append(viral_tests_results -
-                                          delta_confirmed_cases)
-            graph_positive_results.append(delta_confirmed_cases)
+                                          viral_tests_delta_pos_results)
+            graph_positive_results.append(viral_tests_delta_pos_results)
         else:
             graph_negative_results.append(0)
             graph_positive_results.append(0)
@@ -582,18 +585,18 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
             date == min_test_positivity_rate_date):
             found_min_test_positivity_rate_date = True
 
-        week_ago_confirmed_cases_total = \
-            week_ago_row['confirmed_cases']['total']
+        week_ago_viral_pos_results_total = \
+            week_ago_row['viral_tests']['positive_results']
         week_ago_viral_tests_total = \
             week_ago_row['viral_tests']['total']
 
         if (found_min_test_positivity_rate_date and
-            confirmed_cases_total is not None and
+            viral_tests_pos_results is not None and
             viral_tests_total is not None and
-            week_ago_confirmed_cases_total is not None and
+            week_ago_viral_pos_results_total is not None and
             week_ago_viral_tests_total is not None):
             pos_rate = (
-                (confirmed_cases_total - week_ago_confirmed_cases_total) /
+                (viral_tests_pos_results - week_ago_viral_pos_results_total) /
                 (viral_tests_total - week_ago_viral_tests_total) *
                 100.0)
 
