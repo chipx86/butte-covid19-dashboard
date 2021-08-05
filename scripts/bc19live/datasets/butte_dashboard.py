@@ -257,7 +257,7 @@ def build_dataset(response, out_filename, **kwargs):
 
     COUNTER_KEYS_TO_ENTITIES = {
         'confirmed_cases': {
-            'labels': ['confirmed cases'],
+            'labels': ['confirmed cases total'],
             'entity_id': '15b62ec3-79df-492a-9171-f92c09dbe3c4',
         },
         'in_isolation': {
