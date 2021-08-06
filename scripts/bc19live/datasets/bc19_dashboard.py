@@ -849,16 +849,11 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
         'counters': {
             'totalCases': build_counter_data(
                 row_index=latest_cases_row_index,
-                get_value=lambda row: (
-                    row['confirmed_cases']['total_as_of_report'] or
-                    row['confirmed_cases']['total']
-                ),
+                get_value=lambda row: row['confirmed_cases']['total'],
                 delta_days=[1, 7, 14, 30]),
             'totalDeaths': build_counter_data(
                 row_index=latest_cases_row_index,
-                get_value=lambda row: (
-                    row['deaths']['total_as_of_report'] or
-                    row['deaths']['total']),
+                get_value=lambda row: row['deaths']['total'],
                 delta_days=[1, 7, 14, 30]),
             'inIsolation': build_counter_data(
                 row_index=latest_isolation_row_index,
