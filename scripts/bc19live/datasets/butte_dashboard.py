@@ -249,10 +249,6 @@ def build_dataset(response, out_filename, **kwargs):
                          '%s'
                          % e)
 
-    import pprint
-    with open('/tmp/dashboard.json', 'w') as fp:
-        fp.write(pprint.pformat(dashboard_data))
-
     datestamp = (datetime.now() - timedelta(days=1)).date()
 
     COUNTER_KEYS_TO_ENTITIES = {
