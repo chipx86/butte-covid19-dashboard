@@ -248,6 +248,54 @@ a:visited {
 
   .bb-xgrid-line,
   .bb-ygrid-line {
+    &.-is-severity-medium {
+      line {
+        stroke: yellow;
+        stroke-dasharray: 3 3;
+      }
+
+      text {
+        fill: #CAAD0D;
+        font-size: 12px;
+      }
+    }
+
+    &.-is-severity-high {
+      line {
+        stroke: orange;
+        stroke-dasharray: 3 3;
+      }
+
+      text {
+        fill: #B57500;
+        font-size: 12px;
+      }
+    }
+
+    &.-is-severity-critical {
+      line {
+        stroke: red;
+        stroke-dasharray: 3 3;
+      }
+
+      text {
+        fill: red;
+        font-size: 12px;
+      }
+    }
+
+    &.-is-severity-extreme {
+      line {
+        stroke: purple;
+        stroke-dasharray: 3 3;
+      }
+
+      text {
+        fill: purple;
+        font-size: 12px;
+      }
+    }
+
     line {
       stroke: #999999;
     }

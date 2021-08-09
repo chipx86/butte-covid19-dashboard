@@ -116,6 +116,9 @@ HOSPTIALS = [
 ]
 
 
+POPULATION = 217769
+
+
 def norm_rel_value(value, prev_value):
     """Return a normalized number relative to another number.
 
@@ -404,8 +407,9 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
 
             if (one_week_case_rate_total1 is not None and
                 one_week_case_rate_total2 is not None):
-                one_week_case_rate = (one_week_case_rate_total2 -
-                                      one_week_case_rate_total1)
+                one_week_case_rate = (
+                    one_week_case_rate_total2 -
+                    one_week_case_rate_total1) / 7 / (POPULATION / 100000)
                 max_one_week_case_rate = max(max_one_week_case_rate,
                                              one_week_case_rate)
 

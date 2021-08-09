@@ -793,14 +793,43 @@ BC19.setupTimelineGraphs = function() {
         axis: {
             x: axisX,
             y: {
-                max: BC19.getMaxY(Math.max(per1KPopRound + 20,
-                                           maxValues.oneWeekCaseRate),
+                max: BC19.getMaxY(Math.max(90, maxValues.oneWeekCaseRate),
                                   tickCounts.STANDARD),
                 padding: 0,
                 tick: {
                     stepSize: BC19.getStepSize(maxValues.oneWeekCaseRate,
                                                tickCounts.STANDARD),
                 },
+            },
+        },
+        grid: {
+            y: {
+                lines: [
+                    {
+                        value: 70,
+                        text: 'Extreme',
+                        position: 'start',
+                        class: '-is-severity-extreme',
+                    },
+                    {
+                        value: 25,
+                        text: 'Critical',
+                        position: 'start',
+                        class: '-is-severity-critical',
+                    },
+                    {
+                        value: 10,
+                        text: 'High',
+                        position: 'start',
+                        class: '-is-severity-high',
+                    },
+                    {
+                        value: 1,
+                        text: 'Medium',
+                        position: 'start',
+                        class: '-is-severity-medium',
+                    },
+                ],
             },
         },
         point: {
@@ -811,8 +840,10 @@ BC19.setupTimelineGraphs = function() {
 
             format: {
                 value: (value, ratio, id) => {
-                    const per1K = Math.round(value / per1KPop * 100);
-                    return `${value} (~${per1K} per 100K people)`;
+                    const normValue = value.toFixed(1);
+                    const cases = Math.round(
+                        value * 7 * (BC19.COUNTY_POPULATION / 100000));
+                    return `${normValue} per 100K people per day (~${cases})`;
                 },
             },
         },
