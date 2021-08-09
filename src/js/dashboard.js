@@ -222,9 +222,10 @@ BC19.processDashboardData = function(data) {
     BC19.maxValues = data.maxValues;
     BC19.monitoringTier = data.monitoringTier;
 
+    const range = BC19.getTimelineDateRange();
     BC19.defaultTimelineDomain = [
-        moment(BC19.lastMDate).subtract(240, 'days').format('YYYY-MM-DD'),
-        moment(BC19.lastMDate).add(1, 'days').format('YYYY-MM-DD'),
+        range[0].format('YYYY-MM-DD'),
+        range[1].format('YYYY-MM-DD'),
     ];
 };
 
@@ -2193,6 +2194,37 @@ BC19.updateNextTimelineDateRanges = function(domain) {
 }
 
 
+/**
+ * Return a timeline range using the specified number of days.
+ *
+ * Args:
+ *     value (integer or string, optional):
+ *         The number of days, or "all".
+ *
+ * Returns:
+ *     Array:
+ *     An array of ``[fromDate, toDate]``, as moment objects.
+ */
+BC19.getTimelineDateRange = function(value) {
+    let fromMDate = BC19.lastDate;
+    let toMDate = BC19.lastMDate;
+
+    if (value === undefined) {
+        const dateSelectorEl = document.getElementById('date-selector');
+        value = dateSelectorEl.value;
+    }
+
+    if (value === 'all') {
+        fromMDate = moment(BC19.firstMDate);
+    } else {
+        fromMDate = moment(BC19.lastMDate).subtract(
+            value.split('-')[1], 'days');
+    }
+
+    return [fromMDate, toMDate];
+}
+
+
 BC19.setupElements = function() {
     /* Show the report timestamp. */
     const timestampEl = document.getElementById('report-timestamp');
@@ -2331,15 +2363,10 @@ function _onDateSelectorChanged(value) {
         return;
     }
 
-    let fromMDate = BC19.firstMDate;
-    let toMDate = BC19.lastMDate;
-
     rangeEl.classList.remove('-is-shown');
 
-    if (value !== 'all') {
-        fromMDate = moment().subtract(value.split('-')[1], 'days');
-    }
+    const range = BC19.getTimelineDateRange(value);
 
-    BC19.setDateRange(moment.max(fromMDate, BC19.firstMDate).toDate(),
-                      moment.max(toMDate, BC19.lastMDate).toDate());
+    BC19.setDateRange(moment.max(range[0], BC19.firstMDate).toDate(),
+                      moment.max(range[1], BC19.lastMDate).toDate());
 }
