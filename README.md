@@ -95,7 +95,7 @@ The structures of the data is subject to change.
 * [Oroville City Elementary School District (JSON)](https://bc19.live/data/json/schools-ocesd.json)
 * [Oroville Union High School District (JSON)](https://bc19.live/data/json/schools-ouhsd.json)
 * [Palermo Union Elementary School District (JSON)](https://bc19.live/data/json/schools-puesd.json)
-* [Paradist Unified School District (JSON)](https://bc19.live/data/json/schools-pusd.json)
+* [Paradise Unified School District (JSON)](https://bc19.live/data/json/schools-pusd.json)
 
 
 ### Legacy Data
