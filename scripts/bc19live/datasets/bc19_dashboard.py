@@ -418,7 +418,7 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
         # Testing Data
         viral_tests_total = viral_tests_data['total']
         viral_tests_delta_total = viral_tests_data['delta_total']
-        viral_tests_results = viral_tests_data['results']
+        viral_tests_results = viral_tests_data['results'] or 0
         viral_tests_pos_results = viral_tests_data['positive_results']
         viral_tests_delta_pos_results = \
             viral_tests_data['delta_positive_results']
@@ -589,27 +589,13 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
             date == min_test_positivity_rate_date):
             found_min_test_positivity_rate_date = True
 
-        week_ago_viral_pos_results_total = \
-            week_ago_row['viral_tests']['positive_results']
-        week_ago_viral_tests_total = \
-            week_ago_row['viral_tests']['total']
+        viral_tests_pos_rate = viral_tests_data['pos_rate']
+        graph_test_pos_rate.append(viral_tests_pos_rate)
 
-        if (found_min_test_positivity_rate_date and
-            viral_tests_pos_results is not None and
-            viral_tests_total is not None and
-            week_ago_viral_pos_results_total is not None and
-            week_ago_viral_tests_total is not None):
-            pos_rate = (
-                (viral_tests_pos_results - week_ago_viral_pos_results_total) /
-                (viral_tests_total - week_ago_viral_tests_total) *
-                100.0)
-
-            graph_test_pos_rate.append(pos_rate)
-
-            max_seven_day_pos_rate = max(max_seven_day_pos_rate, pos_rate)
+        if viral_tests_pos_rate is not None:
+            max_seven_day_pos_rate = max(max_seven_day_pos_rate,
+                                         viral_tests_pos_rate)
             latest_test_pos_rate_row_index = i
-        else:
-            graph_test_pos_rate.append(None)
 
         # Notable Events
         note = row['note']

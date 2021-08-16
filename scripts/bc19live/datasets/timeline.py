@@ -237,6 +237,10 @@ DATASETS = [
                     'type': 'delta',
                     'delta_from': 'viral_tests:positive_results',
                 },
+                {
+                    'name': 'viral_tests:pos_rate',
+                    'type': 'pct',
+                },
                 {'name': 'viral_tests:pending'},
                 {
                     'name': 'viral_tests:delta_pending',
