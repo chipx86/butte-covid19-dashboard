@@ -1,6 +1,7 @@
 import json
 import os
 from collections import OrderedDict
+from datetime import datetime
 
 from bc19live.utils import safe_open_for_write
 
@@ -141,7 +142,7 @@ def norm_rel_value(value, prev_value):
     return value - prev_value
 
 
-def build_dataset(info, in_fp, out_filename, **kwargs):
+def build_dataset(info, in_fps, out_filename, **kwargs):
     """Parse other datasets to generate JSON data for the dashboard.
 
     This takes the generated timeline data and compiles it into a dataset
@@ -155,8 +156,8 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
         info (dict):
             Parser option information. This must define ``min_filename``.
 
-        in_fp (file):
-            A file pointer to the timeline CSV file being read.
+        in_fps (dict):
+            A mapping of all source names to file pointers.
 
         out_filename (str):
             The filename for the JSON file to write.
@@ -203,7 +204,7 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
 
         return data
 
-    timeline = json.loads(in_fp.read())
+    timeline = json.loads(in_fps['timeline'].read())
 
     rows = timeline['dates']
 
@@ -776,6 +777,125 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
     latest_cases_row = rows[latest_cases_row_index]
     latest_confirmed_cases = latest_cases_row['confirmed_cases']
 
+    # Process the school data.
+    schools_data = json.loads(in_fps['schools'].read())
+
+    schools_date_pad = [None] * (
+        datetime.strptime(schools_data[0]['date'], '%Y-%m-%d') -
+        datetime.strptime(rows[0]['date'], '%Y-%m-%d')).days
+
+    # Set up the graphs, and pad the beginning.
+    graph_schools_semester_student_local_cases = \
+        ['semester_students_local'] + schools_date_pad
+    graph_schools_semester_student_remote_cases = \
+        ['semester_students_remote'] + schools_date_pad
+    graph_schools_semester_staff_local_cases = \
+        ['semester_staff_local'] + schools_date_pad
+    graph_schools_semester_staff_remote_cases = \
+        ['semester_staff_remote'] + schools_date_pad
+
+    graph_schools_new_student_local_cases = \
+        ['new_students_local'] + schools_date_pad
+    graph_schools_new_student_remote_cases = \
+        ['new_students_remote'] + schools_date_pad
+    graph_schools_new_staff_local_cases = \
+        ['new_staff_local'] + schools_date_pad
+    graph_schools_new_staff_remote_cases = \
+        ['new_staff_remote'] + schools_date_pad
+
+    schools_total_student_local_cases = 0
+    schools_total_student_remote_cases = 0
+    schools_total_staff_local_cases = 0
+    schools_total_staff_remote_cases = 0
+    schools_semester_student_local_cases = 0
+    schools_semester_student_remote_cases = 0
+    schools_semester_staff_local_cases = 0
+    schools_semester_staff_remote_cases = 0
+
+    max_new_school_cases = 0
+    max_semester_school_cases = 0
+
+    for row in schools_data:
+        date = row['date']
+
+        # Check if we need to reset the semester. This will happen on
+        # August 1st.
+        if date.split('-')[:2] == ('08', '01'):
+            # New year, who dis?
+            schools_semester_student_local_cases = 0
+            schools_semester_student_remote_cases = 0
+            schools_semester_staff_local_cases = 0
+            schools_semester_staff_remote_cases = 0
+
+        # Get the new student and staff counts for this date.
+        row_student_local_new = 0
+        row_student_remote_new = 0
+        row_staff_local_new = 0
+        row_staff_remote_new = 0
+
+        for district, district_data in row.get('districts', {}).items():
+            district_new_cases = district_data['district_wide']['new_cases']
+
+            row_student_local_new += district_new_cases['students_in_person']
+            row_student_remote_new += district_new_cases['students_remote']
+            row_staff_local_new += district_new_cases['staff_in_person']
+            row_staff_remote_new += district_new_cases['staff_remote']
+
+        # Add to the totals and graph.
+        schools_total_student_local_cases += row_student_local_new
+        schools_total_student_remote_cases += row_student_remote_new
+        schools_total_staff_local_cases += row_staff_local_new
+        schools_total_staff_remote_cases += row_staff_remote_new
+
+        schools_semester_student_local_cases += row_student_local_new
+        schools_semester_student_remote_cases += row_student_remote_new
+        schools_semester_staff_local_cases += row_staff_local_new
+        schools_semester_staff_remote_cases += row_staff_remote_new
+
+        graph_schools_new_student_local_cases.append(row_student_local_new)
+        graph_schools_new_student_remote_cases.append(row_student_remote_new)
+        graph_schools_new_staff_local_cases.append(row_staff_local_new)
+        graph_schools_new_staff_remote_cases.append(row_staff_remote_new)
+
+        max_semester_school_cases = max(
+            max_semester_school_cases,
+            schools_semester_student_local_cases +
+            schools_semester_student_remote_cases +
+            schools_semester_staff_local_cases +
+            schools_semester_staff_remote_cases)
+        max_new_school_cases = max(
+            max_new_school_cases,
+            row_student_local_new +
+            row_student_remote_new +
+            row_staff_local_new +
+            row_staff_remote_new)
+
+        graph_schools_semester_student_local_cases.append(
+            schools_semester_student_local_cases)
+        graph_schools_semester_student_remote_cases.append(
+            schools_semester_student_remote_cases)
+        graph_schools_semester_staff_local_cases.append(
+            schools_semester_staff_local_cases)
+        graph_schools_semester_staff_remote_cases.append(
+            schools_semester_staff_remote_cases)
+
+    # Now pad the end, to get it to align with the timeline data.
+    school_end_date = datetime.strptime(schools_data[-1]['date'], '%Y-%m-%d')
+    timeline_end_date = datetime.strptime(rows[-1]['date'], '%Y-%m-%d')
+
+    if school_end_date < timeline_end_date:
+        schools_date_pad = [None] * (timeline_end_date - school_end_date).days
+
+        graph_schools_semester_student_local_cases += schools_date_pad
+        graph_schools_semester_student_remote_cases += schools_date_pad
+        graph_schools_semester_staff_local_cases += schools_date_pad
+        graph_schools_semester_staff_remote_cases += schools_date_pad
+
+        graph_schools_new_student_local_cases += schools_date_pad
+        graph_schools_new_student_remote_cases += schools_date_pad
+        graph_schools_new_staff_local_cases += schools_date_pad
+        graph_schools_new_staff_remote_cases += schools_date_pad
+
     result = {
         'barGraphs': {
             'byHospital': [
@@ -968,6 +1088,8 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
             'jailStaffTotalCases': max_jail_staff_total_cases,
             'newCases': max_new_cases,
             'newDeaths': max_new_deaths,
+            'semesterSchoolCases': max_semester_school_cases,
+            'newSchoolCases': max_new_school_cases,
             'totalCases': max_total_cases,
             'totalDeaths': max_total_deaths,
             'hospitalizations': max_hospitalizations_y,
@@ -1029,6 +1151,21 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
                 'oroville': graph_cases_in_oroville,
                 'other': graph_cases_in_other,
                 'ridge': graph_cases_in_ridge,
+            },
+            'schools': {
+                'newStudentCasesLocal': graph_schools_new_student_local_cases,
+                'newStudentCasesRemote':
+                    graph_schools_new_student_remote_cases,
+                'newStaffCasesLocal': graph_schools_new_staff_local_cases,
+                'newStaffCasesRemote': graph_schools_new_staff_remote_cases,
+                'semesterStudentCasesLocal':
+                    graph_schools_semester_student_local_cases,
+                'semesterStudentCasesRemote':
+                    graph_schools_semester_student_remote_cases,
+                'semesterStaffCasesLocal':
+                    graph_schools_semester_staff_local_cases,
+                'semesterStaffCasesRemote':
+                    graph_schools_semester_staff_remote_cases,
             },
             'snf': {
                 'curPatientCases': graph_snf_cur_patient_cases,
@@ -1107,9 +1244,15 @@ DATASETS = [
         'filename': 'bc19-dashboard.json',
         'min_filename': 'bc19-dashboard.%s.min.json' % DATASET_VERSION,
         'format': 'json',
-        'local_source': {
-            'filename': 'timeline.json',
-            'format': 'json',
+        'local_sources': {
+            'schools': {
+                'filename': 'schools.json',
+                'format': 'json',
+            },
+            'timeline': {
+                'filename': 'timeline.json',
+                'format': 'json',
+            },
         },
         'parser': build_dataset,
     },
