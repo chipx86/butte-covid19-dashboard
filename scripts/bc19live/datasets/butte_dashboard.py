@@ -235,6 +235,67 @@ def build_dataset(response, out_filename, **kwargs):
 
         return history
 
+    def get_stacked_bar_chart_history(entity_id, row_label_offset=1,
+                                      column_data_offset=2):
+        """Return historical data from a stacked bar chart.
+
+        This will extract the history data and perform date normalization.
+
+        Note that this is currently geared toward the variant percentage
+        bar chart, since there's no others. It might not handle other
+        situations if presented later.
+
+        Args:
+            entity_id (str):
+                The unique ID of the graph entity.
+
+            row_label_offset (int, optional):
+                The offset within a row's data where the column label is
+                present.
+
+            column_data_offset (int, optional):
+                The offset within a column's data where the values begin.
+
+        Returns:
+            list of dict:
+            The history data.
+        """
+        MONTH_MAP = {
+            'Jan.': 'January',
+            'Feb.': 'February',
+            'Mar.': 'March',
+            'Apr.': 'April',
+            'Jun.': 'June',
+            'Jul.': 'July',
+            'Aug.': 'August',
+            'Sept.': 'September',
+            'Oct.': 'October',
+            'Nov.': 'November',
+            'Dec.': 'December',
+        }
+
+        entity = get_entity(entity_id)
+        history = []
+
+        chart_data = entity['props']['chartData']['data'][0]
+        row_labels = chart_data[0][row_label_offset:]
+
+        for column_data in chart_data[1:]:
+            # Kind of a hack... Definitely going to have to change this if
+            # dealing with more stacked bar charts.
+            label = ' '.join(
+                MONTH_MAP.get(_s, _s)
+                for _s in column_data[0].split(' ')
+            )
+            row_data = column_data[column_data_offset - 1:]
+
+            history.append({
+                'label': label,
+                'rows': dict(zip(row_labels, row_data)),
+            })
+
+        return history
+
     # Sometimes the county reports the current day in the report, and sometimes
     # the previous day. This flag dictates behavior around that.
     m = re.search(r'window.infographicData=(.*);</script>', response.text)
@@ -313,6 +374,10 @@ def build_dataset(response, out_filename, **kwargs):
         'probable_cases': '7e36765a-23c2-4bc7-9fc1-ea4a927c8064',
     }
 
+    STACKED_BAR_CHART_KEYS_TO_ENTITIES = {
+        'sequenced_variants': '6b5fa17c-275b-457e-b676-bcca85e4107f',
+    }
+
     scraped_data = {
         key: get_counter_value(info['entity_id'],
                                expected_labels=info['labels'])
@@ -321,6 +386,16 @@ def build_dataset(response, out_filename, **kwargs):
     scraped_data.update({
         key: get_chart_info(entity_id, value_col=value_col)
         for key, (entity_id, value_col) in CHART_KEYS_TO_ENTITIES.items()
+    })
+
+
+    scraped_history_data = {
+        key: get_chart_history(entity_id)
+        for key, entity_id in HISTORY_CHART_KEYS_TO_ENTITIES.items()
+    }
+    scraped_history_data.update({
+        key: get_stacked_bar_chart_history(entity_id)
+        for key, entity_id in STACKED_BAR_CHART_KEYS_TO_ENTITIES.items()
     })
 
     # Find the datestamp for vaccines.
@@ -455,10 +530,7 @@ def build_dataset(response, out_filename, **kwargs):
                     scraped_data['vaccines_total_fully_vaccinated'],
                 'as_of_date': vaccines_datestamp.strftime('%Y-%m-%d'),
             },
-            'history': {
-                key: get_chart_history(entity_id)
-                for key, entity_id in HISTORY_CHART_KEYS_TO_ENTITIES.items()
-            }
+            'history': scraped_history_data,
         }
     except Exception as e:
         raise ParseError('Unable to build row data: %s' % e) from e
@@ -501,6 +573,34 @@ def build_history_dataset(in_fp, out_filename, **kwargs):
             csv_writer.writerow(dict({
                 'date': date,
             }, **values))
+
+
+def build_sequenced_variants_dataset(in_fp, out_filename, **kwargs):
+    """Build a CSV dataset for Butte County Dashboard sequenced variants.
+
+    Args:
+        in_fp (file):
+            A file pointer to the JSON file being read.
+
+        out_filename (str):
+            The name of the outputted CSV file.
+
+        **kwargs (dict, unused):
+            Unused keyword arguments passed to this parser.
+    """
+    dataset = json.load(in_fp)
+    data = dataset['dates'][-1]['history']['sequenced_variants']
+
+    keys = sorted(list(data[0]['rows'].keys()))
+
+    with safe_open_for_write(out_filename) as fp:
+        csv_writer = csv.DictWriter(fp, fieldnames=['date'] + keys)
+        csv_writer.writeheader()
+
+        for column in data:
+            csv_writer.writerow(dict({
+                'date': column['label'],
+            }, **column['rows']))
 
 
 DATASETS = [
@@ -616,5 +716,14 @@ DATASETS = [
             'format': 'json',
         },
         'parser': build_history_dataset,
+    },
+    {
+        'filename': 'butte-dashboard-sequenced-variants.csv',
+        'format': 'csv',
+        'local_source': {
+            'filename': 'butte-dashboard.json',
+            'format': 'json',
+        },
+        'parser': build_sequenced_variants_dataset,
     },
 ]
