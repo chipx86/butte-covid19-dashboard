@@ -34,6 +34,59 @@ DATASET_MODULE_NAMES = [
 ]
 
 
+def _get_urls(urls, allow_cache):
+    """Return responses and up-to-date information from URLs.
+
+    This takes a dictionary of keys to URLs and fetches each one, returning
+    information on the up-to-date status of each and the response payloads.
+
+    If any URLs fails, an error will be logged and the URL information will
+    be excluded from the results.
+
+    Args:
+        urls (dict):
+            The dictionary of keys to URLs.
+
+        allow_cache (bool):
+            Whether to allow a cached entry to be used.
+
+    Returns:
+        tuple:
+        A tuple of:
+
+        1. A dictionary of keys to URL result dictionaries (each with
+           ``up_to_date`` and ``response`` keys).
+        2. The last HTTP session instance.
+    """
+    results = {}
+    session = None
+    responses = {}
+    urls_up_to_date = {}
+
+    for url_name, url in urls.items():
+        session, response = \
+            http_get(url,
+                     allow_cache=allow_cache,
+                     session=session)
+
+        if response.status_code == 200:
+            up_to_date = False
+        elif response.status_code == 304:
+            up_to_date = True
+        else:
+            sys.stderr.write('HTTP error %s while fetching %s: %s'
+                             % (response.status_code, url,
+                                response.text[:3000]))
+            continue
+
+        results[url_name] = {
+            'response': response,
+            'up_to_date': up_to_date,
+        }
+
+    return results, session
+
+
 def main():
     """Main function for building datasets.
 
@@ -85,6 +138,7 @@ def main():
             os.makedirs(out_dir)
 
         out_filename = os.path.join(out_dir, filename)
+        allow_cache = os.path.exists(out_filename)
         parser = info.get('parser')
         result = None
         up_to_date = False
@@ -95,53 +149,46 @@ def main():
 
         try:
             if 'url' in info:
-                url = info['url']
+                url_results, session = _get_urls(
+                    urls={
+                        'main': info['url'],
+                    },
+                    allow_cache=allow_cache)
+                url_result = url_results.get('main')
 
-                session, response = \
-                    http_get(url, allow_cache=os.path.exists(out_filename))
+                if not url_result:
+                    continue
 
-                if response.status_code == 200:
+                if url_result['up_to_date']:
+                    up_to_date = True
+                else:
                     result = parser(info=info,
-                                    response=response,
+                                    response=url_result['response'],
                                     out_filename=out_filename,
                                     session=session)
-                elif response.status_code == 304:
-                    up_to_date = True
-                else:
-                    sys.stderr.write('HTTP error %s while fetching %s: %s'
-                                     % (response.status_code, filename,
-                                        response.text))
-                    continue
             elif 'urls' in info:
                 urls = info['urls']
-                session = None
-                responses = {}
-                urls_up_to_date = {}
+                urls_results, session = _get_urls(
+                    urls=urls,
+                    allow_cache=allow_cache)
 
-                for url_name, url in urls.items():
-                    session, response = \
-                        http_get(url,
-                                 allow_cache=os.path.exists(out_filename),
-                                 session=session)
-
-                    if response.status_code == 200:
-                        urls_up_to_date[url_name] = False
-                    elif response.status_code == 304:
-                        urls_up_to_date[url_name] = True
-                    else:
-                        sys.stderr.write('HTTP error %s while fetching %s: %s'
-                                         % (response.status_code, filename,
-                                            response.text))
-                        continue
-
-                    responses[url_name] = response
-
-                if len(responses) != len(urls):
+                if len(url_results) != len(urls):
                     # One of them failed. Bail.
                     continue
-                elif all(urls_up_to_date.values()):
+
+                all_up_to_date = all(
+                    _url_response['up_to_date']
+                    for _url_response in url_responses.values()
+                )
+
+                if all_up_to_date:
                     up_to_date = True
                 else:
+                    responses = {
+                        _key: _value['response']
+                        for _key, _value in urls_results.items()
+                    }
+
                     result = parser(info=info,
                                     responses=responses,
                                     out_filename=out_filename,
