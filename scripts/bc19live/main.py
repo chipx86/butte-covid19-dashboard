@@ -147,10 +147,16 @@ def main():
     ))
 
     if '--not-timeline' in sys.argv:
+        excluded_feeds = {
+            'timeline.csv',
+            'timeline.json',
+            'bc19-dashboard.json',
+        }
+
         feeds_to_build = {
             feed['filename']
             for feed in DATASETS
-        } - {'timeline.csv', 'timeline.json'}
+        } - excluded_feeds
     elif len(sys.argv) > 1:
         feeds_to_build = set(sys.argv[1:])
     else:
