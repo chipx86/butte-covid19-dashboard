@@ -306,6 +306,43 @@
 {%- endcall -%}
 
 
+{#- Schools -#}
+{% call header(id='schools',
+               title='Schools',
+               css_class='-is-schools-header',
+               aria_label='School case information') -%}
+    {{sources([
+        ('Chico Unified',
+         'https://docs.google.com/spreadsheets/d/e/2PACX-1vSH62Mvnr2amB1E_FqpwrohozTFnMghd0Np1KlhpsaxZZGyxHn5kuf18rfexq8pBSqskgN2LuLcPV38/pubhtml#'),
+        ('Durham Unified',
+         'http://durhamunified.org/dusd-covid-19-community-dashboard/'),
+        ('Inspire',
+         'https://docs.google.com/spreadsheets/d/1-DTOcPmoYiOK-9wPMqMFoT6D9ViFznb9H15lzx-yzBE/edit#gid=0'),
+        ('Oroville City Elementary',
+         'https://www.ocesd.org/page/covid-community-information'),
+        ('Oroville Union High',
+         'https://docs.google.com/spreadsheets/d/1uOghJGc0QCroA8e2xCaHIEYT-STgJtCgGpetVm6Tny0/edit#gid=0'),
+        ('Palermo Union Elementary',
+         'https://drive.google.com/file/d/14vxZGZ9gsXc4-KpX0v16vk11w-qZz4Oq/view'),
+        ('Paradise Unified',
+         'https://www.pusdk12.org/COVID-19/Community-Dashboard/index.html'),
+    ])}}
+{%- endcall -%}
+
+{% call section(css_class='-is-schools-graphs',
+                aria_label='School case graphs') -%}
+    {{timeline_graph(
+        data_id='schools_semester_cases',
+        title='Cases Per School Year'
+    )}}
+
+    {{timeline_graph(
+        data_id='schools_new_cases',
+        title='New Cases'
+    )}}
+{%- endcall %}
+
+
 {#- Demographics -#}
 {% call header(id='demographics',
                title='Demographics',

@@ -913,6 +913,104 @@ BC19.setupTimelineGraphs = function() {
     });
 
     BC19.setupBBGraph({
+        bindto: '#schools_semester_cases',
+        size: {
+            height: BC19.graphSizes.MEDIUM,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                graphData.dates,
+                graphData.schools.semesterStudentCasesRemote,
+                graphData.schools.semesterStudentCasesLocal,
+                graphData.schools.semesterStaffCasesRemote,
+                graphData.schools.semesterStaffCasesLocal,
+            ],
+            names: {
+                semester_staff_local: 'Staff (in person)',
+                semester_staff_remote: 'Staff (remote)',
+                semester_students_local: 'Students (in person)',
+                semester_students_remote: 'Students (remote)',
+            },
+            order: null,
+            groups: [
+                [
+                    'semester_students_local',
+                    'semester_students_remote',
+                    'semester_staff_local',
+                    'semester_staff_remote',
+                ],
+            ],
+            type: 'area-step',
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: BC19.getMaxY(maxValues.semesterSchoolCases,
+                                  tickCounts.MEDIUM),
+                padding: 0,
+                tick: {
+                    stepSize: BC19.getStepSize(maxValues.semesterSchoolCases,
+                                               tickCounts.MEDIUM),
+                },
+            },
+        },
+        legend: {
+            show: true,
+        },
+    });
+
+    BC19.setupBBGraph({
+        bindto: '#schools_new_cases',
+        size: {
+            height: BC19.graphSizes.MEDIUM,
+        },
+        data: {
+            x: 'date',
+            colors: BC19.colors,
+            columns: [
+                graphData.dates,
+                graphData.schools.newStudentCasesRemote,
+                graphData.schools.newStudentCasesLocal,
+                graphData.schools.newStaffCasesRemote,
+                graphData.schools.newStaffCasesLocal,
+            ],
+            names: {
+                new_staff_local: 'Staff (in person)',
+                new_staff_remote: 'Staff (remote)',
+                new_students_local: 'Students (in person)',
+                new_students_remote: 'Students (remote)',
+            },
+            order: null,
+            groups: [
+                [
+                    'new_students_local',
+                    'new_students_remote',
+                    'new_staff_local',
+                    'new_staff_remote',
+                ],
+            ],
+            type: 'bar',
+        },
+        axis: {
+            x: axisX,
+            y: {
+                max: BC19.getMaxY(maxValues.newSchoolCases,
+                                  tickCounts.MEDIUM),
+                padding: 0,
+                tick: {
+                    stepSize: BC19.getStepSize(maxValues.newSchoolCases,
+                                               tickCounts.MEDIUM),
+                },
+            },
+        },
+        legend: {
+            show: true,
+        },
+    });
+
+    BC19.setupBBGraph({
         bindto: '#cases_by_age_timeline_graph',
         size: {
             height: BC19.graphSizes.VERY_TALL,
