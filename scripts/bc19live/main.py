@@ -1,6 +1,7 @@
 import os
 import sys
 import traceback
+from contextlib import contextmanager
 from importlib import import_module
 from itertools import chain
 
@@ -87,11 +88,46 @@ def _get_urls(urls, allow_cache):
     return results, session
 
 
+@contextmanager
+def _open_local_sources(local_sources):
+    """Open one or more local sources for reading.
+
+    This will open the sources, yield to the caller, and then close them
+    again.
+
+    Args:
+        local_sources (dict):
+            A mapping of keys to filenames.
+
+    Context:
+        dict:
+        A mapping of keys to file pointers.
+    """
+    fps = {}
+
+    for source_name, local_source in local_sources.items():
+        source_filename = os.path.join(DATA_DIR,
+                                       local_source['format'],
+                                       local_source['filename'])
+
+        if not os.path.exists(source_filename):
+            with open(source_filename, 'w') as out_fp:
+                out_fp.write('[]')
+
+        fps[source_name] = open(source_filename, 'r')
+
+    try:
+        yield fps
+    finally:
+        for fp in fps.values():
+            fp.close()
+
+
 def main():
     """Main function for building datasets.
 
     This accepts names of feeds on the command line to build, as well as a
-    special ``-not-timeline`` argument that excludes the ``timeline.csv``,
+    special ``--not-timeline`` argument that excludes the ``timeline.csv``,
     ``timeline.json``, and ``timeline.min.json`` files.
 
     Once the options are chosen, this will run through :py:data:`DATASETS` and
@@ -194,17 +230,18 @@ def main():
                                     out_filename=out_filename,
                                     session=session)
             elif 'local_source' in info:
-                local_source = info['local_source']
-                source_filename = os.path.join(DATA_DIR, local_source['format'],
-                                               local_source['filename'])
+                local_sources = {
+                    'main': info['local_source'],
+                }
 
-                if not os.path.exists(source_filename):
-                    with open(source_filename, 'w') as out_fp:
-                        out_fp.write('[]')
-
-                with open(source_filename, 'r') as in_fp:
+                with _open_local_sources(local_sources) as fps:
                     result = parser(info=info,
-                                    in_fp=in_fp,
+                                    in_fp=fps['main'],
+                                    out_filename=out_filename)
+            elif 'local_sources' in info:
+                with _open_local_sources(info['local_sources']) as fps:
+                    result = parser(info=info,
+                                    in_fps=fps,
                                     out_filename=out_filename)
             else:
                 sys.stderr.write('Invalid feed entry: %r\n' % info)
