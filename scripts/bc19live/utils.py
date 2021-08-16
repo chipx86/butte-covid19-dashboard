@@ -310,6 +310,34 @@ def parse_csv_value(value, data_type, col_info):
     return value
 
 
+def build_missing_date_rows(cur_date, latest_date, date_field='date'):
+    """Build empty rows for a span of dates.
+
+    Args:
+        cur_date (datetime.datetime):
+            The current date.
+
+        latest_date (datetime.datetime):
+            The latest date in the dataset.
+
+        date_field (str):
+            The name of the field to add to generated rows for the row date.
+
+    Returns:
+        list of dict:
+        The generated list of rows.
+    """
+    assert cur_date >= latest_date
+
+    return [
+        {
+            date_field: (latest_date +
+                         timedelta(days=day)).strftime('%Y-%m-%d'),
+        }
+        for day in range(1, (cur_date - latest_date).days)
+    ]
+
+
 def add_or_update_json_date_row(filename, row_data, date_field='date'):
     """Add a new row of data for a date, or update an existing one.
 
@@ -358,14 +386,10 @@ def add_or_update_json_date_row(filename, row_data, date_field='date'):
         # See if we have days we're missing. If so, we need to fill in the
         # gaps. This is mainly to keep the spreadsheet rows aligned.
         if latest_date_key is not None:
-            cur_date = datetime.strptime(date_key, '%Y-%m-%d')
-            latest_date = datetime.strptime(latest_date_key, '%Y-%m-%d')
-
-            for day in range(1, (cur_date - latest_date).days):
-                dates_data.append({
-                    date_field: (latest_date +
-                                 timedelta(days=day)).strftime('%Y-%m-%d'),
-                })
+            dates_data += build_missing_date_rows(
+                cur_date=datetime.strptime(date_key, '%Y-%m-%d'),
+                latest_date=datetime.strptime(latest_date_key, '%Y-%m-%d'),
+                date_field=date_field)
 
         dates_data.append(row_data)
 
