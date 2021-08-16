@@ -58,11 +58,6 @@ Data Exports
 
 The following data is made available for others to use:
 
-* [BC19.live Timeline Data (CSV)](https://bc19.live/data/csv/timeline.csv)
-* [BC19.live Timeline Data (JSON)](https://bc19.live/data/json/timeline.json)
-* [BC19.live Timeline Data (Google Sheets)](https://docs.google.com/spreadsheets/d/1cDD-vcOT6mZIgv4S3yflAyqUx9w-BbQ_vv9_bkk00lg/edit?usp=sharing)
-* [Per-Hospital Case Counts (CSV)](https://bc19.live/data/csv/hospital-cases.csv)
-* [Per-Hospital Case Counts (JSON)](https://bc19.live/data/json/hospital-cases.json)
 * [Adult and Senior Care Facilities - Butte County Only (CSV)](https://bc19.live/data/csv/adult-and-senior-care.csv)
 * [Butte County Dashboard (CSV)](https://bc19.live/data/csv/butte-dashboard-v4.csv)
 * [Butte County Dashboard (JSON)](https://bc19.live/data/json/butte-dashboard.json)
@@ -74,16 +69,34 @@ The following data is made available for others to use:
 * [Chico Unified School District Cases (JSON)](https://bc19.live/data/json/cusd.json)
 * [Oroville Union High School District (CSV)](https://bc19.live/data/csv/oroville-union-high-school-district.csv)
 * [Oroville Union High School District (JSON)](https://bc19.live/data/json/oroville-union-high-school-district.json)
-* [State Cases - Butte County Only (CSV)](https://bc19.live/data/csv/state-cases.csv)
+* [Per-Hospital Case Counts (CSV)](https://bc19.live/data/csv/hospital-cases.csv)
+* [Per-Hospital Case Counts (JSON)](https://bc19.live/data/json/hospital-cases.json)
 * [State Skilled Nursing Facilities - Butte County Only (CSV)](https://bc19.live/data/csv/skilled-nursing-facilities-v3.csv)
 * [State Hospital Case Statistics - Butte County Only (CSV)](https://bc19.live/data/csv/state-hospitals-v3.csv)
-* [Stay-at-Home Regions Information (JSON)](https://bc19.live/data/json/stay-at-home.json)
-* [State Per-Region ICU Availability (CSV)](https://bc19.live/data/csv/state-region-icu-pct.csv)
-* [State Resources - Butte County Only (CSV)](https://bc19.live/data/csv/state-resources.csv)
-* [State Resources - Butte County Only (JSON)](https://bc19.live/data/json/state-resources.json)
 * [State Tests - Butte County Only (CSV)](https://bc19.live/data/csv/state-tests.csv)
-* [State Monitoring Tier Status - Butte County Only (CSV)](https://bc19.live/data/csv/state-tiers-v2.csv)
-* [State Monitoring Tier Status - Butte County Only (JSON)](https://bc19.live/data/json/state-tiers.json)
 * [State Vaccines Administered Statistics (CSV)](https://bc19.live/data/csv/chhs-vaccinations-administered.csv)
 * [State Vaccine Demographics - Butte County Only (JSON)](https://bc19.live/data/json/vaccination-demographics.json)
 * [State Vaccine Demographics - Butte County Only (CSV)](https://bc19.live/data/json/vaccination-demographics-v2.csv)
+
+
+### Dashboard-Specific Data
+
+This data is used to build the [bc19.live](https://bc19.live) dashboard.
+The structures of the data is subject to change.
+
+* [BC19.live Timeline Data (CSV)](https://bc19.live/data/csv/timeline.csv)
+* [BC19.live Timeline Data (JSON)](https://bc19.live/data/json/timeline.json)
+* [BC19.live Timeline Data (Google Sheets)](https://docs.google.com/spreadsheets/d/1cDD-vcOT6mZIgv4S3yflAyqUx9w-BbQ_vv9_bkk00lg/edit?usp=sharing)
+
+
+### Legacy Data
+
+This data is no longer updated, and is provided for historical reasons.
+
+* [State Cases - Butte County Only (CSV)](https://bc19.live/data/csv/state-cases.csv)
+* [State Monitoring Tier Status - Butte County Only (CSV)](https://bc19.live/data/csv/state-tiers-v2.csv)
+* [State Monitoring Tier Status - Butte County Only (JSON)](https://bc19.live/data/json/state-tiers.json)
+* [State Per-Region ICU Availability (CSV)](https://bc19.live/data/csv/state-region-icu-pct.csv)
+* [State Resources - Butte County Only (CSV)](https://bc19.live/data/csv/state-resources.csv)
+* [State Resources - Butte County Only (JSON)](https://bc19.live/data/json/state-resources.json)
+* [Stay-at-Home Regions Information (JSON)](https://bc19.live/data/json/stay-at-home.json)
