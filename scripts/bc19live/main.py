@@ -135,34 +135,48 @@ def main():
 
     HTTP responses are cached, to minimize traffic.
     """
-    dataset_modules = [
-        import_module('bc19live.datasets.%s' % module_name)
-        for module_name in DATASET_MODULE_NAMES
-    ]
+    DATASETS_BY_MODULE = {
+        _module_name: import_module('bc19live.datasets.%s'
+                                    % _module_name).DATASETS
+        for _module_name in DATASET_MODULE_NAMES
+    }
 
     DATASETS = list(chain.from_iterable(
-        dataset_module.DATASETS
-        for dataset_module in dataset_modules
+        _dataset
+        for _dataset in DATASETS_BY_MODULE.values()
     ))
 
+    DATASET_FILENAMES = {
+        _dataset['filename']
+        for _dataset in DATASETS
+    }
+
     if '--not-timeline' in sys.argv:
-        excluded_feeds = {
+        feeds_to_build = DATASET_FILENAMES - {
             'timeline.csv',
             'timeline.json',
             'bc19-dashboard.json',
         }
-
-        feeds_to_build = {
-            feed['filename']
-            for feed in DATASETS
-        } - excluded_feeds
     elif len(sys.argv) > 1:
-        feeds_to_build = set(sys.argv[1:])
+        # Include any filenames or dataset names specified in the arguments.
+        feeds_to_build = set()
+
+        for feed_name in sys.argv[1:]:
+            if feed_name in DATASET_FILENAMES:
+                # This is an explicit filename.
+                feeds_to_build.add(feed_name)
+            elif feed_name in DATASETS_BY_MODULE:
+                # This is a dataset name. Add each filename within it.
+                feeds_to_build.update(
+                    _dataset['filename']
+                    for _dataset in DATASETS_BY_MODULE[feed_name]
+                )
+            else:
+                sys.stderr.write('Invalid dataset/filename specified: "%s"\n'
+                                 % feed_name)
+                sys.exit(1)
     else:
-        feeds_to_build = {
-            feed['filename']
-            for feed in DATASETS
-        }
+        feeds_to_build = DATASET_FILENAMES
 
     # Load in the stored HTTP cache, if it exists.
     load_http_cache()
