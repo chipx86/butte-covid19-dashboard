@@ -6,5 +6,6 @@ __pycache__
 .babelrc
 .http-cache
 package-lock.json
+src/index.html
 
 .*.swp
