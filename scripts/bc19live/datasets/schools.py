@@ -173,7 +173,6 @@ def build_all_schools_json(in_fps, out_filename, info, **kwargs):
     for district_key, in_fp in in_fps.items():
         school_rows = json.load(in_fp).get('dates', [])
         district_name = district_key_map[district_key]
-        prev_row = None
 
         for row in school_rows:
             date = row['date']
@@ -182,13 +181,11 @@ def build_all_schools_json(in_fps, out_filename, info, **kwargs):
 
             new_row = results_by_date.setdefault(date, {
                 'date': date,
+                'districts': {},
             })
 
-            if not row:
-                row = prev_row
-
-            new_row[district_name] = row
-            prev_row = row
+            if row:
+                new_row['districts'][district_name] = row
 
     results = [
         _row_data
