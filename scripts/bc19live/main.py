@@ -15,9 +15,7 @@ from bc19live.utils import parse_csv
 DATASET_MODULE_NAMES = [
     'butte_county_jail',
     'butte_dashboard',
-    'cusd',
     'hospital_cases',
-    'oroville_union_high_district',
     'skilled_nursing_facilities',
     'adult_and_senior_care',
     'schools',
