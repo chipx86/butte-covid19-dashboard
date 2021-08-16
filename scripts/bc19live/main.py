@@ -20,6 +20,7 @@ DATASET_MODULE_NAMES = [
     'oroville_union_high_district',
     'skilled_nursing_facilities',
     'adult_and_senior_care',
+    'schools',
     'state_cases',
     'state_hospitals',
     'state_region_icu_pct',

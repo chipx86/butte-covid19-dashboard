@@ -65,10 +65,6 @@ The following data is made available for others to use:
 * [Butte County Dashboard - Sequenced Variants (CSV)](https://bc19.live/data/csv/butte-dashboard-sequenced-variants.csv)
 * [Butte County Jail (CSV)](https://bc19.live/data/csv/butte-county-jail.csv)
 * [Butte County Jail (JSON)](https://bc19.live/data/csv/butte-county-jail.json)
-* [Chico Unified School District Cases (CSV)](https://bc19.live/data/csv/cusd.csv)
-* [Chico Unified School District Cases (JSON)](https://bc19.live/data/json/cusd.json)
-* [Oroville Union High School District (CSV)](https://bc19.live/data/csv/oroville-union-high-school-district.csv)
-* [Oroville Union High School District (JSON)](https://bc19.live/data/json/oroville-union-high-school-district.json)
 * [Per-Hospital Case Counts (CSV)](https://bc19.live/data/csv/hospital-cases.csv)
 * [Per-Hospital Case Counts (JSON)](https://bc19.live/data/json/hospital-cases.json)
 * [State Skilled Nursing Facilities - Butte County Only (CSV)](https://bc19.live/data/csv/skilled-nursing-facilities-v3.csv)
@@ -87,6 +83,19 @@ The structures of the data is subject to change.
 * [BC19.live Timeline Data (CSV)](https://bc19.live/data/csv/timeline.csv)
 * [BC19.live Timeline Data (JSON)](https://bc19.live/data/json/timeline.json)
 * [BC19.live Timeline Data (Google Sheets)](https://docs.google.com/spreadsheets/d/1cDD-vcOT6mZIgv4S3yflAyqUx9w-BbQ_vv9_bkk00lg/edit?usp=sharing)
+
+
+### School Data
+
+*Added August 15, 2021.*
+
+* [Chico Unified School District Cases (JSON)](https://bc19.live/data/json/schools-cusd.json)
+* [Durham Unified School District (JSON)](https://bc19.live/data/json/schools-dusd.json)
+* [Inspire School (JSON)](https://bc19.live/data/json/schools-inspire.json)
+* [Oroville City Elementary School District (JSON)](https://bc19.live/data/json/schools-ocesd.json)
+* [Oroville Union High School District (JSON)](https://bc19.live/data/json/schools-ouhsd.json)
+* [Palermo Union Elementary School District (JSON)](https://bc19.live/data/json/schools-puesd.json)
+* [Paradist Unified School District (JSON)](https://bc19.live/data/json/schools-pusd.json)
 
 
 ### Legacy Data
