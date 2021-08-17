@@ -820,7 +820,7 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
 
         # Check if we need to reset the semester. This will happen on
         # August 1st.
-        if date.split('-')[:2] == ('08', '01'):
+        if date.split('-')[1:] == ['08', '01']:
             # New year, who dis?
             schools_semester_student_local_cases = 0
             schools_semester_student_remote_cases = 0
