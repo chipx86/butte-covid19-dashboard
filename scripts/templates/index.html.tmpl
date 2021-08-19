@@ -43,7 +43,7 @@
 {%- for rel_day in rel_days %}
      <div class="bc19-c-counter__relative">
       <span class="bc19-c-counter__relative-value">0</span>
-      last {{rel_day}} days
+      - {{rel_day}} days ago
      </div>
 {%- endfor %}
     </figure>
@@ -331,6 +331,20 @@
 
 {% call section(css_class='-is-schools-graphs',
                 aria_label='School case graphs') -%}
+    {{counter(
+        id='school-year-student-cases',
+        title='Student Cases This School Year',
+        timestamp_key='schools',
+        rel_days=[7, 14]
+    )}}
+
+    {{counter(
+        id='school-year-staff-cases',
+        title='Staff Cases This School Year',
+        timestamp_key='schools',
+        rel_days=[7, 14]
+    )}}
+
     {{timeline_graph(
         data_id='schools_semester_cases',
         title='Cases Per School Year'
