@@ -188,13 +188,17 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
             'relValue': norm_rel_value(value, prev_value),
         }
 
-    def build_counter_data(row_index, get_value, delta_days=[1], is_pct=False):
-        latest_row = rows[row_index]
+    def build_counter_data(get_value, row_index=-1, delta_days=[1],
+                           is_pct=False, data_rows=None):
+        if data_rows is None:
+            data_rows = rows
+
+        latest_row = data_rows[row_index]
 
         data = {
-            'value': get_value(rows[row_index]),
+            'value': get_value(data_rows[row_index]),
             'relativeValues': [
-                get_value(rows[row_index - num_days])
+                get_value(data_rows[row_index - num_days])
                 for num_days in delta_days
             ],
         }
@@ -812,6 +816,8 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
     schools_semester_staff_local_cases = 0
     schools_semester_staff_remote_cases = 0
 
+    school_totals = []
+
     max_new_school_cases = 0
     max_semester_school_cases = 0
 
@@ -878,6 +884,13 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
             schools_semester_staff_local_cases)
         graph_schools_semester_staff_remote_cases.append(
             schools_semester_staff_remote_cases)
+
+        school_totals.append({
+            'students': (schools_semester_student_local_cases +
+                         schools_semester_student_remote_cases),
+            'staff': (schools_semester_staff_local_cases +
+                      schools_semester_staff_remote_cases),
+        })
 
     # Now pad the end, to get it to align with the timeline data.
     school_end_date = datetime.strptime(schools_data[-1]['date'], '%Y-%m-%d')
@@ -984,6 +997,12 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
                 get_value=lambda row: (
                     row['hospitalizations']['state_data']['icu_positive']
                 )),
+            'schoolYearNewStudentCasesTotal': build_counter_data(
+                data_rows=school_totals,
+                get_value=lambda row: row['students']),
+            'schoolYearNewStaffCasesTotal': build_counter_data(
+                data_rows=school_totals,
+                get_value=lambda row: row['staff']),
             'vaccines1DosePct': build_counter_data(
                 row_index=latest_vaccines_chhs_row_index,
                 get_value=lambda row: (
