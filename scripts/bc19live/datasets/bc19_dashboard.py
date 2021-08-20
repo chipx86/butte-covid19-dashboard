@@ -198,7 +198,7 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
         data = {
             'value': get_value(data_rows[row_index]),
             'relativeValues': [
-                get_value(data_rows[row_index - num_days])
+                get_value(data_rows[max(0, row_index - num_days)])
                 for num_days in delta_days
             ],
         }
@@ -999,9 +999,11 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
                 )),
             'schoolYearNewStudentCasesTotal': build_counter_data(
                 data_rows=school_totals,
+                row_index=len(school_totals) - 1,
                 get_value=lambda row: row['students']),
             'schoolYearNewStaffCasesTotal': build_counter_data(
                 data_rows=school_totals,
+                row_index=len(school_totals) - 1,
                 get_value=lambda row: row['staff']),
             'vaccines1DosePct': build_counter_data(
                 row_index=latest_vaccines_chhs_row_index,
