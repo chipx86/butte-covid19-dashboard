@@ -202,6 +202,17 @@ def build_all_schools_json(in_fps, out_filename, info, **kwargs):
 
 DATASETS = [
     {
+        'filename': 'schools-csuchico.json',
+        'format': 'json',
+        'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRUZCiEH2327_GwtD13qx-R6QpZOx5nv3UnnG-bFd-t-dwAv_OqYTiQLI55-vL_TfOsbsFtbK-lwJyx/pub/sheet?gid=530156977&output=csv',
+        'parser': build_district_json,
+        'school_types': {
+            'college': [
+                'Chico State',
+            ],
+        },
+    },
+    {
         'filename': 'schools-cusd.json',
         'format': 'json',
         'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRUZCiEH2327_GwtD13qx-R6QpZOx5nv3UnnG-bFd-t-dwAv_OqYTiQLI55-vL_TfOsbsFtbK-lwJyx/pub/sheet?gid=0&output=csv',
@@ -362,6 +373,10 @@ DATASETS = [
         'format': 'json',
         'parser': build_all_schools_json,
         'local_sources': {
+            'csuchico': {
+                'filename': 'schools-csuchico.json',
+                'format': 'json',
+            },
             'cusd': {
                 'filename': 'schools-cusd.json',
                 'format': 'json',
@@ -392,6 +407,7 @@ DATASETS = [
             },
         },
         'district_key_map': {
+            'csuchico': 'Chico State',
             'cusd': 'Chico Unified School District',
             'dusd': 'Durham Unified School District',
             'inspire': 'Inspire School',

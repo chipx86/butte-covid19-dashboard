@@ -87,7 +87,12 @@ The structures of the data is subject to change.
 
 ### School Data
 
-*Added August 15, 2021.*
+Added August 20, 2021:
+
+* [Chico State Cases (JSON)](https://bc19.live/data/json/schools-csuchico.json)
+
+
+Added August 15, 2021:
 
 * [Chico Unified School District Cases (JSON)](https://bc19.live/data/json/schools-cusd.json)
 * [Durham Unified School District (JSON)](https://bc19.live/data/json/schools-dusd.json)
