@@ -87,7 +87,9 @@ window.BC19 = {
             right: 10,
         },
         point: {
-            show: false,
+            focus: {
+                only: true,
+            },
         },
         svg: {
             classname: 'bb-graph-svg',
@@ -329,16 +331,12 @@ BC19.setupBBGraph = function(options) {
 
     options = Object.assign({}, BC19.commonTimelineOptions, options);
 
-    const graph = bb.generate(options);
-    BC19.graphs.push(graph);
-
-    if (!options.tooltip || !options.tooltip.format) {
-        graph.config(
-            'tooltip.format.value',
-            function(_graph, value, ratio, id, index) {
+    if (!options.tooltip.format) {
+        options.tooltip.format = {
+            value: function(value, ratio, id, index) {
                 if (index > 0) {
                     const prevValue =
-                        _graph.data(id)[0].values[index - 1].value;
+                        this.data(id)[0].values[index - 1].value;
 
                     if (prevValue > value) {
                         return value + ' (-' + (prevValue - value) + ')';
@@ -348,8 +346,12 @@ BC19.setupBBGraph = function(options) {
                 }
 
                 return value;
-            }.bind(this, graph));
+            }
+        };
     }
+
+    const graph = bb.generate(options);
+    BC19.graphs.push(graph);
 
     BC19.scheduledGraphData.push([graph, columns]);
 
@@ -364,7 +366,7 @@ BC19.renderNextGraphData = function() {
     if (BC19.scheduledGraphData.length > 0) {
         const info = BC19.scheduledGraphData.shift();
 
-        info[0].flow({
+        info[0].load({
             columns: info[1],
         });
 
@@ -841,9 +843,6 @@ BC19.setupTimelineGraphs = function() {
                 ],
             },
         },
-        point: {
-            show: false,
-        },
         tooltip: {
             linked: true,
 
@@ -1261,9 +1260,6 @@ BC19.setupTimelineGraphs = function() {
                 },
             },
         },
-        point: {
-            show: false,
-        },
         tooltip: {
             format: {
                 value: (value, ratio, id, index) => {
@@ -1327,9 +1323,6 @@ BC19.setupTimelineGraphs = function() {
         },
         legend: {
             show: true,
-        },
-        point: {
-            show: false,
         },
         tooltip: {
             format: {
@@ -1403,9 +1396,6 @@ BC19.setupTimelineGraphs = function() {
         legend: {
             show: true,
         },
-        point: {
-            show: false,
-        },
         tooltip: {
             format: {
                 value: (value, ratio, id, index) => {
@@ -1464,9 +1454,6 @@ BC19.setupTimelineGraphs = function() {
         legend: {
             show: true,
         },
-        point: {
-            show: false,
-        },
         tooltip: {
             linked: true,
         },
@@ -1510,9 +1497,6 @@ BC19.setupTimelineGraphs = function() {
         },
         legend: {
             show: true,
-        },
-        point: {
-            show: false,
         },
         tooltip: {
             format: {
@@ -1581,9 +1565,6 @@ BC19.setupTimelineGraphs = function() {
         },
         legend: {
             show: true,
-        },
-        point: {
-            show: false,
         },
         tooltip: {
             format: {
@@ -1661,9 +1642,6 @@ BC19.setupTimelineGraphs = function() {
         },
         legend: {
             show: true,
-        },
-        point: {
-            show: false,
         },
         tooltip: {
             format: {
@@ -1749,9 +1727,6 @@ BC19.setupTimelineGraphs = function() {
         },
         legend: {
             show: true,
-        },
-        point: {
-            show: false,
         },
         tooltip: {
             format: {
@@ -2290,13 +2265,8 @@ BC19.updateNextTimelineDateRanges = function(domain) {
             },
         });
 
-        /*
-         * A simple flush() doesn't fix the grid lines, so reach into
-         * the internals.
-         */
-        graph.internal.resizeFunction();
-
-        setTimeout(() => BC19.updateNextTimelineDateRanges(domain), 0);
+        requestAnimationFrame(() => BC19.updateNextTimelineDateRanges(domain),
+                              0);
     }
 }
 
