@@ -1387,11 +1387,11 @@ BC19.setupTimelineGraphs = function() {
         axis: {
             x: axisX,
             y: {
-                max: BC19.getMaxY(maxValues.vaccinesDoses,
+                max: BC19.getMaxY(maxValues.vaccinesAdministered,
                                   tickCounts.STANDARD),
                 padding: 0,
                 tick: {
-                    stepSize: BC19.getStepSize(maxValues.vaccinesDoses,
+                    stepSize: BC19.getStepSize(maxValues.vaccinesAdministered,
                                                tickCounts.STANDARD),
                 },
             },
@@ -2074,10 +2074,11 @@ BC19.setupTimelineGraphs = function() {
         axis: {
             x: axisX,
             y: {
-                max: BC19.getMaxY(maxValues.adultSeniorCare, tickCounts.MEDIUM),
+                max: BC19.getMaxY(maxValues.adultSeniorCareCases,
+                                  tickCounts.MEDIUM),
                 padding: 0,
                 tick: {
-                    stepSize: BC19.getStepSize(maxValues.adultSeniorCare,
+                    stepSize: BC19.getStepSize(maxValues.adultSeniorCareCases,
                                                tickCounts.MEDIUM),
                 },
             },
