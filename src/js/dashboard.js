@@ -1538,9 +1538,6 @@ BC19.setupTimelineGraphs = function() {
                 graphData.vaccines.gender.unknown,
             ],
             type: 'area-step',
-            stack: {
-                normalize: true,
-            },
             groups: [[
                 'vaccines_male',
                 'vaccines_female',
@@ -1609,9 +1606,6 @@ BC19.setupTimelineGraphs = function() {
             ],
             order: null,
             type: 'area-step',
-            stack: {
-                normalize: true,
-            },
             groups: [[
                 'vaccines_0_11',
                 'vaccines_12_17',
@@ -1688,9 +1682,6 @@ BC19.setupTimelineGraphs = function() {
                 graphData.vaccines.ethnicity.unknown,
             ],
             type: 'area-step',
-            stack: {
-                normalize: true,
-            },
             groups: [[
                 'vaccines_ai_an',
                 'vaccines_asian_american',
