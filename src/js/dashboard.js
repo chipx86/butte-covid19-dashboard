@@ -4,17 +4,17 @@ window.BC19 = {
     tickCounts: {
         VERY_TALL: 15,
         STANDARD: 10,
-        MEDIUM: 9,
+        MEDIUM: 10,
         SMALL: 5,
         VERY_SMALL: 5,
     },
 
     graphSizes: {
         VERY_TALL: 380,
-        STANDARD: 240,
-        MEDIUM: 200,
-        SMALL: 120,
-        VERY_SMALL: 120,
+        STANDARD: 250,
+        MEDIUM: 250,
+        SMALL: 160,
+        VERY_SMALL: 160,
     },
 
     colors: {
@@ -257,7 +257,11 @@ BC19.processDashboardData = function(data) {
 BC19.getStepSize = function(maxValue, numTicks) {
     let nearest = 2;
 
-    if (maxValue > 10000) {
+    if (maxValue > 50000) {
+        nearest = 20000;
+    } else if (maxValue > 10000) {
+        nearest = 2000;
+    } else if (maxValue > 5000) {
         nearest = 1000;
     } else if (maxValue > 1000) {
         nearest = 100;
