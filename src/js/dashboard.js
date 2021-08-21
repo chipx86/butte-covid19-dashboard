@@ -554,7 +554,7 @@ BC19.setCounter = function(elID, options) {
     if (relValues && relValues.length > 0) {
         const relativeValueEls =
             el.querySelectorAll('.bc19-c-counter__relative-value');
-        console.assert(relativeValueEls.length === relValues.length);
+        console.assert(relativeValueEls.length >= relValues.length);
 
         for (let i = 0; i < relValues.length; i++) {
             const relValueEl = relativeValueEls[i];
