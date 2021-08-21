@@ -297,16 +297,23 @@ a:visited {
     }
 
     line {
-      stroke: #999999;
+      stroke: rgba(0, 0, 0, 0.15);
+      stroke-dasharray: 3;
     }
 
     text {
       fill: @note-color;
       font-size: 11px;
       background: white;
+      opacity: 0.8;
       stroke-width: 3;
       stroke: white;
-      stroke-opacity: 0.2;
+      stroke-opacity: 0.1;
+
+      &:hover {
+        opacity: 1;
+        stroke-opacity: 0;
+      }
     }
   }
 
