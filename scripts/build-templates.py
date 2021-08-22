@@ -7,7 +7,7 @@ from jinja2 import Environment, FileSystemLoader, Template
 
 TEMPLATES = [
     {
-        'template': 'index.html.tmpl',
+        'template': 'index.html.j2',
         'out_filename': 'index.html',
         'context': {
             # Page header information
