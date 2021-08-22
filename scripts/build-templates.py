@@ -39,11 +39,12 @@ def build_template(env, dest_path, template, out_filename, context):
 
 
 def main():
-    dest_path = os.path.abspath(os.path.join(__file__, '..', '..', 'src'))
+    base_path = os.path.abspath(os.path.join(__file__, '..', '..', 'src'))
+    dest_path = base_path
+    templates_path = os.path.join(base_path, 'templates')
 
     env = Environment(
-        loader=FileSystemLoader(
-            os.path.abspath(os.path.join(__file__, '..', 'templates'))),
+        loader=FileSystemLoader(templates_path),
         keep_trailing_newline=True)
 
     for template_info in TEMPLATES:
