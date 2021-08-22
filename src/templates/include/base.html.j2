@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+
+<html>
+ <head>
+  <title>{{title}}</title>
+  <meta charset="utf-8">
+  <meta http-equiv="content-type: text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="title" content="{{title}}">
+  <meta name="description" content="{{summary}}">
+  <meta property="og:description" content="{{summary}}">
+  <meta property="og:image" content="{{preview_file}}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="{{summary}}">
+  <meta property="og:site_name" content="{{title}}">
+  <meta property="og:title" content="{{title}}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://bc19.live">
+  <meta property="twitter:description" content="{{summary}}">
+  <meta property="twitter:image" content="{{preview_file}}">
+  <meta property="twitter:image:width" content="1200">
+  <meta property="twitter:image:height" content="630">
+  <meta property="twitter:image:alt" content="{{summary}}">
+  <meta property="twitter:site" content="@chipx86">
+  <meta property="twitter:title" content="{{title}}">
+
+  <link rel="icon" type="image/png" href="./favicon.png">
+
+{% block stylesheets %}
+  <link rel="stylesheet" href="./css/dashboard.less">
+{% endblock stylesheets %}
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/3.1.5/billboard.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/3.1.5/theme/graph.css">
+ </head>
+ <body>
+  <div class="bc19-o-spinner" id="page-spinner"></div>
+
+  <div class="bc19-c-dashboard -is-loading">
+<!--
+   <p class="bc19-c-dashboard__notice">
+   <strong>Date:</strong>
+    Notice...
+    Follow on <a href="https://www.facebook.com/bc19.live/">Facebook</a> and
+    <a href="https://twitter.com/bc19live">Twitter</a>.
+   </p>
+-->
+{% call header(css_class='-is-intro',
+               aria_label='Dashboard introduction') -%}
+    <img class="bc19-c-dashboard__logo"
+         src="./images/logo.png" width="128" height="128"
+         srcset="./images/logo.png 1x, ./images/logo@2x.png 2x"
+         alt="Site logo">
+    <div class="bc19-c-dashboard__intro-info">
+     <h1><a href="https://bc19.live/">BC19.live</a></h1>
+     <h2>Unofficial Butte County COVID-19 Dashboard</h2>
+     <p id="report-timestamp-container">
+      Updated <span id="report-timestamp"></span>
+      by <a href="https://twitter.com/chipx86">Christian Hammond</a>
+     </p>
+     <nav class="bc19-c-dashboard__nav" aria-label="Navigation"
+          id="nav">
+      <dl class="bc19-c-dashboard__nav-section">
+       <dt>Weekday Reports</dt>
+       <dd><a href="https://facebook.com/bc19.live">Facebook</a></dd>
+       <dd><a href="https://twitter.com/bc19live">Twitter</a></dd>
+       <dd><a href="https://www.notion.so/6b6b4635f8f84896873664eb42ba58ca?v=861aa8fd432e4a82a3f33fa6fb9b7c91">Archives</a></dd>
+      </dl>
+
+      <dl class="bc19-c-dashboard__nav-section">
+       <dt>Dashboard</dt>
+       <dd><a href="#cases">Cases</a></dd>
+       <dd><a href="#demographics">Demographics</a></dd>
+       <dd><a href="#vaccines">Vaccines</a></dd>
+       <dd><a href="#testing">Viral Testing</a></dd>
+       <dd><a href="#hospitalizations">Hospitalizations/Care</a></dd>
+       <dd><a href="#jail">Butte County Jail</a></dd>
+      </dl>
+
+      <dl class="bc19-c-dashboard__nav-section">
+       <dt>Information</dt>
+       <dd><a href="https://www.notion.so/Frequently-Asked-Questions-98c9989c090c41a88f767830af845462">Frequently Asked Questions</a></dd>
+       <dd><a href="https://github.com/chipx86/butte-covid19-dashboard">Sources/Datasets</a></dd>
+       <dd><a href="https://www.buymeacoffee.com/chipx86">Donate</a></dd>
+      </dl>
+     </nav>
+    </div>
+{%- endcall -%}
+
+{% block sections %}{% endblock %}
+
+   <footer class="bc19-c-dashboard__footer">
+    <nav>
+     <a href="#" class="bc19-c-dashboard__back-to-top">🔼 Back to Top</a>
+     <a href="https://github.com/chipx86/butte-covid19-dashboard">Source code and datasets</a>
+    </nav>
+
+    <p>
+     Copyright &copy; 2020 <a href="https://twitter.com/chipx86">Christian
+     Hammond</a>
+    </p>
+   </footer>
+  </div>
+
+  <div class="bc19-c-option-pane">
+   <label for="date-selector">Timeline graphs show:</label>
+   <select id="date-selector">
+    <option value="all">All cases</option>
+    <option value="days-7">7 days</option>
+    <option value="days-14">14 days</option>
+    <option value="days-30">30 days</option>
+    <option value="days-60">60 days</option>
+    <option value="days-90">90 days</option>
+    <option value="days-120">120 days</option>
+    <option value="days-180">180 days</option>
+    <option value="days-240">240 days</option>
+    <option value="days-280">280 days</option>
+    <option value="days-365" selected>1 year</option>
+    <option value="days-730">2 years</option>
+    <option value="custom">Choose a date range</option>
+   </select>
+   <div class="bc19-c-option-pane__date-range">
+    <input type="date" id="date-range-from" aria-label="Start of date range">
+    ➝
+    <input type="date" id="date-range-through" aria-label="End of date range">
+   </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.26.0/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.32/moment-timezone-with-data-10-year-range.min.js "></script>
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/3.1.5/billboard.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/3.1.5/plugin/billboardjs-plugin-textoverlap.min.js"></script>
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-1584268-5"></script>
+  <script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'UA-1584268-5');
+  </script>
+  <script>
+window.onload = function() {
+    BC19.init();
+};
+  </script>
+ </body>
+</html>

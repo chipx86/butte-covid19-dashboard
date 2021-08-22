@@ -1,639 +1,496 @@
 {% from "include/macros.j2" import
    bar_graph, counter, header, section, sources, timeline_graph
 %}
-<!DOCTYPE html>
-
-<html>
- <head>
-  <title>{{title}}</title>
-  <meta charset="utf-8">
-  <meta http-equiv="content-type: text/html; charset=utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="title" content="{{title}}">
-  <meta name="description" content="{{summary}}">
-  <meta property="og:description" content="{{summary}}">
-  <meta property="og:image" content="{{preview_file}}">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="{{summary}}">
-  <meta property="og:site_name" content="{{title}}">
-  <meta property="og:title" content="{{title}}">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://bc19.live">
-  <meta property="twitter:description" content="{{summary}}">
-  <meta property="twitter:image" content="{{preview_file}}">
-  <meta property="twitter:image:width" content="1200">
-  <meta property="twitter:image:height" content="630">
-  <meta property="twitter:image:alt" content="{{summary}}">
-  <meta property="twitter:site" content="@chipx86">
-  <meta property="twitter:title" content="{{title}}">
-
-  <link rel="icon" type="image/png" href="./favicon.png">
-
-  <link rel="stylesheet" href="./css/dashboard.less">
-
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/3.1.5/billboard.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/3.1.5/theme/graph.css">
- </head>
- <body>
-  <div class="bc19-o-spinner" id="page-spinner"></div>
-
-  <div class="bc19-c-dashboard -is-loading">
-<!--
-   <p class="bc19-c-dashboard__notice">
-   <strong>Date:</strong>
-    Notice...
-    Follow on <a href="https://www.facebook.com/bc19.live/">Facebook</a> and
-    <a href="https://twitter.com/bc19live">Twitter</a>.
-   </p>
--->
-{% call header(css_class='-is-intro',
-               aria_label='Dashboard introduction') -%}
-    <img class="bc19-c-dashboard__logo"
-         src="./images/logo.png" width="128" height="128"
-         srcset="./images/logo.png 1x, ./images/logo@2x.png 2x"
-         alt="Site logo">
-    <div class="bc19-c-dashboard__intro-info">
-     <h1><a href="https://bc19.live/">BC19.live</a></h1>
-     <h2>Unofficial Butte County COVID-19 Dashboard</h2>
-     <p id="report-timestamp-container">
-      Updated <span id="report-timestamp"></span>
-      by <a href="https://twitter.com/chipx86">Christian Hammond</a>
-     </p>
-     <nav class="bc19-c-dashboard__nav" aria-label="Navigation"
-          id="nav">
-      <dl class="bc19-c-dashboard__nav-section">
-       <dt>Weekday Reports</dt>
-       <dd><a href="https://facebook.com/bc19.live">Facebook</a></dd>
-       <dd><a href="https://twitter.com/bc19live">Twitter</a></dd>
-       <dd><a href="https://www.notion.so/6b6b4635f8f84896873664eb42ba58ca?v=861aa8fd432e4a82a3f33fa6fb9b7c91">Archives</a></dd>
-      </dl>
-
-      <dl class="bc19-c-dashboard__nav-section">
-       <dt>Dashboard</dt>
-       <dd><a href="#cases">Cases</a></dd>
-       <dd><a href="#demographics">Demographics</a></dd>
-       <dd><a href="#vaccines">Vaccines</a></dd>
-       <dd><a href="#testing">Viral Testing</a></dd>
-       <dd><a href="#hospitalizations">Hospitalizations/Care</a></dd>
-       <dd><a href="#jail">Butte County Jail</a></dd>
-      </dl>
-
-      <dl class="bc19-c-dashboard__nav-section">
-       <dt>Information</dt>
-       <dd><a href="https://www.notion.so/Frequently-Asked-Questions-98c9989c090c41a88f767830af845462">Frequently Asked Questions</a></dd>
-       <dd><a href="https://github.com/chipx86/butte-covid19-dashboard">Sources/Datasets</a></dd>
-       <dd><a href="https://www.buymeacoffee.com/chipx86">Donate</a></dd>
-      </dl>
-     </nav>
-    </div>
-{%- endcall -%}
+{% extends "include/base.html.j2" %}
 
 
-{% call section(id='monitoring-tier-section',
-                css_class='-is-monitoring-tier',
-                aria_label='County monitoring tier') -%}
-    <strong>County risk level:</strong>
-    <span id="monitoring-tier"></span>
-{%- endcall -%}
+{% block sections %}
+{%  call section(id='monitoring-tier-section',
+                 css_class='-is-monitoring-tier',
+                 aria_label='County monitoring tier') -%}
+ <strong>County risk level:</strong>
+ <span id="monitoring-tier"></span>
+{%-  endcall -%}
 
 
 {#- Cases Counters -#}
-{% call section(id='cases',
-                aria_label='General case-related counts',
-                has_counters=True) -%}
-    {{counter(
-        id='total-cases-counter',
-        title='Total Cases',
-        timestamp_key='cases',
-        rel_days=[7, 14, 30],
-        up_is_bad=True
-    )}}
+{%  call section(id='cases',
+                 aria_label='General case-related counts',
+                 has_counters=True) -%}
+     {{counter(
+         id='total-cases-counter',
+         title='Total Cases',
+         timestamp_key='cases',
+         rel_days=[7, 14, 30],
+         up_is_bad=True
+     )}}
 
-    {{counter(
-        id='deaths-counter',
-        title='Total Deaths',
-        timestamp_key='deaths',
-        rel_days=[7, 14, 30],
-        up_is_bad=True
-    )}}
+     {{counter(
+         id='deaths-counter',
+         title='Total Deaths',
+         timestamp_key='deaths',
+         rel_days=[7, 14, 30],
+         up_is_bad=True
+     )}}
 
-    {{counter(
-        id='in-isolation-counter',
-        title='In Isolation',
-        timestamp_key='isolation',
-        rel_days=[7, 14, 30],
-        up_is_bad=True
-    )}}
+     {{counter(
+         id='in-isolation-counter',
+         title='In Isolation',
+         timestamp_key='isolation',
+         rel_days=[7, 14, 30],
+         up_is_bad=True
+     )}}
 
-    <hr class="bc19-o-flex-break">
+     <hr class="bc19-o-flex-break">
 
-    {{counter(
-        id='hospitalized-counter',
-        title='Total Hospitalized',
-        timestamp_key='stateHospitals',
-        up_is_bad=True
-    )}}
+     {{counter(
+         id='hospitalized-counter',
+         title='Total Hospitalized',
+         timestamp_key='stateHospitals',
+         up_is_bad=True
+     )}}
 
-    {{counter(
-        id='icu-counter',
-        title='Total In ICU',
-        timestamp_key='stateHospitals',
-        up_is_bad=True
-    )}}
+     {{counter(
+         id='icu-counter',
+         title='Total In ICU',
+         timestamp_key='stateHospitals',
+         up_is_bad=True
+     )}}
 
-    {{counter(
-        id='hospitalized-residents-counter',
-        title='County Patients',
-        timestamp_key='countyHospitals',
-        up_is_bad=True
-    )}}
-{%- endcall -%}
+     {{counter(
+         id='hospitalized-residents-counter',
+         title='County Patients',
+         timestamp_key='countyHospitals',
+         up_is_bad=True
+     )}}
+{%-  endcall -%}
 
 
 {#- Cases -#}
-{% call section(id='cases-section',
-                css_class='-has-side',
-                aria_label='Breakdown of cases') -%}
-    <div class="bc19-c-dashboard__section-side">
-     {{bar_graph(
-         id='by_age_graph',
-         title='Total Cases By Age Group',
-         timestamp_key='ages')
-     }}
+{%  call section(id='cases-section',
+                 css_class='-has-side',
+                 aria_label='Breakdown of cases') -%}
+     <div class="bc19-c-dashboard__section-side">
+      {{bar_graph(
+          id='by_age_graph',
+          title='Total Cases By Age Group',
+          timestamp_key='ages')
+      }}
 
-     {{bar_graph(
-         id='by_region_graph',
-         title='Total Cases By Region',
-         timestamp_key='regions'
-     )}}
+      {{bar_graph(
+          id='by_region_graph',
+          title='Total Cases By Region',
+          timestamp_key='regions'
+      )}}
 
-     {{bar_graph(
-         id='by_hospital_graph',
-         title='Current Cases By Hospital',
-         timestamp_key='countyHospitals'
-     )}}
+      {{bar_graph(
+          id='by_hospital_graph',
+          title='Current Cases By Hospital',
+          timestamp_key='countyHospitals'
+      )}}
 
-     {{bar_graph(
-         id='deaths_by_age_graph',
-         title='Total Deaths By Age Group',
-        timestamp_key='deathsByAge'
-     )}}
-
-     {{bar_graph(
-         id='mortality_by_age_graph',
-         title='Mortality Rate By Age Group',
+      {{bar_graph(
+          id='deaths_by_age_graph',
+          title='Total Deaths By Age Group',
          timestamp_key='deathsByAge'
+      )}}
+
+      {{bar_graph(
+          id='mortality_by_age_graph',
+          title='Mortality Rate By Age Group',
+          timestamp_key='deathsByAge'
+      )}}
+     </div>
+
+
+     <div class="bc19-c-dashboard__section-main">
+      {{timeline_graph(
+          data_id='total_cases_graph',
+          title='Total Confirmed Cases',
+          note='
+        <p>
+         <strong>Note:</strong> The timeline above includes some notable
+         one-off events. These <em>should not</em> be assumed to be the cause
+         of any outbreak without word from the county. We <em>do not</em> have
+         contact tracing information.
+        </p>
+        <p>
+         Regular activities with large crowds, including bar visits, parties,
+         and farmers markets, could be a more significant contributor to the
+         spread of the virus.
+        </p>'
+      )}}
+
+      {{timeline_graph(
+          data_id='new_cases_graph',
+          title='New Cases'
+      )}}
+
+      {{timeline_graph(
+          data_id='one_week_new_case_rate_graph',
+          title='7-Day New Case Rate',
+          subtitles=[
+              'New cases over a 7-day period, based on available date '
+              'information',
+          ]
+      )}}
+
+      {{timeline_graph(
+          data_id='total_deaths_graph',
+          title='Total Deaths'
+      )}}
+
+      {{timeline_graph(
+          data_id='new_deaths_graph',
+          title='New Deaths'
+      )}}
+     </div>
+{%-  endcall -%}
+
+
+{#- Schools -#}
+{%  call header(id='schools',
+                title='Schools',
+                aria_label='School case information') -%}
+     {{sources([
+         ('Chico Unified',
+          'http://www.chicousd.org/News/District-Wide-Safety-Info/COVID-19-Information/2021-Community-Dashboard/'),
+         ('Durham Unified',
+          'http://durhamunified.org/dusd-covid-19-community-dashboard/'),
+         ('Inspire',
+          'https://docs.google.com/spreadsheets/d/1-DTOcPmoYiOK-9wPMqMFoT6D9ViFznb9H15lzx-yzBE/edit#gid=0'),
+         ('Oroville City Elementary',
+          'https://www.ocesd.org/page/covid-community-information'),
+         ('Oroville Union High',
+          'https://www.ouhsd.org/Page/3178'),
+         ('Palermo Union Elementary',
+          'https://drive.google.com/file/d/14vxZGZ9gsXc4-KpX0v16vk11w-qZz4Oq/view'),
+         ('Paradise Unified',
+          'https://www.pusdk12.org/COVID-19/Community-Dashboard/index.html'),
+     ])}}
+{%-  endcall -%}
+
+{%  call section(aria_label='School case graphs') -%}
+     {{counter(
+         id='school-year-student-cases',
+         title='Student Cases This School Year',
+         timestamp_key='schools',
+         rel_days=[7, 14]
      )}}
-    </div>
 
-
-    <div class="bc19-c-dashboard__section-main">
-     {{timeline_graph(
-         data_id='total_cases_graph',
-         title='Total Confirmed Cases',
-         note='
-       <p>
-        <strong>Note:</strong> The timeline above includes some notable
-        one-off events. These <em>should not</em> be assumed to be the cause
-        of any outbreak without word from the county. We <em>do not</em> have
-        contact tracing information.
-       </p>
-       <p>
-        Regular activities with large crowds, including bar visits, parties,
-        and farmers markets, could be a more significant contributor to the
-        spread of the virus.
-       </p>'
+     {{counter(
+         id='school-year-staff-cases',
+         title='Staff Cases This School Year',
+         timestamp_key='schools',
+         rel_days=[7, 14]
      )}}
 
      {{timeline_graph(
-         data_id='new_cases_graph',
+         data_id='schools_semester_cases',
+         title='Cases Per School Year'
+     )}}
+
+     {{timeline_graph(
+         data_id='schools_new_cases',
          title='New Cases'
      )}}
+{%-  endcall %}
+
+
+{#- Demographics -#}
+{%  call header(id='demographics',
+                title='Demographics',
+                aria_label='Demographics header') -%}
+     <p>
+      Growth of the spread by age group and region, based on county data.
+     </p>
+     {{sources([('Butte County Dashboard', county_dashboard_url)])}}
+{%-  endcall -%}
+
+{%  call section(aria_label='Demographics graphs') -%}
+     {{timeline_graph(
+         data_id='cases_by_age_timeline_graph',
+         title='Cases By Age',
+         subtitles=['More age ranges introduced July 9th, 2020']
+     )}}
 
      {{timeline_graph(
-         data_id='one_week_new_case_rate_graph',
-         title='7-Day New Case Rate',
+         data_id='cases_by_region_timeline_graph',
+         title='Cases By Region'
+     )}}
+{%-  endcall -%}
+
+
+{#- Vaccines -#}
+{%  call header(id='vaccines',
+                title='Vaccines',
+                aria_label='Vaccines introduction') -%}
+     <p>
+      This only covers vaccines coordinated through Butte County Public Health.
+      It is generally updated weekly. Number of administered doses may be
+      delayed several days.
+     </p>
+     {{sources([('Butte County Dashboard', county_dashboard_url)])}}
+{%-  endcall -%}
+
+{%  call section(aria_label='Vaccine information',
+                 has_counters=True) -%}
+     {{counter(
+         id='vaccines-1dose-pct-counter',
+         title='% Received 1 Or More Doses',
+         timestamp_key='vaccines',
+         rel_days=[7, 14]
+     )}}
+
+     {{counter(
+         id='vaccines-full-doses-pct-counter',
+         title='% Fully Vaccinated',
+         timestamp_key='vaccines',
+         rel_days=[7, 14]
+     )}}
+{%-  endcall -%}
+
+
+{%  call section(aria_label='Vaccine graphs') -%}
+     {{timeline_graph(
+         data_id='vaccines_doses',
+         title='% of County Vaccinated'
+     )}}
+
+     {{timeline_graph(
+         data_id='vaccines_doses_by_day',
+         title='Vaccinated People',
+     )}}
+
+     {{timeline_graph(
+         data_id='vaccines_one_week_rate_graph',
+         title='7-Day Vaccination Dose Rates',
          subtitles=[
-             'New cases over a 7-day period, based on available date '
-             'information',
+             'New vaccinations (1+ dose and fully vaccinated) over the past '
+             '7-days',
          ]
      )}}
 
      {{timeline_graph(
-         data_id='total_deaths_graph',
-         title='Total Deaths'
+         data_id='vaccine_doses_by_type',
+         title='Vaccine Doses by Type'
      )}}
 
      {{timeline_graph(
-         data_id='new_deaths_graph',
-         title='New Deaths'
+         data_id='vaccines_by_gender',
+         title='% of Vaccinations by Gender',
      )}}
-    </div>
-{%- endcall -%}
 
+     {{timeline_graph(
+         data_id='vaccines_by_age',
+         title='% of Vaccinations by Age',
+     )}}
 
-{#- Schools -#}
-{% call header(id='schools',
-               title='Schools',
-               aria_label='School case information') -%}
-    {{sources([
-        ('Chico Unified',
-         'http://www.chicousd.org/News/District-Wide-Safety-Info/COVID-19-Information/2021-Community-Dashboard/'),
-        ('Durham Unified',
-         'http://durhamunified.org/dusd-covid-19-community-dashboard/'),
-        ('Inspire',
-         'https://docs.google.com/spreadsheets/d/1-DTOcPmoYiOK-9wPMqMFoT6D9ViFznb9H15lzx-yzBE/edit#gid=0'),
-        ('Oroville City Elementary',
-         'https://www.ocesd.org/page/covid-community-information'),
-        ('Oroville Union High',
-         'https://www.ouhsd.org/Page/3178'),
-        ('Palermo Union Elementary',
-         'https://drive.google.com/file/d/14vxZGZ9gsXc4-KpX0v16vk11w-qZz4Oq/view'),
-        ('Paradise Unified',
-         'https://www.pusdk12.org/COVID-19/Community-Dashboard/index.html'),
-    ])}}
-{%- endcall -%}
-
-{% call section(aria_label='School case graphs') -%}
-    {{counter(
-        id='school-year-student-cases',
-        title='Student Cases This School Year',
-        timestamp_key='schools',
-        rel_days=[7, 14]
-    )}}
-
-    {{counter(
-        id='school-year-staff-cases',
-        title='Staff Cases This School Year',
-        timestamp_key='schools',
-        rel_days=[7, 14]
-    )}}
-
-    {{timeline_graph(
-        data_id='schools_semester_cases',
-        title='Cases Per School Year'
-    )}}
-
-    {{timeline_graph(
-        data_id='schools_new_cases',
-        title='New Cases'
-    )}}
-{%- endcall %}
-
-
-{#- Demographics -#}
-{% call header(id='demographics',
-               title='Demographics',
-               aria_label='Demographics header') -%}
-    <p>
-     Growth of the spread by age group and region, based on county data.
-    </p>
-    {{sources([('Butte County Dashboard', county_dashboard_url)])}}
-{%- endcall -%}
-
-{% call section(aria_label='Demographics graphs') -%}
-    {{timeline_graph(
-        data_id='cases_by_age_timeline_graph',
-        title='Cases By Age',
-        subtitles=['More age ranges introduced July 9th, 2020']
-    )}}
-
-    {{timeline_graph(
-        data_id='cases_by_region_timeline_graph',
-        title='Cases By Region'
-    )}}
-{%- endcall -%}
-
-
-{#- Vaccines -#}
-{% call header(id='vaccines',
-               title='Vaccines',
-               aria_label='Vaccines introduction') -%}
-    <p>
-     This only covers vaccines coordinated through Butte County Public Health.
-     It is generally updated weekly. Number of administered doses may be
-     delayed several days.
-    </p>
-    {{sources([('Butte County Dashboard', county_dashboard_url)])}}
-{%- endcall -%}
-
-{% call section(aria_label='Vaccine information',
-                has_counters=True) -%}
-    {{counter(
-        id='vaccines-1dose-pct-counter',
-        title='% Received 1 Or More Doses',
-        timestamp_key='vaccines',
-        rel_days=[7, 14]
-    )}}
-
-    {{counter(
-        id='vaccines-full-doses-pct-counter',
-        title='% Fully Vaccinated',
-        timestamp_key='vaccines',
-        rel_days=[7, 14]
-    )}}
-{%- endcall -%}
-
-
-{% call section(aria_label='Vaccine graphs') -%}
-    {{timeline_graph(
-        data_id='vaccines_doses',
-        title='% of County Vaccinated'
-    )}}
-
-    {{timeline_graph(
-        data_id='vaccines_doses_by_day',
-        title='Vaccinated People',
-    )}}
-
-    {{timeline_graph(
-        data_id='vaccines_one_week_rate_graph',
-        title='7-Day Vaccination Dose Rates',
-        subtitles=[
-            'New vaccinations (1+ dose and fully vaccinated) over the past '
-            '7-days',
-        ]
-    )}}
-
-    {{timeline_graph(
-        data_id='vaccine_doses_by_type',
-        title='Vaccine Doses by Type'
-    )}}
-
-    {{timeline_graph(
-        data_id='vaccines_by_gender',
-        title='% of Vaccinations by Gender',
-    )}}
-
-    {{timeline_graph(
-        data_id='vaccines_by_age',
-        title='% of Vaccinations by Age',
-    )}}
-
-    {{timeline_graph(
-        data_id='vaccines_by_ethnicity',
-        title='% of Vaccinations by Ethnicity',
-    )}}
-{%- endcall -%}
+     {{timeline_graph(
+         data_id='vaccines_by_ethnicity',
+         title='% of Vaccinations by Ethnicity',
+     )}}
+{%-  endcall -%}
 
 
 {#- Viral Testing -#}
-{% call header(id='testing',
-               title='Viral Testing',
-               aria_label='Viral tests introduction') -%}
-    <p>
-     <strong>NOTE:</strong> The number of tests performed is MORE THAN the
-     number of people tested! There is <em>no</em> public data on the number
-     of <strong>people</strong> tested.
-    </p>
-    {{sources([('Butte County Dashboard', county_dashboard_url)])}}
-{%- endcall -%}
+{%  call header(id='testing',
+                title='Viral Testing',
+                aria_label='Viral tests introduction') -%}
+     <p>
+      <strong>NOTE:</strong> The number of tests performed is MORE THAN the
+      number of people tested! There is <em>no</em> public data on the number
+      of <strong>people</strong> tested.
+     </p>
+     {{sources([('Butte County Dashboard', county_dashboard_url)])}}
+{%-  endcall -%}
 
-{% call section(aria_label='Viral test statistics',
-                has_counters=True) -%}
-    {{counter(
-        id='total-tests-counter',
-        title='Total Tests (NOT People!)',
-        timestamp_key='tests'
-    )}}
+{%  call section(aria_label='Viral test statistics',
+                 has_counters=True) -%}
+     {{counter(
+         id='total-tests-counter',
+         title='Total Tests (NOT People!)',
+         timestamp_key='tests'
+     )}}
 
-    {{counter(
-        id='positive-test-results-counter',
-        title='Positive Test Results',
-        timestamp_key='tests',
-        bad=True,
-        up_is_bad=True
-    )}}
+     {{counter(
+         id='positive-test-results-counter',
+         title='Positive Test Results',
+         timestamp_key='tests',
+         bad=True,
+         up_is_bad=True
+     )}}
 
-    {{counter(
-        id='positive-test-rate-counter',
-        title='7-Day Test Positivity Rate',
-        timestamp_key='testPosRate',
-        up_is_bad=True
-    )}}
-{%- endcall -%}
+     {{counter(
+         id='positive-test-rate-counter',
+         title='7-Day Test Positivity Rate',
+         timestamp_key='testPosRate',
+         up_is_bad=True
+     )}}
+{%-  endcall -%}
 
-{% call section(aria_label='Viral testing graphs') -%}
-    {{timeline_graph(
-        data_id='test_positivity_rate_graph',
-        title='7-Day Test Positivity Rate',
-        subtitles=[
-            'Positivity rate over a 7-day period, based on available date '
-            'information',
+{%  call section(aria_label='Viral testing graphs') -%}
+     {{timeline_graph(
+         data_id='test_positivity_rate_graph',
+         title='7-Day Test Positivity Rate',
+         subtitles=[
+             'Positivity rate over a 7-day period, based on available date '
+             'information',
 
-            "The state tracks this differently for the purposes of "
-            "reopening/monitoring &mdash; consider this a <em>very</em> rough "
-            "idea of what they're seeing",
-        ]
-    )}}
+             "The state tracks this differently for the purposes of "
+             "reopening/monitoring &mdash; consider this a <em>very</em> rough "
+             "idea of what they're seeing",
+         ]
+     )}}
 
-    {{timeline_graph(
-        data_id='cases_in_test_results_graph',
-        title='% of Cases In Each Batch of Test Results',
-        subtitles=['Most early historical data is unavailable']
-    )}}
+     {{timeline_graph(
+         data_id='cases_in_test_results_graph',
+         title='% of Cases In Each Batch of Test Results',
+         subtitles=['Most early historical data is unavailable']
+     )}}
 
-    {{timeline_graph(
-        data_id='test_results_graph',
-        title='Test Results',
-        subtitles=['Most early historical data is unavailable']
-    )}}
-{%- endcall -%}
+     {{timeline_graph(
+         data_id='test_results_graph',
+         title='Test Results',
+         subtitles=['Most early historical data is unavailable']
+     )}}
+{%-  endcall -%}
 
 
 {#- Hospitalizations -#}
-{% call header(id='hospitalizations',
-               title='Hospitalizations, Isolation, Care',
-               aria_label='Hospitalizations and isolation information') -%}
-    <p>
-     <strong>NOTE:</strong> Hospital/ICU information comes from the state,
-     and lags a day behind.
-    </p>
-    {{sources([
-        ('Butte County Dashboard', county_dashboard_url),
-        ('State Hospitals Dashboard',
-         'https://public.tableau.com/views/COVID-19HospitalsDashboard/Hospitals?:embed=y&:showVizHome=no&COUNTY=Butte'),
-        ('State Skilled Nursing Facilities',
-         'https://www.cdph.ca.gov/Programs/CID/DCDC/Pages/COVID-19/SNFsCOVID_19.aspx'),
-    ])}}
-{%- endcall -%}
+{%  call header(id='hospitalizations',
+                title='Hospitalizations, Isolation, Care',
+                aria_label='Hospitalizations and isolation information') -%}
+     <p>
+      <strong>NOTE:</strong> Hospital/ICU information comes from the state,
+      and lags a day behind.
+     </p>
+     {{sources([
+         ('Butte County Dashboard', county_dashboard_url),
+         ('State Hospitals Dashboard',
+          'https://public.tableau.com/views/COVID-19HospitalsDashboard/Hospitals?:embed=y&:showVizHome=no&COUNTY=Butte'),
+         ('State Skilled Nursing Facilities',
+          'https://www.cdph.ca.gov/Programs/CID/DCDC/Pages/COVID-19/SNFsCOVID_19.aspx'),
+     ])}}
+{%-  endcall -%}
 
-{% call section(aria_label='Hospitalizations and isolation graphs') -%}
-    {{timeline_graph(
-        data_id='hospitalizations_icu_timeline_graph',
-        title='Total Hospitalizations vs. ICU',
-        subtitles=[
-            'Includes non-county residents &mdash; most early historical '
-            'data is unavailable',
-        ]
-    )}}
+{%  call section(aria_label='Hospitalizations and isolation graphs') -%}
+     {{timeline_graph(
+         data_id='hospitalizations_icu_timeline_graph',
+         title='Total Hospitalizations vs. ICU',
+         subtitles=[
+             'Includes non-county residents &mdash; most early historical '
+             'data is unavailable',
+         ]
+     )}}
 
-    {{timeline_graph(
-        data_id='hospitalized_residents_timeline_graph',
-        title='Hospitalized Butte County Residents',
-        subtitles=['Most early historical data is unavailable']
-    )}}
+     {{timeline_graph(
+         data_id='hospitalized_residents_timeline_graph',
+         title='Hospitalized Butte County Residents',
+         subtitles=['Most early historical data is unavailable']
+     )}}
 
-    {{timeline_graph(
-        data_id='isolation_timeline_graph',
-        title='People In Isolation',
-        subtitles=['Most early historical data is unavailable']
-    )}}
+     {{timeline_graph(
+         data_id='isolation_timeline_graph',
+         title='People In Isolation',
+         subtitles=['Most early historical data is unavailable']
+     )}}
 
-    {{timeline_graph(
-        data_id='skilled_nursing_graph',
-        title='Skilled Nursing Facility Cases',
-        subtitles=[
-            'Tracking 9 facilities &mdash; Staff/patient cases &lt; 11 at a '
-            'facility may each be reported as "1", and may be higher',
-        ]
-    )}}
+     {{timeline_graph(
+         data_id='skilled_nursing_graph',
+         title='Skilled Nursing Facility Cases',
+         subtitles=[
+             'Tracking 9 facilities &mdash; Staff/patient cases &lt; 11 at a '
+             'facility may each be reported as "1", and may be higher',
+         ]
+     )}}
 
-    {{timeline_graph(
-        data_id='skilled_nursing_deaths_graph',
-        title='Skilled Nursing Facility Deaths',
-    )}}
+     {{timeline_graph(
+         data_id='skilled_nursing_deaths_graph',
+         title='Skilled Nursing Facility Deaths',
+     )}}
 
-    {{timeline_graph(
-        data_id='adult_senior_care_graph',
-        title='Adult/Senior Care Cases',
-        subtitles=[
-            'Tracking 9 facilities &mdash; Staff/patient cases &lt; 11 at a '
-            'facility may each be reported as "1", and may be higher',
-        ]
-    )}}
+     {{timeline_graph(
+         data_id='adult_senior_care_graph',
+         title='Adult/Senior Care Cases',
+         subtitles=[
+             'Tracking 9 facilities &mdash; Staff/patient cases &lt; 11 at a '
+             'facility may each be reported as "1", and may be higher',
+         ]
+     )}}
 
-    {{timeline_graph(
-        data_id='adult_senior_care_deaths_graph',
-        title='Adult/Senior Care Deaths',
-    )}}
-{%- endcall -%}
+     {{timeline_graph(
+         data_id='adult_senior_care_deaths_graph',
+         title='Adult/Senior Care Deaths',
+     )}}
+{%-  endcall -%}
 
 
 {#- Butte County Jail -#}
-{% call header(id='jail',
-               title='Butte County Jail',
-               aria_label='County jail information') -%}
-    {{sources([('Butte County Jail COVID-19 Page',
-                'https://www.buttecounty.net/sheriffcoroner/Covid-19')])}}
-{%- endcall -%}
+{%  call header(id='jail',
+                title='Butte County Jail',
+                aria_label='County jail information') -%}
+     {{sources([('Butte County Jail COVID-19 Page',
+                 'https://www.buttecounty.net/sheriffcoroner/Covid-19')])}}
+{%-  endcall -%}
 
-{% call section(aria_label='County jail graphs') -%}
-    {{counter(
-        id='jail-inmate-pop-counter',
-        title='Inmate Population',
-        timestamp_key='jail',
-        up_is_bad=True
-    )}}
+{%  call section(aria_label='County jail graphs') -%}
+     {{counter(
+         id='jail-inmate-pop-counter',
+         title='Inmate Population',
+         timestamp_key='jail',
+         up_is_bad=True
+     )}}
 
-    {{counter(
-        id='jail-inmate-total-tests',
-        title='Total Inmate Tests',
-        timestamp_key='jail'
-    )}}
+     {{counter(
+         id='jail-inmate-total-tests',
+         title='Total Inmate Tests',
+         timestamp_key='jail'
+     )}}
 
-    {{counter(
-        id='jail-inmate-cur-cases',
-        title='Current Inmate Cases',
-        timestamp_key='jail',
-        up_is_bad=True
-    )}}
+     {{counter(
+         id='jail-inmate-cur-cases',
+         title='Current Inmate Cases',
+         timestamp_key='jail',
+         up_is_bad=True
+     )}}
 
-    {{counter(
-        id='jail-inmate-pos-rate',
-        title='% of Inmates Positive',
-        timestamp_key='jail',
-        up_is_bad=True
-    )}}
+     {{counter(
+         id='jail-inmate-pos-rate',
+         title='% of Inmates Positive',
+         timestamp_key='jail',
+         up_is_bad=True
+     )}}
 
-    {{counter(
-        id='jail-staff-total-tests',
-        title='Total Staff Tests',
-        timestamp_key='jail'
-    )}}
+     {{counter(
+         id='jail-staff-total-tests',
+         title='Total Staff Tests',
+         timestamp_key='jail'
+     )}}
 
-    {{counter(
-        id='jail-staff-total-cases',
-        title='Total Staff Cases',
-        timestamp_key='jail',
-        up_is_bad=True
-    )}}
+     {{counter(
+         id='jail-staff-total-cases',
+         title='Total Staff Cases',
+         timestamp_key='jail',
+         up_is_bad=True
+     )}}
 
-    {{timeline_graph(
-        data_id='jail_inmates_cur_cases_timeline_graph',
-        title='Current Inmate Cases',
-        subtitles=[
-            'Only current cases are available. Unlike staff numbers, total '
-            'cases are not provided by the county.'
-        ]
-    )}}
+     {{timeline_graph(
+         data_id='jail_inmates_cur_cases_timeline_graph',
+         title='Current Inmate Cases',
+         subtitles=[
+             'Only current cases are available. Unlike staff numbers, total '
+             'cases are not provided by the county.'
+         ]
+     )}}
 
-    {{timeline_graph(
-        data_id='jail_staff_total_cases_timeline_graph',
-        title='Total Staff Cases',
-        subtitles=[
-            'Only total cases are available. Unlike inmate numbers, current '
-            'cases are not provided by the county.',
-        ]
-    )}}
-{%- endcall %}
-
-   <footer class="bc19-c-dashboard__footer">
-    <nav>
-     <a href="#" class="bc19-c-dashboard__back-to-top">🔼 Back to Top</a>
-     <a href="https://github.com/chipx86/butte-covid19-dashboard">Source code and datasets</a>
-    </nav>
-
-    <p>
-     Copyright &copy; 2020 <a href="https://twitter.com/chipx86">Christian
-     Hammond</a>
-    </p>
-   </footer>
-  </div>
-
-  <div class="bc19-c-option-pane">
-   <label for="date-selector">Timeline graphs show:</label>
-   <select id="date-selector">
-    <option value="all">All cases</option>
-    <option value="days-7">7 days</option>
-    <option value="days-14">14 days</option>
-    <option value="days-30">30 days</option>
-    <option value="days-60">60 days</option>
-    <option value="days-90">90 days</option>
-    <option value="days-120">120 days</option>
-    <option value="days-180">180 days</option>
-    <option value="days-240">240 days</option>
-    <option value="days-280">280 days</option>
-    <option value="days-365" selected>1 year</option>
-    <option value="days-730">2 years</option>
-    <option value="custom">Choose a date range</option>
-   </select>
-   <div class="bc19-c-option-pane__date-range">
-    <input type="date" id="date-range-from" aria-label="Start of date range">
-    ➝
-    <input type="date" id="date-range-through" aria-label="End of date range">
-   </div>
-  </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.26.0/moment.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.32/moment-timezone-with-data-10-year-range.min.js "></script>
-  <script src="https://d3js.org/d3.v6.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/3.1.5/billboard.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/3.1.5/plugin/billboardjs-plugin-textoverlap.min.js"></script>
-
-  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-1584268-5"></script>
-  <script>
-window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', 'UA-1584268-5');
-  </script>
-  <script>
-window.onload = function() {
- BC19.init();
-};
-  </script>
- </body>
-</html>
-{# vim: set et ft=jinja :#}
+     {{timeline_graph(
+         data_id='jail_staff_total_cases_timeline_graph',
+         title='Total Staff Cases',
+         subtitles=[
+             'Only total cases are available. Unlike inmate numbers, current '
+             'cases are not provided by the county.',
+         ]
+     )}}
+{%-  endcall %}
+{%- endblock sections %}
