@@ -174,7 +174,6 @@
 
 {#- Cases Counters -#}
 {% call section(id='cases',
-                css_class='-is-case-counters',
                 aria_label='General case-related counts',
                 has_counters=True) -%}
     {{counter(
@@ -228,88 +227,89 @@
 
 {#- Cases -#}
 {% call section(id='cases-section',
-                css_class='-is-cases-breakdown',
+                css_class='-has-side',
                 aria_label='Breakdown of cases') -%}
-    {{bar_graph(
-        id='by_age_graph',
-        title='Total Cases By Age Group',
-        timestamp_key='ages')
-    }}
+    <div class="bc19-c-dashboard__section-side">
+     {{bar_graph(
+         id='by_age_graph',
+         title='Total Cases By Age Group',
+         timestamp_key='ages')
+     }}
 
-    {{bar_graph(
-        id='by_region_graph',
-        title='Total Cases By Region',
-        timestamp_key='regions'
-    )}}
+     {{bar_graph(
+         id='by_region_graph',
+         title='Total Cases By Region',
+         timestamp_key='regions'
+     )}}
 
-    {{bar_graph(
-        id='by_hospital_graph',
-        title='Current Cases By Hospital',
-        timestamp_key='countyHospitals'
-    )}}
+     {{bar_graph(
+         id='by_hospital_graph',
+         title='Current Cases By Hospital',
+         timestamp_key='countyHospitals'
+     )}}
 
-    {{bar_graph(
-        id='deaths_by_age_graph',
-        title='Total Deaths By Age Group',
+     {{bar_graph(
+         id='deaths_by_age_graph',
+         title='Total Deaths By Age Group',
         timestamp_key='deathsByAge'
-    )}}
+     )}}
 
-    {{bar_graph(
-        id='mortality_by_age_graph',
-        title='Mortality Rate By Age Group',
-        timestamp_key='deathsByAge'
-    )}}
-{%- endcall -%}
+     {{bar_graph(
+         id='mortality_by_age_graph',
+         title='Mortality Rate By Age Group',
+         timestamp_key='deathsByAge'
+     )}}
+    </div>
 
-{% call section(css_class='-is-case-graphs',
-                aria_label='Case graphs') -%}
-    {{timeline_graph(
-        data_id='total_cases_graph',
-        title='Total Confirmed Cases',
-        note='
-      <p>
-       <strong>Note:</strong> The timeline above includes some notable
-       one-off events. These <em>should not</em> be assumed to be the cause
-       of any outbreak without word from the county. We <em>do not</em> have
-       contact tracing information.
-      </p>
-      <p>
-       Regular activities with large crowds, including bar visits, parties,
-       and farmers markets, could be a more significant contributor to the
-       spread of the virus.
-      </p>'
-    )}}
 
-    {{timeline_graph(
-        data_id='new_cases_graph',
-        title='New Cases'
-    )}}
+    <div class="bc19-c-dashboard__section-main">
+     {{timeline_graph(
+         data_id='total_cases_graph',
+         title='Total Confirmed Cases',
+         note='
+       <p>
+        <strong>Note:</strong> The timeline above includes some notable
+        one-off events. These <em>should not</em> be assumed to be the cause
+        of any outbreak without word from the county. We <em>do not</em> have
+        contact tracing information.
+       </p>
+       <p>
+        Regular activities with large crowds, including bar visits, parties,
+        and farmers markets, could be a more significant contributor to the
+        spread of the virus.
+       </p>'
+     )}}
 
-    {{timeline_graph(
-        data_id='one_week_new_case_rate_graph',
-        title='7-Day New Case Rate',
-        subtitles=[
-            'New cases over a 7-day period, based on available date '
-            'information',
-        ]
-    )}}
+     {{timeline_graph(
+         data_id='new_cases_graph',
+         title='New Cases'
+     )}}
 
-    {{timeline_graph(
-        data_id='total_deaths_graph',
-        title='Total Deaths'
-    )}}
+     {{timeline_graph(
+         data_id='one_week_new_case_rate_graph',
+         title='7-Day New Case Rate',
+         subtitles=[
+             'New cases over a 7-day period, based on available date '
+             'information',
+         ]
+     )}}
 
-    {{timeline_graph(
-        data_id='new_deaths_graph',
-        title='New Deaths'
-    )}}
+     {{timeline_graph(
+         data_id='total_deaths_graph',
+         title='Total Deaths'
+     )}}
+
+     {{timeline_graph(
+         data_id='new_deaths_graph',
+         title='New Deaths'
+     )}}
+    </div>
 {%- endcall -%}
 
 
 {#- Schools -#}
 {% call header(id='schools',
                title='Schools',
-               css_class='-is-schools-header',
                aria_label='School case information') -%}
     {{sources([
         ('Chico Unified',
@@ -329,8 +329,7 @@
     ])}}
 {%- endcall -%}
 
-{% call section(css_class='-is-schools-graphs',
-                aria_label='School case graphs') -%}
+{% call section(aria_label='School case graphs') -%}
     {{counter(
         id='school-year-student-cases',
         title='Student Cases This School Year',
@@ -360,7 +359,6 @@
 {#- Demographics -#}
 {% call header(id='demographics',
                title='Demographics',
-               css_class='-is-demographics-header',
                aria_label='Demographics header') -%}
     <p>
      Growth of the spread by age group and region, based on county data.
@@ -368,8 +366,7 @@
     {{sources([('Butte County Dashboard', county_dashboard_url)])}}
 {%- endcall -%}
 
-{% call section(css_class='-is-demographics-graphs',
-                aria_label='Demographics graphs') -%}
+{% call section(aria_label='Demographics graphs') -%}
     {{timeline_graph(
         data_id='cases_by_age_timeline_graph',
         title='Cases By Age',
@@ -386,7 +383,6 @@
 {#- Vaccines -#}
 {% call header(id='vaccines',
                title='Vaccines',
-               css_class='-is-vaccine-intro',
                aria_label='Vaccines introduction') -%}
     <p>
      This only covers vaccines coordinated through Butte County Public Health.
@@ -396,8 +392,7 @@
     {{sources([('Butte County Dashboard', county_dashboard_url)])}}
 {%- endcall -%}
 
-{% call section(css_class='-is-vaccine-counters',
-                aria_label='Vaccine information',
+{% call section(aria_label='Vaccine information',
                 has_counters=True) -%}
     {{counter(
         id='vaccines-1dose-pct-counter',
@@ -415,8 +410,7 @@
 {%- endcall -%}
 
 
-{% call section(css_class='-is-vaccine-graphs',
-                aria_label='Vaccine graphs') -%}
+{% call section(aria_label='Vaccine graphs') -%}
     {{timeline_graph(
         data_id='vaccines_doses',
         title='% of County Vaccinated'
@@ -461,7 +455,6 @@
 {#- Viral Testing -#}
 {% call header(id='testing',
                title='Viral Testing',
-               css_class='-is-viral-testing-intro',
                aria_label='Viral tests introduction') -%}
     <p>
      <strong>NOTE:</strong> The number of tests performed is MORE THAN the
@@ -471,8 +464,7 @@
     {{sources([('Butte County Dashboard', county_dashboard_url)])}}
 {%- endcall -%}
 
-{% call section(css_class='-is-viral-test-counters',
-                aria_label='Viral test statistics',
+{% call section(aria_label='Viral test statistics',
                 has_counters=True) -%}
     {{counter(
         id='total-tests-counter',
@@ -496,8 +488,7 @@
     )}}
 {%- endcall -%}
 
-{% call section(css_class='-is-viral-test-graphs',
-                aria_label='Viral testing graphs') -%}
+{% call section(aria_label='Viral testing graphs') -%}
     {{timeline_graph(
         data_id='test_positivity_rate_graph',
         title='7-Day Test Positivity Rate',
@@ -528,7 +519,6 @@
 {#- Hospitalizations -#}
 {% call header(id='hospitalizations',
                title='Hospitalizations, Isolation, Care',
-               css_class='-is-hospitalizations-header',
                aria_label='Hospitalizations and isolation information') -%}
     <p>
      <strong>NOTE:</strong> Hospital/ICU information comes from the state,
@@ -543,8 +533,7 @@
     ])}}
 {%- endcall -%}
 
-{% call section(css_class='-is-hospitalizations-graphs',
-                aria_label='Hospitalizations and isolation graphs') -%}
+{% call section(aria_label='Hospitalizations and isolation graphs') -%}
     {{timeline_graph(
         data_id='hospitalizations_icu_timeline_graph',
         title='Total Hospitalizations vs. ICU',
@@ -599,14 +588,12 @@
 {#- Butte County Jail -#}
 {% call header(id='jail',
                title='Butte County Jail',
-               css_class='-is-jail-header',
                aria_label='County jail information') -%}
     {{sources([('Butte County Jail COVID-19 Page',
                 'https://www.buttecounty.net/sheriffcoroner/Covid-19')])}}
 {%- endcall -%}
 
-{% call section(css_class='-is-jail-graphs',
-                aria_label='County jail graphs') -%}
+{% call section(aria_label='County jail graphs') -%}
     {{counter(
         id='jail-inmate-pop-counter',
         title='Inmate Population',
