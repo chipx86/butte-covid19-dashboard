@@ -32,13 +32,13 @@
 {%- endmacro -%}
 
 {% macro counter(id, title, timestamp_key, rel_days=[], bad=False,
-                 up_is_bad=False) -%}
+                 up_is_bad=False, show_weeks=False) -%}
     <figure class="bc19-c-counter{% if bad %} -is-bad{% endif %}{% if up_is_bad %} -up-is-bad{% endif %}" id="{{id}}">
      <h3 class="bc19-c-counter__title">{{title}}</h3>
      <div class="bc19-c-counter__value">0</div>
      <div class="bc19-c-counter__relative">
       <span class="bc19-c-counter__relative-value">0</span>
-      <span class="bc19-o-update-day" data-key="{{timestamp_key}}"></span>
+      <span class="bc19-o-update-day" data-key="{{timestamp_key}}"{% if show_weeks %} data-show-weeks="1"{% endif %}></span>
      </div>
 {%- for rel_day in rel_days %}
      <div class="bc19-c-counter__relative">
@@ -49,9 +49,12 @@
     </figure>
 {%- endmacro -%}
 
-{% macro bar_graph(id, title, timestamp_key) -%}
+{% macro bar_graph(id, title, timestamp_key, subtitle="") -%}
     <figure class="bc19-c-bar-graph -is-horiz" id="{{id}}">
      <h3 class="bc19-c-bar-graph__title">{{title}}</h3>
+{%- if subtitle %}
+     <h4 class="bc19-c-bar-graph__subtitle">{{subtitle}}</span></h4>
+{%- endif %}
      <h4 class="bc19-c-bar-graph__subtitle">Updated <span class="bc19-o-update-day" data-key="{{timestamp_key}}"></span></h4>
     </figure>
 {%- endmacro -%}

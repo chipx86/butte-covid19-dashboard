@@ -23,6 +23,23 @@ TEMPLATES = [
                 'https://infogram.com/1pe66wmyjnmvkrhm66x9362kp3al60r57ex',
         },
     },
+    {
+        'template': 'schools.html.j2',
+        'out_filename': 'schools.html',
+        'context': {
+            # Page header information
+            'preview_file': './images/preview.png',
+            'summary': (
+                'Detailed trends and information on the COVID-19 situation '
+                'in Butte County.'
+            ),
+            'title': 'Unofficial Butte County COVID-19 Dashboard',
+
+            # URLs
+            'county_dashboard_url':
+                'https://infogram.com/1pe66wmyjnmvkrhm66x9362kp3al60r57ex',
+        },
+    },
 ]
 
 

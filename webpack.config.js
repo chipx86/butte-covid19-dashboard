@@ -56,6 +56,10 @@ module.exports = (_, env) => ({
             path.resolve(src_dir, 'js', 'common.js'),
             path.resolve(src_dir, 'js', 'dashboard.js'),
         ],
+        schools: [
+            path.resolve(src_dir, 'js', 'common.js'),
+            path.resolve(src_dir, 'js', 'schools.js'),
+        ],
     },
     module: {
         rules: [
@@ -125,6 +129,11 @@ module.exports = (_, env) => ({
             filename: './index.html',
             template: 'index.html',
             chunks: ['main'],
+        }),
+        new HtmlWebpackPlugin({
+            filename: './schools.html',
+            template: 'schools.html',
+            chunks: ['schools'],
         }),
     ],
 });

@@ -596,6 +596,32 @@ a:visited {
 }
 
 
+.bc19-c-tiles {
+  display: grid;
+
+  @media only screen and (min-width: 600px) {
+    grid: auto-flow e('/') repeat(2, 50%);
+
+    &__tile {
+      margin: 1.5em;
+    }
+  }
+
+  @media only screen and (min-width: 1200px) {
+    grid: auto-flow e('/') repeat(3, 33%);
+  }
+
+  &__tile-header {
+    font-size: 115%;
+
+    &:link {
+      color: #2B54F7;
+      font-weight: normal;
+    }
+  }
+}
+
+
 .bc19-o-flex-break {
   display: none;
   border: 0;
