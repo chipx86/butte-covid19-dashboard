@@ -343,6 +343,9 @@ DATASETS = [
                 'Golden Hills Elementary School',
                 'Palermo School',
             ],
+            'other': [
+                'District-wide',
+            ],
         },
     },
     {
