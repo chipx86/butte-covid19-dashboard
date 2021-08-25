@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from collections import OrderedDict
 from datetime import datetime
 
@@ -115,6 +116,13 @@ HOSPTIALS = [
         'label': 'Orchard Hospital',
     },
 ]
+
+
+# This is hacky, having two, but it reduces date parsing in the main dashboard.
+NEW_SCHOOL_YEAR_START = (8, 1)
+NEW_SCHOOL_YEAR_START_STRS = ['08', '01']
+
+SCHOOL_ID_ESCAPE_RE = re.compile(r'[^A-Za-z0-9]')
 
 
 POPULATION = 217769
@@ -895,7 +903,7 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
 
         # Check if we need to reset the semester. This will happen on
         # August 1st.
-        if date.split('-')[1:] == ['08', '01']:
+        if date.split('-')[1:] == NEW_SCHOOL_YEAR_START_STRS:
             # New year, who dis?
             schools_semester_student_local_cases = 0
             schools_semester_student_remote_cases = 0
@@ -1354,6 +1362,568 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
     return True
 
 
+def build_schools_dataset(info, in_fps, out_filename, **kwargs):
+    class CaseGraphs:
+        def __init__(self, skip_days=0):
+            values = [0] * skip_days
+
+            self.dates = ['date'] + values
+            self.student_local_cases = ['students_local'] + values
+            self.student_remote_cases = ['students_remote'] + values
+            self.staff_local_cases = ['staff_local'] + values
+            self.staff_remote_cases = ['staff_remote'] + values
+            self.new_student_local_cases = ['new_students_local'] + values
+            self.new_student_remote_cases = ['new_students_remote'] + values
+            self.new_staff_local_cases = ['new_staff_local'] + values
+            self.new_staff_remote_cases = ['new_staff_remote'] + values
+
+            self.total_cases = [] + values
+            self.student_cases = [] + values
+            self.staff_cases = [] + values
+
+            self.weekly_total_cases = [0]
+
+    class CaseCounts:
+        def __init__(self):
+            self.student_local_cases = 0
+            self.student_remote_cases = 0
+            self.staff_local_cases = 0
+            self.staff_remote_cases = 0
+
+        @property
+        def total_cases(self):
+            return (self.student_local_cases +
+                    self.student_remote_cases +
+                    self.staff_local_cases +
+                    self.staff_remote_cases)
+
+    class CaseDataState:
+        def __init__(self, skip_days=0):
+            self.graphs = CaseGraphs(skip_days=skip_days)
+            self.counts = CaseCounts()
+            self.max_new_cases = 0
+            self._pending_case_counts = CaseCounts()
+
+        def add_cases(self, student_local_cases, student_remote_cases,
+                      staff_local_cases, staff_remote_cases):
+            counts = self.counts
+            pending_counts = self._pending_case_counts
+
+            counts.student_local_cases += student_local_cases
+            counts.student_remote_cases += student_remote_cases
+            counts.staff_local_cases += staff_local_cases
+            counts.staff_remote_cases += staff_remote_cases
+
+            pending_counts.student_local_cases += student_local_cases
+            pending_counts.student_remote_cases += student_remote_cases
+            pending_counts.staff_local_cases += staff_local_cases
+            pending_counts.staff_remote_cases += staff_remote_cases
+
+        def finalize_day(self):
+            counts = self.counts
+            graphs = self.graphs
+            pending_counts = self._pending_case_counts
+
+            graphs.new_student_local_cases.append(
+                pending_counts.student_local_cases)
+            graphs.new_student_remote_cases.append(
+                pending_counts.student_remote_cases)
+            graphs.new_staff_local_cases.append(
+                pending_counts.staff_local_cases)
+            graphs.new_staff_remote_cases.append(
+                pending_counts.staff_remote_cases)
+
+            graphs.student_local_cases.append(counts.student_local_cases)
+            graphs.student_remote_cases.append(counts.student_remote_cases)
+            graphs.staff_local_cases.append(counts.staff_local_cases)
+            graphs.staff_remote_cases.append(counts.staff_remote_cases)
+
+            total_cases = counts.total_cases
+
+            graphs.total_cases.append(total_cases)
+            graphs.student_cases.append(counts.student_local_cases +
+                                        counts.student_remote_cases)
+            graphs.staff_cases.append(counts.staff_local_cases +
+                                      counts.staff_remote_cases)
+
+            graphs.weekly_total_cases[-1] += total_cases
+
+            self.max_new_cases = max(
+                self.max_new_cases,
+                (pending_counts.student_local_cases +
+                 pending_counts.student_remote_cases +
+                 pending_counts.staff_local_cases +
+                 pending_counts.staff_remote_cases))
+
+            self._pending_case_counts = CaseCounts()
+
+        def finalize_week(self):
+            self.graphs.weekly_total_cases.append(0)
+
+    class SchoolState(CaseDataState):
+        def __init__(self, school_id, school_name, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+            self.id = school_id
+            self.name = school_name
+
+    class DistrictState(CaseDataState):
+        def __init__(self, district_id, district_name, district_short_name):
+            super().__init__()
+
+            self.id = district_id
+            self.name = district_name
+            self.short_name = district_short_name
+
+            self.schools = OrderedDict()
+            self.school_types = OrderedDict()
+            self.school_names = []
+
+            self.total_cases_by_school = {}
+
+            for school_type, school_name in info['school_types']:
+                self.school_types[school_type] = CaseDataState()
+
+        def add_cases(self, school, school_type, *cases):
+            super().add_cases(*cases)
+
+            self.schools[make_id(school)].add_cases(*cases)
+            self.school_types[school_type].add_cases(*cases)
+
+        def ensure_school(self, school_id, school_name):
+            if school_id not in self.schools:
+                self.schools[school_id] = SchoolState(school_id=school_id,
+                                                      school_name=school_name)
+                self.school_names.append(school_name)
+
+        def finalize_day(self):
+            super().finalize_day()
+
+            for d in (self.schools, self.school_types):
+                for state in d.values():
+                    state.finalize_day()
+
+        def finalize_week(self):
+            super().finalize_week()
+
+            for d in (self.schools, self.school_types):
+                for state in d.values():
+                    state.finalize_week()
+
+    class SchoolYearState:
+        def __init__(self, year, first_date):
+            self.year = year
+            self.first_date = first_date
+            self.last_date = None
+
+            self.total = CaseDataState()
+            self.districts = {
+                _district_id: DistrictState(
+                    district_id=_district_id,
+                    district_name=_district_info['full_name'],
+                    district_short_name=_district_info['short_name'])
+                for _district_id, _district_info in info['districts']
+            }
+
+            self.schools = {}
+            self.school_types = {}
+            self.num_days = 0
+
+            self.week_districts_with_cases = [set()]
+            self.week_district_schools_with_cases = {
+                _district_id: [set()]
+                for _district_id in self.districts.keys()
+            }
+            self.week_schools_with_cases = [set()]
+
+        def add_cases(self, district, school, school_type,
+                      student_local_cases, student_remote_cases,
+                      staff_local_cases, staff_remote_cases):
+            district_state = self.districts[district]
+            school_state = self.ensure_school(district, school)
+            school_type_state = self.ensure_school_type(district, school_type)
+
+            cases = [
+                student_local_cases,
+                student_remote_cases,
+                staff_local_cases,
+                staff_remote_cases,
+            ]
+
+            district_state.add_cases(school, school_type, *cases)
+            school_state.add_cases(*cases)
+            school_type_state.add_cases(*cases)
+            self.total.add_cases(*cases)
+
+            if (student_local_cases > 0 or
+                student_remote_cases > 0 or
+                staff_local_cases > 0 or
+                staff_remote_cases > 0):
+                self.week_districts_with_cases[-1].add(district)
+                self.week_district_schools_with_cases[district][-1].add(school)
+                self.week_schools_with_cases[-1].add(school)
+
+        def ensure_school_type(self, district, school_type):
+            return self._ensure_case_state(self.school_types, school_type)
+
+        def ensure_school(self, district, school_name):
+            school_id = make_id(school_name)
+
+            self.districts[district].ensure_school(school_id=school_id,
+                                                   school_name=school_name)
+
+            if school_id not in self.schools:
+                self.schools[school_id] = SchoolState(school_id=school_id,
+                                                      school_name=school_name,
+                                                      skip_days=self.num_days)
+
+            return self.schools[school_id]
+
+        def _ensure_case_state(self, d, key):
+            if key not in d:
+                d[key] = CaseDataState(skip_days=self.num_days)
+
+            return d[key]
+
+        def finalize_day(self, date):
+            self.last_date = date
+
+            self.total.graphs.dates.append(date.strftime('%Y-%m-%d'))
+            self.total.finalize_day()
+            self.num_days += 1
+
+            for d in (self.districts, self.schools, self.school_types):
+                for state in d.values():
+                    state.finalize_day()
+
+        def finalize_week(self):
+            self.total.finalize_week()
+
+            self.week_districts_with_cases.append(set())
+            self.week_schools_with_cases.append(set())
+
+            for items in self.week_district_schools_with_cases.values():
+                items.append(set())
+
+            for d in (self.districts, self.schools, self.school_types):
+                for state in d.values():
+                    state.finalize_week()
+
+    class GlobalState:
+        def __init__(self):
+            self.school_years = OrderedDict()
+            self.cur_school_year_state = None
+
+            self.district_ids_to_schools = {}
+            self.district_ids_to_school_types = {}
+
+            for district_id, district_info in info['districts']:
+                self.district_ids_to_schools[district_id] = OrderedDict()
+                self.district_ids_to_school_types[district_id] = OrderedDict()
+
+        def add_school_year(self, year, first_date):
+            school_year_state = SchoolYearState(year=year,
+                                                first_date=first_date)
+            self.school_years[year] = school_year_state
+            self.cur_school_year_state = school_year_state
+
+        def add_cases(self, district, school, school_type,
+                      student_local_cases, student_remote_cases,
+                      staff_local_cases, staff_remote_cases):
+            assert self.cur_school_year_state
+
+            district_schools = self.district_ids_to_schools[district]
+            district_school_types = self.district_ids_to_school_types[district]
+
+            if school not in district_schools:
+                district_schools[make_id(school)] = school
+
+            if school_type not in district_school_types:
+                district_school_types[make_id(school_type)] = \
+                    SCHOOL_TYPE_ID_NAME_MAP[school_type]
+
+            self.cur_school_year_state.add_cases(
+                district, school, school_type, student_local_cases,
+                student_remote_cases, staff_local_cases,
+                staff_remote_cases)
+
+        def finalize_day(self, date):
+            assert self.cur_school_year_state
+            self.cur_school_year_state.finalize_day(date)
+
+        def finalize_week(self):
+            assert self.cur_school_year_state
+            self.cur_school_year_state.finalize_week()
+
+    def make_id(name):
+        return SCHOOL_ID_ESCAPE_RE.sub('_', name)
+
+    def make_graph_result(graphs):
+        return {
+            'studentLocalCases': graphs.student_local_cases,
+            'studentRemoteCases': graphs.student_remote_cases,
+            'staffLocalCases': graphs.staff_local_cases,
+            'staffRemoteCases': graphs.staff_remote_cases,
+            'newStudentLocalCases': graphs.new_student_local_cases,
+            'newStudentRemoteCases': graphs.new_student_remote_cases,
+            'newStaffLocalCases': graphs.new_staff_local_cases,
+            'newStaffRemoteCases': graphs.new_staff_remote_cases,
+        }
+
+    def iter_districts(school_year):
+        for district_id, district_info in info['districts']:
+            district_key = district_info['full_name']
+            state = school_year.districts.get(district_id)
+
+            if state is not None:
+                yield district_id, state
+
+    DISTRICT_NAME_ID_MAP = {
+        _district_info['full_name']: _district_id
+        for _district_id, _district_info in info['districts']
+    }
+
+    SCHOOL_TYPE_ID_NAME_MAP = dict(info['school_types'])
+
+    bc19_dashboard = json.loads(in_fps['bc19_dashboard'].read())
+    rows = json.loads(in_fps['schools'].read())
+
+    # Set up the initial state.
+    first_school_year = 2020
+
+    state = GlobalState()
+    state.add_school_year(year=first_school_year,
+                          first_date=datetime.strptime(rows[0]['date'],
+                                                       '%Y-%m-%d'))
+
+    for row in rows:
+        date_str = row['date']
+        date = datetime.strptime(date_str, '%Y-%m-%d')
+
+        # Check if we need to reset the school_year. This will happen on
+        # August 1st.
+        if (date.month, date.day) == NEW_SCHOOL_YEAR_START:
+            # New year, who dis?
+            state.add_school_year(year=date.year,
+                                  first_date=date)
+
+        # Get the new student and staff counts for this date.
+        for district, district_data in row.get('districts', {}).items():
+            district_id = DISTRICT_NAME_ID_MAP[district]
+
+            for school_type, schools in district_data.items():
+                if school_type == 'district_wide':
+                    continue
+
+                for school, school_data in schools.items():
+                    school_new_cases = school_data['new_cases']
+                    state.add_cases(
+                        district_id,
+                        school,
+                        school_type,
+                        school_new_cases['students_in_person'],
+                        school_new_cases['students_remote'],
+                        school_new_cases['staff_in_person'],
+                        school_new_cases['staff_remote'])
+
+        state.finalize_day(date)
+
+        if date.weekday() == 5:
+            state.finalize_week()
+
+    # Check if we're processing this in a new week. If so, then we need to
+    # finalize again, once for each week that's elapsed, because we don't want
+    # the last week's worth of data to show up as current.
+    for i in range(datetime.today().isocalendar()[1] - date.isocalendar()[1]):
+        school_year.finalize_week()
+
+    school_years = state.school_years.values()
+
+    import pprint
+    pprint.pprint(state.cur_school_year_state.week_district_schools_with_cases)
+
+    result = {
+        'barGraphs': {
+            _school_year.year: {
+                'countyWide': {
+                    'casesByDistrict': [
+                        build_bar_graph_data(
+                            _district.graphs.total_cases,
+                            data_id=_district_id,
+                            label=_district.short_name)
+                        for (_district_id,
+                             _district) in _school_year.districts.items()
+                    ],
+                    'casesByGradeLevel': [
+                        build_bar_graph_data(
+                            (_school_year.school_types[_key]
+                             .graphs.total_cases),
+                            data_id=_key,
+                            label=_label)
+                        for _key, _label in info['school_types']
+                        if _key in _school_year.school_types
+                    ],
+                },
+                'districts': {
+                    _district_id: {
+                        'casesBySchool': [
+                            build_bar_graph_data(
+                                _school.graphs.total_cases,
+                                data_id=_school_id,
+                                label=_school.name)
+                            for (_school_id,
+                                 _school) in _district.schools.items()
+                        ],
+                        'casesByGradeLevel': [
+                            build_bar_graph_data(
+                                _state.graphs.total_cases,
+                                data_id=_key,
+                                label=SCHOOL_TYPE_ID_NAME_MAP[_key])
+                            for _key, _state in _district.school_types.items()
+                        ],
+                    }
+                    for (_district_id,
+                         _district) in _school_year.districts.items()
+                },
+            }
+            for _school_year in school_years
+        },
+        'counters': {
+            _school_year.year: {
+                'countyWide': {
+                    'districtsWithNewCases': build_counter_data(
+                        _school_year.week_districts_with_cases,
+                        get_value=lambda row: len(row)),
+                    'schoolsWithNewCases': build_counter_data(
+                        _school_year.week_schools_with_cases,
+                        get_value=lambda row: len(row)),
+                    'staffCases': build_counter_data(
+                        _school_year.total.graphs.staff_cases,
+                        delta_days=[1, 7, 14, 30]),
+                    'studentCases': build_counter_data(
+                        _school_year.total.graphs.student_cases,
+                        delta_days=[1, 7, 14, 30]),
+                },
+                'districts': {
+                    _district_id: {
+                        'schoolsWithNewCases': build_counter_data(
+                            (_school_year
+                             .week_district_schools_with_cases[_district_id]),
+                            get_value=lambda row: len(row)),
+                        'staffCases': build_counter_data(
+                            _district.graphs.staff_cases,
+                            delta_days=[1, 7, 14, 30]),
+                        'studentCases': build_counter_data(
+                            _district.graphs.student_cases,
+                            delta_days=[1, 7, 14, 30]),
+                    }
+                    for (_district_id,
+                         _district) in _school_year.districts.items()
+                },
+                'schools': {
+                    _school_id: {
+                        'staffCases': build_counter_data(
+                            _school.graphs.staff_cases,
+                            delta_days=[1, 7, 14, 30]),
+                        'studentCases': build_counter_data(
+                            _school.graphs.student_cases,
+                            delta_days=[1, 7, 14, 30]),
+                    }
+                    for _school_id, _school in _school_year.schools.items()
+                },
+            }
+            for _school_year in school_years
+        },
+        'dates': {
+            _school_year.year: {
+                'first': _school_year.first_date.strftime('%Y-%m-%d'),
+                'last': _school_year.last_date.strftime('%Y-%m-%d'),
+                'rows': [],
+            }
+            for _school_year in school_years
+        },
+        'districts': dict(info['districts']),
+        'latestRows': {},
+        'maxValues': {
+            _school_year.year: {
+                'countyWide': {
+                    'totalCases': _school_year.total.counts.total_cases,
+                    'newCases': _school_year.total.max_new_cases,
+                },
+                'districts': {
+                    _district_id: {
+                        'totalCases': _district.counts.total_cases,
+                        'newCases': _district.max_new_cases,
+                    }
+                    for (_district_id,
+                         _district) in _school_year.districts.items()
+                },
+                'schools': {
+                    _school: {
+                        'totalCases': _state.counts.total_cases,
+                        'newCases': _state.max_new_cases,
+                    }
+                    for _school, _state in _school_year.schools.items()
+                },
+            }
+            for _school_year in school_years
+        },
+        'monitoringTier': bc19_dashboard['monitoringTier'],
+        'reportTimestamp': bc19_dashboard['reportTimestamp'],
+        'schools': {
+            _district_id: {
+                _school_id: _school_name
+                for _school_id, _school_name in _schools.items()
+            }
+            for (_district_id,
+                 _schools) in state.district_ids_to_schools.items()
+        },
+        'schoolTypes': state.district_ids_to_school_types,
+        'schoolYears': [
+            _school_year.year
+            for _school_year in school_years
+        ],
+        'timelineGraphs': {
+            _school_year.year: {
+                'dates': _school_year.total.graphs.dates,
+                'districts': {
+                    _district_id: make_graph_result(_district.graphs)
+                    for (_district_id,
+                         _district) in _school_year.districts.items()
+                },
+                'schools': {
+                    _school: make_graph_result(_state.graphs)
+                    for _school, _state in _school_year.schools.items()
+                },
+                'schoolTypes': {
+                    _school_type: make_graph_result(_state.graphs)
+                    for (_school_type,
+                         _state) in _school_year.school_types.items()
+                },
+                'countyWide': make_graph_result(_school_year.total.graphs),
+            }
+            for _school_year in school_years
+        },
+    }
+
+    with safe_open_for_write(out_filename) as fp:
+        json.dump(result,
+                  fp,
+                  sort_keys=True,
+                  indent=2)
+
+    min_filename = os.path.join(os.path.dirname(out_filename),
+                                info['min_filename'])
+
+    with safe_open_for_write(min_filename) as fp:
+        json.dump(result,
+                  fp,
+                  sort_keys=True,
+                  separators=(',', ':'))
+
+    return True
+
+
 DATASETS = [
     {
         'filename': 'bc19-dashboard.json',
@@ -1369,6 +1939,71 @@ DATASETS = [
                 'format': 'json',
             },
         },
-        'parser': build_dataset,
+        'parser': build_dashboard_dataset,
+    },
+    {
+        'filename': 'bc19-schools.json',
+        'min_filename': 'bc19-schools.%s.min.json' % DATASET_VERSION,
+        'format': 'json',
+        'local_sources': {
+            'bc19_dashboard': {
+                'filename': 'bc19-dashboard.json',
+                'format': 'json',
+            },
+            'schools': {
+                'filename': 'schools.json',
+                'format': 'json',
+            },
+        },
+        'parser': build_schools_dataset,
+        'districts': [
+            ('csuchico', {
+                'short_name': 'Chico State',
+                'full_name': 'Chico State',
+            }),
+            ('cusd', {
+                'short_name': 'Chico Unified',
+                'full_name': 'Chico Unified School District',
+                'source': 'http://www.chicousd.org/News/District-Wide-Safety-Info/COVID-19-Information/2021-Community-Dashboard/',
+            }),
+            ('dusd', {
+                'short_name': 'Durham Unified',
+                'full_name': 'Durham Unified School District',
+                'source': 'http://durhamunified.org/dusd-covid-19-community-dashboard/',
+            }),
+            ('inspire', {
+                'short_name': 'Inspire',
+                'full_name': 'Inspire School',
+                'source': 'https://docs.google.com/spreadsheets/d/1-DTOcPmoYiOK-9wPMqMFoT6D9ViFznb9H15lzx-yzBE/edit#gid=0',
+            }),
+            ('ocesd', {
+                'short_name': 'Oroville City Elementary',
+                'full_name': 'Oroville City Elementary School District',
+                'source': 'https://www.ocesd.org/page/covid-community-information',
+            }),
+            ('ouhsd', {
+                'short_name': 'Oroville Union High',
+                'full_name': 'Oroville Union High School District',
+                'source': 'https://www.ouhsd.org/Page/3178',
+            }),
+            ('puesd', {
+                'short_name': 'Palermo Union Elementary',
+                'full_name': 'Palermo Union Elementary School District',
+                'source': 'https://drive.google.com/file/d/14vxZGZ9gsXc4-KpX0v16vk11w-qZz4Oq/view',
+            }),
+            ('pusd', {
+                'short_name': 'Paradise Unified',
+                'full_name': 'Paradise Unified School District',
+                'source': 'https://www.pusdk12.org/COVID-19/Community-Dashboard/index.html',
+            }),
+        ],
+        'school_types': [
+            ('preschool', 'Preschool'),
+            ('elementary', 'Elementary School'),
+            ('junior_high', 'Junior High'),
+            ('high_school', 'High School'),
+            ('college', 'College'),
+            ('other', 'Other'),
+        ],
     },
 ]
