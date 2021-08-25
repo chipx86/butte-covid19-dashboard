@@ -5,13 +5,6 @@
 
 
 {% block sections %}
-{%  call section(id='monitoring-tier-section',
-                 css_class='-is-monitoring-tier',
-                 aria_label='County monitoring tier') -%}
- <strong>County risk level:</strong>
- <span id="monitoring-tier"></span>
-{%-  endcall -%}
-
 
 {#- Cases Counters -#}
 {%  call section(id='cases',
