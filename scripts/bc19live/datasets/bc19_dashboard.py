@@ -1363,6 +1363,37 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
 
 
 def build_schools_dataset(info, in_fps, out_filename, **kwargs):
+    """Generate JSON data for the schools dashboard.
+
+    This takes the generated main dashboard data and schools data and compiles
+    it into a series of datasets that can be directly fed into the counters and
+    graphs on the schools dashboard.
+
+    Both a ``.json`` and a ``.min.json`` (actually used by the website) will
+    be generated.
+
+    Args:
+        info (dict):
+            Parser option information. This must define ``min_filename``.
+
+        in_fps (dict):
+            A mapping of all source names to file pointers.
+
+        out_filename (str):
+            The filename for the JSON file to write.
+
+        **kwargs (dict, unused):
+            Unused keyword arguments passed to this parser.
+
+    Returns:
+        bool:
+        ``True`` if the file was written, or ``False`` if skipped.
+
+    Raises:
+        ParseError:
+            Expected data was missing or was in an unexpected format. Detailed
+            information will be in the error message.
+    """
     class CaseGraphs:
         def __init__(self, skip_days=0):
             values = [0] * skip_days
