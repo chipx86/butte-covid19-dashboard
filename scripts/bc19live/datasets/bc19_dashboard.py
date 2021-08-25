@@ -142,7 +142,110 @@ def norm_rel_value(value, prev_value):
     return value - prev_value
 
 
-def build_dataset(info, in_fps, out_filename, **kwargs):
+def build_bar_graph_data(rows, data_id, label, row_index=-1, get_value=None):
+    """Return data used for an entry on a bar graph.
+
+    Args:
+        rows (list):
+            The row data containing values for the bar graph entry.
+
+        data_id (str):
+            The ID identifying the entry.
+
+        label (str):
+            The label for the entry.
+
+        row_index (int, optional):
+            The index into the row data for the current value.
+
+        get_value (callable, optional):
+            A function for processing the value used in the entry. This
+            defaults to returning the value as-is.
+
+    Returns:
+        dict:
+        JSON data for the entry for the page.
+    """
+    if get_value is None:
+        get_value = lambda row: row
+
+    try:
+        latest_row = rows[row_index]
+        value = get_value(latest_row)
+    except IndexError:
+        value = 0
+
+    try:
+        prev_row = rows[row_index - 1]
+        prev_value = get_value(prev_row)
+    except IndexError:
+        prev_value = 0
+
+    return {
+        'data_id': data_id,
+        'label': label,
+        'value': value,
+        'relValue': norm_rel_value(value, prev_value),
+    }
+
+
+def build_counter_data(rows, get_value=None, row_index=-1, delta_days=[1],
+                       is_pct=False):
+    """Return data used for a counter.
+
+    Args:
+        rows (list):
+            The row data containing values for the counter.
+
+        get_value (callable, optional):
+            A function for processing the value used in the counter. This
+            defaults to returning the value as-is.
+
+        row_index (int, optional):
+            The index into the row data for the current value.
+
+        delta_days (list of int, optional):
+            The list of delta values to compute. These are relative offsets
+            before ``row_index`` into ``rows``.
+
+        is_pct (bool, optional):
+            Whether the value represents a percentage.
+
+    Returns:
+        dict:
+        JSON data for the counter for the page.
+    """
+    if get_value is None:
+        get_value = lambda row: row
+
+    rel_values = []
+
+    if rows:
+        if row_index < 0:
+            row_index = len(rows) + row_index
+
+        for num_days in delta_days:
+            if row_index - num_days >= 0:
+                rel_values.append(get_value(rows[row_index - num_days]))
+            else:
+                rel_values.append(0)
+
+        value = get_value(rows[row_index])
+    else:
+        value = 0
+
+    data = {
+        'value': value,
+        'relativeValues': rel_values,
+    }
+
+    if is_pct:
+        data['isPct'] = True
+
+    return data
+
+
+def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
     """Parse other datasets to generate JSON data for the dashboard.
 
     This takes the generated timeline data and compiles it into a dataset
@@ -174,40 +277,6 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
             Expected data was missing or was in an unexpected format. Detailed
             information will be in the error message.
     """
-    def build_bar_graph_data(data_id, label, row_index, get_value):
-        latest_row = rows[row_index]
-        prev_row = rows[row_index - 1]
-
-        value = get_value(latest_row)
-        prev_value = get_value(prev_row)
-
-        return {
-            'data_id': data_id,
-            'label': label,
-            'value': value,
-            'relValue': norm_rel_value(value, prev_value),
-        }
-
-    def build_counter_data(get_value, row_index=-1, delta_days=[1],
-                           is_pct=False, data_rows=None):
-        if data_rows is None:
-            data_rows = rows
-
-        latest_row = data_rows[row_index]
-
-        data = {
-            'value': get_value(data_rows[row_index]),
-            'relativeValues': [
-                get_value(data_rows[max(0, row_index - num_days)])
-                for num_days in delta_days
-            ],
-        }
-
-        if is_pct:
-            data['isPct'] = True
-
-        return data
-
     timeline = json.loads(in_fps['timeline'].read())
 
     rows = timeline['dates']
@@ -913,6 +982,7 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
         'barGraphs': {
             'byHospital': [
                 build_bar_graph_data(
+                    rows,
                     data_id=_info['key'],
                     label=_info['label'],
                     row_index=latest_per_hospital_row_index,
@@ -923,6 +993,7 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
             ],
             'casesByAge': [
                 build_bar_graph_data(
+                    rows,
                     data_id=_key,
                     label=_info.get('text', _key.replace('_', '-')),
                     row_index=latest_death_by_age_row_index,
@@ -934,6 +1005,7 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
             ],
             'deathsByAge': [
                 build_bar_graph_data(
+                    rows,
                     data_id=_key,
                     label=_info.get('text', _key.replace('_', '-')),
                     row_index=latest_death_by_age_row_index,
@@ -946,6 +1018,7 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
             ],
             'mortalityRate': [
                 build_bar_graph_data(
+                    rows,
                     data_id=_key,
                     label=_info.get('text', _key.replace('_', '-')),
                     row_index=latest_death_by_age_row_index,
@@ -960,6 +1033,7 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
             ],
             'casesByRegion': [
                 build_bar_graph_data(
+                    rows,
                     data_id=_info['key'],
                     label=_info['label'],
                     row_index=latest_region_row_index,
@@ -971,41 +1045,48 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
         },
         'counters': {
             'totalCases': build_counter_data(
+                rows,
                 row_index=latest_cases_row_index,
                 get_value=lambda row: row['confirmed_cases']['total'],
                 delta_days=[1, 7, 14, 30]),
             'totalDeaths': build_counter_data(
+                rows,
                 row_index=latest_cases_row_index,
                 get_value=lambda row: row['deaths']['total'],
                 delta_days=[1, 7, 14, 30]),
             'inIsolation': build_counter_data(
+                rows,
                 row_index=latest_isolation_row_index,
                 get_value=lambda row: row['in_isolation']['current'],
                 delta_days=[1, 7, 14, 30]),
             'hospitalizedResidents': build_counter_data(
+                rows,
                 row_index=latest_county_hospital_row_index,
                 get_value=lambda row: (
                     row['hospitalizations']['county_data']['hospitalized']
                 )),
             'allHospitalized': build_counter_data(
+                rows,
                 row_index=latest_state_hospital_row_index,
                 get_value=lambda row: (
                     row['hospitalizations']['state_data']['positive']
                 )),
             'inICU': build_counter_data(
+                rows,
                 row_index=latest_state_hospital_row_index,
                 get_value=lambda row: (
                     row['hospitalizations']['state_data']['icu_positive']
                 )),
             'schoolYearNewStudentCasesTotal': build_counter_data(
-                data_rows=school_totals,
+                school_totals,
                 row_index=len(school_totals) - 1,
                 get_value=lambda row: row['students']),
             'schoolYearNewStaffCasesTotal': build_counter_data(
-                data_rows=school_totals,
+                school_totals,
                 row_index=len(school_totals) - 1,
                 get_value=lambda row: row['staff']),
             'vaccines1DosePct': build_counter_data(
+                rows,
                 row_index=latest_vaccines_chhs_row_index,
                 get_value=lambda row: (
                     row['vaccines']['chhs']['administered']
@@ -1014,6 +1095,7 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
                 delta_days=[1, 7, 14],
                 is_pct=True),
             'vaccinesFullDosesPct': build_counter_data(
+                rows,
                 row_index=latest_vaccines_chhs_row_index,
                 get_value=lambda row: (
                     row['vaccines']['chhs']['administered']['fully_pct']
@@ -1021,29 +1103,36 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
                 delta_days=[1, 7, 14],
                 is_pct=True),
             'vaccinesAllocated': build_counter_data(
+                rows,
                 row_index=latest_vaccines_county_row_index,
                 get_value=lambda row: row['vaccines']['allocated'],
                 delta_days=[1, 7, 14]),
             'vaccinesAdministered': build_counter_data(
+                rows,
                 row_index=latest_vaccines_county_row_index,
                 get_value=lambda row: row['vaccines']['administered'],
                 delta_days=[1, 7, 14]),
             'vaccinesOrdered1': build_counter_data(
+                rows,
                 row_index=latest_vaccines_county_row_index,
                 get_value=lambda row: row['vaccines']['first_doses_ordered'],
                 delta_days=[1, 7, 14]),
             'vaccinesOrdered2': build_counter_data(
+                rows,
                 row_index=latest_vaccines_county_row_index,
                 get_value=lambda row: row['vaccines']['second_doses_ordered'],
                 delta_days=[1, 7, 14]),
             'vaccinesReceived': build_counter_data(
+                rows,
                 row_index=latest_vaccines_county_row_index,
                 get_value=lambda row: row['vaccines']['received'],
                 delta_days=[1, 7, 14]),
             'totalTests': build_counter_data(
+                rows,
                 row_index=latest_tests_row_index,
                 get_value=lambda row: row['viral_tests']['total']),
             'positiveTestResults': build_counter_data(
+                rows,
                 row_index=latest_cases_row_index,
                 get_value=lambda row: row['confirmed_cases']['total']),
             'positiveTestRate': {
@@ -1057,16 +1146,19 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
                 'isPct': True,
             },
             'jailInmatePop': build_counter_data(
+                rows,
                 row_index=latest_jail_row_index,
                 get_value=lambda row: (
                     row['county_jail']['inmates']['population']
                 )),
             'jailInmateTotalTests': build_counter_data(
+                rows,
                 row_index=latest_jail_row_index,
                 get_value=lambda row: (
                     row['county_jail']['inmates']['total_tests']
                 )),
             'jailInmateCurCases': build_counter_data(
+                rows,
                 row_index=latest_jail_row_index,
                 get_value=lambda row: (
                     row['county_jail']['inmates']['current_cases']
@@ -1084,11 +1176,13 @@ def build_dataset(info, in_fps, out_filename, **kwargs):
                 'isPct': True,
             },
             'jailStaffTotalTests': build_counter_data(
+                rows,
                 row_index=latest_jail_row_index,
                 get_value=lambda row: (
                     row['county_jail']['staff']['total_tests']
                 )),
             'jailStaffTotalCases': build_counter_data(
+                rows,
                 row_index=latest_jail_row_index,
                 get_value=lambda row: (
                     row['county_jail']['staff']['total_positive']
