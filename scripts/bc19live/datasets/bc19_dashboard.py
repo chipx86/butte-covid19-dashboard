@@ -1686,6 +1686,14 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
             assert self.cur_school_year_state
             self.cur_school_year_state.finalize_week()
 
+        def finalize(self):
+            # Make sure that all school years and districts have the same
+            # lists of schools.
+            for district_id, schools in self.district_ids_to_schools.items():
+                for school in schools:
+                    for school_year_state in self.school_years.values():
+                        school_year_state.ensure_school(district_id, school)
+
     def make_id(name):
         return SCHOOL_ID_ESCAPE_RE.sub('_', name)
 
@@ -1767,6 +1775,8 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
     # the last week's worth of data to show up as current.
     for i in range(datetime.today().isocalendar()[1] - date.isocalendar()[1]):
         school_year.finalize_week()
+
+    state.finalize()
 
     school_years = state.school_years.values()
 
