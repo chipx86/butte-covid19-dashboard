@@ -717,10 +717,12 @@ BC19.setupBarGraph = function(graph, options={}, data) {
                 .node());
 
             if (showPct) {
+                const pct = Math.round((d.value / total) * 100);
+
                 this.appendChild(d3.create('div')
                     .attr('class', 'bc19-c-bar-graph__pct')
                     .attr('id', 'bar_graph_' + d.data_id)
-                    .text(Math.round((d.value / total) * 100) + '%')
+                    .text(Number.isNaN(pct) ? '' : `${pct}%`)
                     .node());
             }
 
