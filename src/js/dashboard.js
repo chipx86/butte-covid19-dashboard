@@ -592,8 +592,6 @@ BC19.setupCounters = function() {
     BC19.setCounter('total-cases-counter', data.totalCases);
     BC19.setCounter('deaths-counter', data.totalDeaths);
     BC19.setCounter('in-isolation-counter', data.inIsolation);
-    BC19.setCounter('hospitalized-residents-counter',
-                    data.hospitalizedResidents);
     BC19.setCounter('hospitalized-counter', data.allHospitalized);
     BC19.setCounter('icu-counter', data.inICU);
     BC19.setCounter('school-year-student-cases',
