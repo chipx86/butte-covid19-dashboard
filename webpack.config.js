@@ -51,7 +51,12 @@ module.exports = (_, env) => ({
         compress: true,
         port: 8090,
     },
-    entry: path.resolve(src_dir, 'js', 'dashboard.js'),
+    entry: {
+        main: [
+            path.resolve(src_dir, 'js', 'common.js'),
+            path.resolve(src_dir, 'js', 'dashboard.js'),
+        ],
+    },
     module: {
         rules: [
             {
@@ -117,8 +122,9 @@ module.exports = (_, env) => ({
     },
     plugins: [
         new HtmlWebpackPlugin({
+            filename: './index.html',
             template: 'index.html',
-            minify: false,
+            chunks: ['main'],
         }),
     ],
 });
