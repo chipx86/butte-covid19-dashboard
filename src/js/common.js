@@ -597,31 +597,6 @@ BC19.setupBBGraph = function(options) {
 };
 
 
-BC19.makeSparkline = function(options) {
-    const width = options.width || 160;
-    const height = options.height || 30;
-    const data = options.data;
-
-    const x = d3.scaleLinear().domain([0, data.length]).range([0, width]);
-    const y = d3.scaleLinear().domain([0, 1]).range([height, 0]);
-
-    const svg = d3.select(options.el).append('svg')
-        .attr('width', width)
-        .attr('height', height)
-        .append('g');
-
-    svg.selectAll('.bar').data(options.data)
-        .enter()
-        .append('rect')
-            .attr('class', 'bar')
-            .attr('x', (d, i) => x(i))
-            .attr('y', d => (height - y(d)))
-            .attr('width', (width - data.length) / data.length)
-            .attr('height', d => y(d))
-            .attr('fill', 'tomato');
-};
-
-
 /**
  * Render the next timeline graph on the page.
  */
