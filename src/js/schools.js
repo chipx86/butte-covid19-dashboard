@@ -405,8 +405,13 @@ function setupGraphs() {
 
         const districtName = BC19.Schools.districts[district].full_name;
 
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.delete('district');
+        const allDistrictsURL = urlParams.toString();
+
         overviewTitleEl.innerHTML =
-            `<h2>${districtName}</h2>`;
+            `<h2>${districtName}</h2>` +
+            `<a href="?${allDistrictsURL}">See all districts</a>`;
     } else if (mode === 'school') {
         barGraphData = {};
         counters = BC19.countersData.schools[school];
@@ -416,8 +421,17 @@ function setupGraphs() {
         const districtName = BC19.Schools.districts[district].full_name;
         const schoolName = BC19.Schools.schools[district][school];
 
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.delete('school');
+        const districtURL = urlParams.toString();
+
+        urlParams.delete('district');
+        const allDistrictsURL = urlParams.toString();
+
         overviewTitleEl.innerHTML =
-            `<h2>${schoolName}</h2><h3>${districtName}</h3>`;
+            `<h2>${schoolName}</h2>` +
+            `<h3><a href="?${districtURL}">${districtName}</a></h3>` +
+            `<a href="?${allDistrictsURL}">See all districts</a>`;
     }
 
     console.assert(maxValues);
