@@ -343,6 +343,192 @@ BC19.getMaxY = function(maxValue, numTicks) {
 
 
 /**
+ * Return a new billboard.js graph element for the DOM.
+ *
+ * Args:
+ *     options (object):
+ *         Options for the element.
+ *
+ * Option Args:
+ *     dataID (string):
+ *         The ID of the data, used to build DOM IDs for the element.
+ *
+ *     subtitles (Array of string, optional):
+ *         Subtitles to include below the main title.
+ *
+ *     title (string, optional):
+ *         The title to show above the element.
+ *
+ * Returns:
+ *     HTMLElement:
+ *     The new element.
+ */
+BC19.makeBBGraphElement = function(options) {
+    const dataID = options.dataID;
+    const labelID = `${dataID}_label`;
+
+    const subtitles = options.subtitles || [];
+
+    const el = document.createElement('figure');
+    el.classList.add('bc19-c-timeline-graph');
+
+    if (options.title) {
+        const titleEl = document.createElement('h3');
+        titleEl.classList.add('bc19-c-timeline-graph__title');
+        titleEl.id = labelID;
+        titleEl.innerText = options.title;
+        el.appendChild(titleEl);
+    }
+
+    subtitles.forEach(subtitle => {
+        const subtitleEl = document.createElement('h4');
+        subtitleEl.classList.add('bc19-c-timeline-graph__subtitle');
+        subtitleEl.innerText = subtitle;
+        el.appendChild(subtitleEl);
+    });
+
+    const dataEl = document.createElement('div');
+    dataEl.id = dataID;
+    dataEl.setAttribute('aria-labelled-by', labelID);
+    el.appendChild(dataEl);
+
+    return el;
+};
+
+
+/**
+ * Return a new section header element.
+ *
+ * Args:
+ *     options (object):
+ *         Options for the element.
+ *
+ * Option Args:
+ *     ariaLabel (string, optional):
+ *         The ARIA label assigned to the element.
+ *
+ *     id (string, optional):
+ *         The ID of the element.
+ *
+ *     title (string):
+ *         The title to show in the header.
+ *
+ * Returns:
+ *     HTMLElement:
+ *     The new element.
+ */
+BC19.makeSectionHeaderElement = function(options) {
+    const headerEl = document.createElement('header');
+    headerEl.classList.add('bc19-c-dashboard__header');
+
+    if (options.id) {
+        headerEl.id = options.id;
+    }
+
+    if (options.ariaLabel) {
+        headerEl.setAttribute('aria-label', options.ariaLabel);
+    }
+
+    const titleEl = document.createElement('h2');
+    titleEl.innerText = options.title;
+    headerEl.appendChild(titleEl);
+
+    return headerEl;
+};
+
+
+/**
+ * Return a new sources element.
+ *
+ * Args:
+ *     sources (Array of object):
+ *         The list of sources, each an object with ``url`` and optional
+ *         ``label`` attributes.
+ *
+ * Returns:
+ *     HTMLElement:
+ *     The new element.
+ */
+BC19.makeSourcesElement = function(sources) {
+    const sourcesEl = document.createElement('p');
+    sourcesEl.classList.add('bc19-c-dashboard__sources');
+
+    if (sources.length === 1 && !sources[0].label) {
+        const linkEl = document.createElement('a');
+        linkEl.setAttribute('href', sources[0].url);
+        linkEl.innerText = 'Source';
+        sourcesEl.appendChild(linkEl);
+    } else {
+        const labelEl = document.createElement('strong');
+
+        if (sources.length === 1) {
+            labelEl.innerText = 'Source: ';
+        } else {
+            labelEl.innerText = 'Sources: ';
+        }
+
+        sourcesEl.appendChild(labelEl);
+
+        for (let i = 0; i < sources.length; i++) {
+            const sourceInfo = sources[i];
+
+            const linkEl = document.createElement('a');
+            linkEl.setAttribute('href', sourceInfo.url);
+            linkEl.innerText = sourceInfo.label;
+            sourcesEl.appendChild(linkEl);
+
+            if (i < sourceInfo.length - 1) {
+                sourcesEl.appendChild(document.createTextNode(', '));
+            }
+        }
+    }
+
+    return sourcesEl;
+};
+
+
+/**
+ * Return a new section element.
+ *
+ * Args:
+ *     options (object):
+ *         Options for the element.
+ *
+ * Option Args:
+ *     ariaLabel (string, optional):
+ *         The ARIA label assigned to the element.
+ *
+ *     id (string, optional):
+ *         The ID of the element.
+ *
+ *     hasCounters (boolean, optional):
+ *         Whether this section contains counters.
+ *
+ * Returns:
+ *     HTMLElement:
+ *     The new element.
+ */
+BC19.makeSectionElement = function(options) {
+    const sectionEl = document.createElement('section');
+    sectionEl.classList.add('bc19-c-dashboard__section');
+
+    if (options.hasCounters) {
+        sectionEl.classList.add('-has-counters');
+    }
+
+    if (options.id) {
+        sectionEl.id = options.id;
+    }
+
+    if (options.ariaLabel) {
+        sectionEl.setAttribute('aria-label', options.ariaLabel);
+    }
+
+    return sectionEl;
+};
+
+
+/**
  * Set up a billboard.js-backed graph.
  *
  * This will create and render the graph based on a combination of the
