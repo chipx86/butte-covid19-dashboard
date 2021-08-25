@@ -146,7 +146,7 @@ function setupTimelineGraphs() {
                 lines: graphData.notes,
             },
             y: {
-                show: true,
+                show: false,
             },
         },
         axis: {
