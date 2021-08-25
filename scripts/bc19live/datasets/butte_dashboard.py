@@ -214,6 +214,9 @@ def build_dataset(response, out_filename, **kwargs):
         year = 2020
 
         for item in entity['props']['chartData']['data'][0][1:]:
+            if item[0] is None:
+                continue
+
             parts = [
                 int(_i)
                 for _i in item[0].split('/')
