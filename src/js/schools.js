@@ -505,7 +505,7 @@ function setupGraphs() {
 
 BC19.init = function() {
     BC19.loadDashboard(
-        'data/json/bc19-schools.1.min.json',
+        '/data/json/bc19-schools.1.min.json',
         data => {
             const urlParams = new URLSearchParams(window.location.search);
             const year = urlParams.get('year') ||
