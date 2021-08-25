@@ -38,6 +38,27 @@ a:visited {
 }
 
 
+/* Billboard.js theme overrides */
+.bb path,
+.bb line {
+  fill: none;
+  stroke: #999;
+}
+
+.bb text {
+  fill: #555;
+}
+
+.bb-axis-y text,
+.bb-axis-y2 text {
+  fill: #999;
+}
+
+.bb-grid line {
+  stroke: #F1F1F1;
+}
+
+
 /*
  * Bar graph.
  */
@@ -370,9 +391,8 @@ a:visited {
   }
 
   &__header {
-    background: #FFF4DC;
-    border-top: 1px rgba(0, 0, 0, 0.4) solid;
-    border-bottom: 1px rgba(0, 0, 0, 0.4) solid;
+    background: linear-gradient(#FFF4DC, 80%, white);
+    border-top: 1px rgba(0, 0, 0, 0.7) solid;
     margin: 2em 0 0 0;
     padding: 2em;
     text-align: center;
@@ -380,9 +400,11 @@ a:visited {
     &:first-child,
     & + & {
       border-top: 0;
+      margin-top: 0;
     }
 
     &.-is-intro {
+      background: #FFF4DC;
       margin-top: 0;
       text-align: left;
       padding: 1em;
@@ -500,9 +522,11 @@ a:visited {
 
         .bc19-c-dashboard__section-side {
           padding-right: 1em;
+          min-width: 22em;
         }
 
         .bc19-c-dashboard__section-main {
+          width: 100%;
         }
       }
     }
@@ -694,6 +718,7 @@ a:visited {
   .bc19-c-timeline-graph {
     padding-left: 2em;
     padding-right: 3em;
+    width: 100%;
   }
 
   .bc19-c-timeline-graph__subtitle {
