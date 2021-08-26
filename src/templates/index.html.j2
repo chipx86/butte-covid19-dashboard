@@ -161,14 +161,16 @@
          id='school-year-student-cases',
          title='Student Cases This School Year',
          timestamp_key='schools',
-         rel_days=[7, 14]
+         rel_days=[7, 14],
+         up_is_bad=True
      )}}
 
      {{counter(
          id='school-year-staff-cases',
          title='Staff Cases This School Year',
          timestamp_key='schools',
-         rel_days=[7, 14]
+         rel_days=[7, 14],
+         up_is_bad=True
      )}}
 
      {{timeline_graph(

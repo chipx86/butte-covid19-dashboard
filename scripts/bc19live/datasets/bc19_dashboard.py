@@ -1088,10 +1088,12 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
             'schoolYearNewStudentCasesTotal': build_counter_data(
                 school_totals,
                 row_index=len(school_totals) - 1,
+                delta_days=[1, 7, 14],
                 get_value=lambda row: row['students']),
             'schoolYearNewStaffCasesTotal': build_counter_data(
                 school_totals,
                 row_index=len(school_totals) - 1,
+                delta_days=[1, 7, 14],
                 get_value=lambda row: row['staff']),
             'vaccines1DosePct': build_counter_data(
                 rows,
