@@ -237,6 +237,12 @@ function setupNewSection(options) {
 
         if (options.headerChildren) {
             options.headerChildren.forEach(el => headerEl.appendChild(el));
+        } else if (options.headerText) {
+            options.headerText.forEach(html => {
+                const paragraphEl = document.createElement('p');
+                paragraphEl.innerHTML = html;
+                headerEl.appendChild(paragraphEl);
+            });
         }
 
         parentEl.appendChild(headerEl);
@@ -316,10 +322,10 @@ function addDistrictSections(parentEl) {
     const sectionEl = setupNewSection({
         parentEl: parentEl,
         title: 'Districts',
-        headerChildren: [
-            document.createTextNode(
-                'Click or tap a district name to see more information'
-            ),
+        headerText: [
+            ('<em>If a district or school is not listed, it may not ' +
+             'provide public case information.</em>'),
+            'Click or tap a district name to see more information.',
         ],
     });
 

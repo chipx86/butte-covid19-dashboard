@@ -4,6 +4,15 @@
 {% extends "include/base.html.j2" %}
 
 
+{% block notice %}
+   <p class="bc19-c-dashboard__notice">
+	If your school or district isn't listed, it may not provide case data
+	publicly. If you work at one, please reach out to me to find out how we
+	can add your school or district here.
+   </p>
+{% endblock %}
+
+
 {% block sections %}
 
 {%  call header(id='overview-title') -%}
