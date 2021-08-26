@@ -29,9 +29,7 @@ TEMPLATES = [
         'context': {
             # Page header information
             'preview_file': './images/preview.png',
-            'summary': (
-                'Information on COVID-19 cases in Butte County schools',
-            ),
+            'summary': 'Information on COVID-19 cases in Butte County schools',
             'title': 'Unofficial Butte County COVID-19 Schools Dashboard',
 
             # URLs
