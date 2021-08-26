@@ -269,7 +269,34 @@ function makeTile(options) {
     titleEl.setAttribute('href', `?${options.url}`);
     tileEl.appendChild(titleEl);
 
+    if (options.subtitle) {
+        const subtitleEl = document.createElement('div');
+        subtitleEl.classList.add('bc19-c-tiles__tile-subtitle');
+        subtitleEl.innerText = options.subtitle;
+        tileEl.appendChild(subtitleEl);
+    }
+
     return tileEl;
+}
+
+
+function compareGraphCaseSets(name1, maxValues1, name2, maxValues2) {
+    const total1 = maxValues1.totalCases;
+    const total2 = maxValues2.totalCases;
+
+    if (total1 < total2) {
+        return 1;
+    } else if (total1 > total2) {
+        return -1;
+    } else {
+        if (name1 < name2) {
+            return -1;
+        } else if (name1 > name2) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
 }
 
 
@@ -289,12 +316,16 @@ function addDistrictSections(parentEl) {
 
     const districts = BC19.Schools.districts;
 
-    for (let districtID in districts) {
-        if (!districts.hasOwnProperty(districtID)) {
-            continue;
-        }
+    const sortedDistricts = Object.entries(districts).sort(
+        (districtPair1, districtPair2) => compareGraphCaseSets(
+            districtPair1[1],
+            BC19.maxValues.districts[districtPair1[0]],
+            districtPair2[1],
+            BC19.maxValues.districts[districtPair2[0]]));
 
-        const districtInfo = districts[districtID];
+    sortedDistricts.forEach(districtPair => {
+        const districtID = districtPair[0];
+        const districtInfo = districtPair[1];
         const source = districtInfo.source;
         const districtMaxValues = BC19.maxValues.districts[districtID];
 
@@ -303,6 +334,7 @@ function addDistrictSections(parentEl) {
 
         const tileEl = makeTile({
             title: districtInfo.full_name,
+            subtitle: `${districtMaxValues.totalCases} cases`,
             url: urlParams.toString(),
         });
         tilesEl.appendChild(tileEl);
@@ -321,7 +353,7 @@ function addDistrictSections(parentEl) {
             small: true,
             linkTooltip: false,
         });
-    };
+    });
 }
 
 
@@ -341,12 +373,21 @@ function addSchoolSections(parentEl, districtID) {
     const tilesEl = makeTiles();
     sectionEl.appendChild(tilesEl);
 
-    for (let schoolID in schools) {
+    const sortedSchools = Object.entries(schools).sort(
+        (schoolPair1, schoolPair2) => compareGraphCaseSets(
+            schoolPair1[1],
+            BC19.maxValues.schools[schoolPair1[0]],
+            schoolPair2[1],
+            BC19.maxValues.schools[schoolPair2[0]]));
+
+    sortedSchools.forEach(schoolPair => {
+        const schoolID = schoolPair[0];
+
         if (!schools.hasOwnProperty(schoolID)) {
-            continue;
+            return;
         }
 
-        const schoolName = schools[schoolID];
+        const schoolName = schoolPair[1];
         const schoolGraphs = BC19.graphData.schools[schoolID];
         const schoolMaxValues = BC19.maxValues.schools[schoolID];
 
@@ -355,6 +396,7 @@ function addSchoolSections(parentEl, districtID) {
 
         const tileEl = makeTile({
             title: schoolName,
+            subtitle: `${schoolMaxValues.totalCases} cases`,
             url: urlParams.toString(),
         });
         tilesEl.appendChild(tileEl);
@@ -373,7 +415,7 @@ function addSchoolSections(parentEl, districtID) {
             small: true,
             linkTooltip: false,
         });
-    }
+    });
 }
 
 
