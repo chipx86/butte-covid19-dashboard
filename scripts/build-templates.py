@@ -30,10 +30,9 @@ TEMPLATES = [
             # Page header information
             'preview_file': './images/preview.png',
             'summary': (
-                'Detailed trends and information on the COVID-19 situation '
-                'in Butte County.'
+                'Information on COVID-19 cases in Butte County schools',
             ),
-            'title': 'Unofficial Butte County COVID-19 Dashboard',
+            'title': 'Unofficial Butte County COVID-19 Schools Dashboard',
 
             # URLs
             'county_dashboard_url':
