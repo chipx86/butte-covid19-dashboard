@@ -269,6 +269,18 @@ function makeTile(options) {
     titleEl.setAttribute('href', `?${options.url}`);
     tileEl.appendChild(titleEl);
 
+    const cases = options.cases;
+
+    if (cases !== undefined) {
+        if (cases === 0 && !options.casesHaveData) {
+            options.subtitle = '0 cases or no data';
+        } else if (cases === 1) {
+            options.subtitle = '1 case';
+        } else {
+            options.subtitle = `${cases} cases`;
+        }
+    }
+
     if (options.subtitle) {
         const subtitleEl = document.createElement('div');
         subtitleEl.classList.add('bc19-c-tiles__tile-subtitle');
@@ -334,7 +346,7 @@ function addDistrictSections(parentEl) {
 
         const tileEl = makeTile({
             title: districtInfo.full_name,
-            subtitle: `${districtMaxValues.totalCases} cases`,
+            cases: districtMaxValues.totalCases,
             url: urlParams.toString(),
         });
         tilesEl.appendChild(tileEl);
@@ -380,6 +392,9 @@ function addSchoolSections(parentEl, districtID) {
             schoolPair2[1],
             BC19.maxValues.schools[schoolPair2[0]]));
 
+    const casesHaveData = (
+        BC19.maxValues.districts[districtID].totalCases > 0);
+
     sortedSchools.forEach(schoolPair => {
         const schoolID = schoolPair[0];
 
@@ -396,7 +411,8 @@ function addSchoolSections(parentEl, districtID) {
 
         const tileEl = makeTile({
             title: schoolName,
-            subtitle: `${schoolMaxValues.totalCases} cases`,
+            cases: schoolMaxValues.totalCases,
+            casesHaveData: casesHaveData,
             url: urlParams.toString(),
         });
         tilesEl.appendChild(tileEl);
