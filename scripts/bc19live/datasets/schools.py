@@ -358,6 +358,8 @@ DATASETS = [
                 'Honcut Elementary School',
                 'Helen Wilcox Elementary School',
                 'Golden Hills Elementary School',
+            ],
+            'junior_high': [
                 'Palermo School',
             ],
             'other': [
