@@ -380,6 +380,9 @@ DATASETS = [
                 'Paradise Ridge Elementary School',
                 'Pine Ridge Elementary School',
             ],
+            'junior_high': [
+                'Paradise Junior High School',
+            ],
             'high_school': [
                 'Paradise High School',
                 'Ridgeview High School',
