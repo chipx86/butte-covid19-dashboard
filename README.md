@@ -87,6 +87,10 @@ The structures of the data is subject to change.
 
 ### School Data
 
+Added August 26, 2021:
+
+* [Chico Country Day School (JSON)](https://bc19.live/data/json/schools-ccds.json)
+
 Added August 20, 2021:
 
 * [Chico State Cases (JSON)](https://bc19.live/data/json/schools-csuchico.json)
@@ -101,6 +105,7 @@ Added August 15, 2021:
 * [Oroville Union High School District (JSON)](https://bc19.live/data/json/schools-ouhsd.json)
 * [Palermo Union Elementary School District (JSON)](https://bc19.live/data/json/schools-puesd.json)
 * [Paradise Unified School District (JSON)](https://bc19.live/data/json/schools-pusd.json)
+* [All Schools Above (JSON)](https://bc19.live/data/json/schools.json)
 
 
 ### Legacy Data

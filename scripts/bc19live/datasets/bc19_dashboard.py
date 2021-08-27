@@ -2000,6 +2000,10 @@ DATASETS = [
         },
         'parser': build_schools_dataset,
         'districts': [
+            ('ccds', {
+                'short_name': 'Chico Country Day School',
+                'full_name': 'Chico Country Day School',
+            }),
             ('csuchico', {
                 'short_name': 'Chico State',
                 'full_name': 'Chico State',
