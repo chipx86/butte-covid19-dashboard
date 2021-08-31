@@ -1929,7 +1929,7 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
             for _school_year in school_years
         },
         'monitoringTier': bc19_dashboard['monitoringTier'],
-        'reportTimestamp': bc19_dashboard['reportTimestamp'],
+        'reportTimestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'schools': {
             _district_id: {
                 _school_id: _school_name
