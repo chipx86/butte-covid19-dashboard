@@ -476,6 +476,8 @@ function setupGraphs() {
         overviewTitleEl.innerHTML =
             `<h2>${districtName}</h2>` +
             `<a href="?${allDistrictsURL}">See all districts</a>`;
+
+        document.title = `${districtName} | ${document.title}`;
     } else if (mode === 'school') {
         barGraphData = {};
         counters = BC19.countersData.schools[school];
@@ -496,6 +498,8 @@ function setupGraphs() {
             `<h2>${schoolName}</h2>` +
             `<h3><a href="?${districtURL}">${districtName}</a></h3>` +
             `<a href="?${allDistrictsURL}">See all districts</a>`;
+
+        document.title = `${schoolName} | ${document.title}`;
     }
 
     console.assert(maxValues);
