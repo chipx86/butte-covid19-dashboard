@@ -1517,6 +1517,11 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
             for school_type, school_name in info['school_types']:
                 self.school_types[school_type] = CaseDataState()
 
+        @property
+        def sorted_schools(self):
+            return sorted(self.schools.items(),
+                          key=lambda pair: pair[0])
+
         def add_cases(self, school, school_type, *cases):
             super().add_cases(*cases)
 
@@ -1568,6 +1573,16 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
                 for _district_id in self.districts.keys()
             }
             self.week_schools_with_cases = [set()]
+
+        @property
+        def sorted_districts(self):
+            return sorted(self.districts.items(),
+                          key=lambda pair: pair[0])
+
+        @property
+        def sorted_schools(self):
+            return sorted(self.schools.items(),
+                          key=lambda pair: pair[0])
 
         def add_cases(self, district, school, school_type,
                       student_local_cases, student_remote_cases,
@@ -1795,7 +1810,7 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
                             data_id=_district_id,
                             label=_district.short_name)
                         for (_district_id,
-                             _district) in _school_year.districts.items()
+                             _district) in _school_year.sorted_districts
                     ],
                     'casesByGradeLevel': [
                         build_bar_graph_data(
@@ -1815,7 +1830,7 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
                                 data_id=_school_id,
                                 label=_school.name)
                             for (_school_id,
-                                 _school) in _district.schools.items()
+                                 _school) in _district.sorted_schools
                         ],
                         'casesByGradeLevel': [
                             build_bar_graph_data(
@@ -1826,7 +1841,7 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
                         ],
                     }
                     for (_district_id,
-                         _district) in _school_year.districts.items()
+                         _district) in _school_year.sorted_districts
                 },
             }
             for _school_year in school_years
