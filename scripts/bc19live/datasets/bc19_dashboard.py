@@ -1711,6 +1711,14 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
                     for school_year_state in self.school_years.values():
                         school_year_state.ensure_school(district_id, school)
 
+            # Check if we're processing this in a new week. If so, then we need
+            # to finalize again, once for each week that's elapsed, because we
+            # don't want the last week's worth of data to show up as current.
+            for i in range(datetime.today().isocalendar()[1] -
+                           date.isocalendar()[1]):
+                self.cur_school_year_state.finalize_week()
+
+
     def make_id(name):
         return SCHOOL_ID_ESCAPE_RE.sub('_', name)
 
@@ -1786,12 +1794,6 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
 
         if date.weekday() == 5:
             state.finalize_week()
-
-    # Check if we're processing this in a new week. If so, then we need to
-    # finalize again, once for each week that's elapsed, because we don't want
-    # the last week's worth of data to show up as current.
-    for i in range(datetime.today().isocalendar()[1] - date.isocalendar()[1]):
-        school_year.finalize_week()
 
     state.finalize()
 
