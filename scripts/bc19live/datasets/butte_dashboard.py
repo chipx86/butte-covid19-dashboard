@@ -334,7 +334,7 @@ def build_dataset(response, out_filename, **kwargs):
         },
         'hospitalized': {
             'labels': ['currently hospitalized'],
-            'entity_id': '3f7e639a-c67b-48b3-8b29-f552c9a30dcf',
+            'entity_id': '3e7ad00d-727d-436a-bdf6-edef227d7c28',
         },
         'vaccines_total_allocation': {
             'labels': ['total vaccine allocation for butte county'],
