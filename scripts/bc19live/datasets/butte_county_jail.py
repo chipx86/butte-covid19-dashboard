@@ -43,8 +43,7 @@ def build_dataset(response, out_filename, **kwargs):
 
     content = m.group(1)
 
-    m = re.search(r'DAILY COVID-19 UPDATE FOR ([A-Za-z]+) (\d+), (20\d{2}) '
-                  r'\(Updated',
+    m = re.search(r'DAILY COVID-19 UPDATE FOR ([A-Za-z]+) (\d+), (20\d{2})',
                   content)
 
     if not m:
