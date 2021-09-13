@@ -2017,6 +2017,11 @@ DATASETS = [
         },
         'parser': build_schools_dataset,
         'districts': [
+            ('buttecollege', {
+                'short_name': 'Butte College',
+                'full_name': 'Butte College',
+                'source': 'https://www.butte.edu/coronavirus/',
+            }),
             ('ccds', {
                 'short_name': 'Chico Country Day School',
                 'full_name': 'Chico Country Day School',
@@ -2038,7 +2043,10 @@ DATASETS = [
             ('inspire', {
                 'short_name': 'Inspire',
                 'full_name': 'Inspire School',
-                'source': 'https://docs.google.com/spreadsheets/d/1-DTOcPmoYiOK-9wPMqMFoT6D9ViFznb9H15lzx-yzBE/edit#gid=0',
+            }),
+            ('nordcountryschool', {
+                'short_name': 'Nord Country School',
+                'full_name': 'Nord Country School',
             }),
             ('ocesd', {
                 'short_name': 'Oroville City Elementary',

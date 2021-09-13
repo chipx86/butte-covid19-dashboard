@@ -202,6 +202,17 @@ def build_all_schools_json(in_fps, out_filename, info, **kwargs):
 
 DATASETS = [
     {
+        'filename': 'schools-buttecollege.json',
+        'format': 'json',
+        'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRUZCiEH2327_GwtD13qx-R6QpZOx5nv3UnnG-bFd-t-dwAv_OqYTiQLI55-vL_TfOsbsFtbK-lwJyx/pub/sheet?gid=87360889&single=true&output=csv',
+        'parser': build_district_json,
+        'school_types': {
+            'college': [
+                'Butte College',
+            ],
+        },
+    },
+    {
         'filename': 'schools-ccds.json',
         'format': 'json',
         'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRUZCiEH2327_GwtD13qx-R6QpZOx5nv3UnnG-bFd-t-dwAv_OqYTiQLI55-vL_TfOsbsFtbK-lwJyx/pub/sheet?gid=1453653551&output=csv',
@@ -303,6 +314,18 @@ DATASETS = [
         },
     },
     {
+        'filename': 'schools-nordcountryschool.json',
+        'format': 'json',
+        'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRUZCiEH2327_GwtD13qx-R6QpZOx5nv3UnnG-bFd-t-dwAv_OqYTiQLI55-vL_TfOsbsFtbK-lwJyx/pub?gid=663814162&single=true&output=csv',
+        'parser': build_district_json,
+        'has_grades': True,
+        'school_types': {
+            'elementary': [
+                'Nord Country School',
+            ],
+        },
+    },
+    {
         'filename': 'schools-ocesd.json',
         'format': 'json',
         'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRUZCiEH2327_GwtD13qx-R6QpZOx5nv3UnnG-bFd-t-dwAv_OqYTiQLI55-vL_TfOsbsFtbK-lwJyx/pub/sheet?gid=814817652&output=csv',
@@ -400,6 +423,10 @@ DATASETS = [
         'format': 'json',
         'parser': build_all_schools_json,
         'local_sources': {
+            'buttecollege': {
+                'filename': 'schools-buttecollege.json',
+                'format': 'json',
+            },
             'ccds': {
                 'filename': 'schools-ccds.json',
                 'format': 'json',
@@ -420,6 +447,10 @@ DATASETS = [
                 'filename': 'schools-inspire.json',
                 'format': 'json',
             },
+            'nordcountryschool': {
+                'filename': 'schools-nordcountryschool.json',
+                'format': 'json',
+            },
             'ocesd': {
                 'filename': 'schools-ocesd.json',
                 'format': 'json',
@@ -438,11 +469,13 @@ DATASETS = [
             },
         },
         'district_key_map': {
+            'buttecollege': 'Butte College',
             'ccds': 'Chico Country Day School',
             'csuchico': 'Chico State',
             'cusd': 'Chico Unified School District',
             'dusd': 'Durham Unified School District',
             'inspire': 'Inspire School',
+            'nordcountryschool': 'Nord Country School',
             'ocesd': 'Oroville City Elementary School District',
             'ouhsd': 'Oroville Union High School District',
             'puesd': 'Palermo Union Elementary School District',
