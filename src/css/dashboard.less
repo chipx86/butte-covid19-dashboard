@@ -617,6 +617,17 @@ a:visited {
     grid: auto-flow e('/') repeat(3, 33%);
   }
 
+  &__tile-delta {
+      color: @color-red;
+      margin-left: 1em;
+      font-size: 85%;
+
+      &::before {
+        content: @symbol-up-arrow;
+        font-size: 80%;
+      }
+  }
+
   &__tile-header {
     font-size: 115%;
 

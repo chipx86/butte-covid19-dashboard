@@ -292,6 +292,16 @@ function makeTile(options) {
         subtitleEl.classList.add('bc19-c-tiles__tile-subtitle');
         subtitleEl.innerText = options.subtitle;
         tileEl.appendChild(subtitleEl);
+
+        const deltaCases = options.deltaCases;
+
+        if (deltaCases) {
+            const deltaEl = document.createElement('span');
+            deltaEl.classList.add('bc19-c-tiles__tile-delta');
+            deltaEl.setAttribute('title', `${deltaCases} new cases`);
+            deltaEl.innerText = deltaCases;
+            subtitleEl.appendChild(deltaEl);
+        }
     }
 
     return tileEl;
@@ -341,6 +351,12 @@ function addDistrictSections(parentEl) {
             districtPair2[1],
             BC19.maxValues.districts[districtPair2[0]]));
 
+    const caseRelValues = {};
+
+    BC19.barGraphsData.countyWide.casesByDistrict.forEach(data => {
+        caseRelValues[data.data_id] = data.relValue;
+    });
+
     sortedDistricts.forEach(districtPair => {
         const districtID = districtPair[0];
         const districtInfo = districtPair[1];
@@ -353,6 +369,7 @@ function addDistrictSections(parentEl) {
         const tileEl = makeTile({
             title: districtInfo.full_name,
             cases: districtMaxValues.totalCases,
+            deltaCases: caseRelValues[districtID],
             url: urlParams.toString(),
         });
         tilesEl.appendChild(tileEl);
@@ -398,10 +415,16 @@ function addSchoolSections(parentEl, districtID) {
             schoolPair2[1],
             BC19.maxValues.schools[schoolPair2[0]]));
 
+    const caseRelValues = {};
+
+    BC19.barGraphsData.districts[districtID].casesBySchool.forEach(data => {
+        caseRelValues[data.data_id] = data.relValue;
+    });
+
     const casesHaveData = (
         BC19.maxValues.districts[districtID].totalCases > 0);
 
-    sortedSchools.forEach(schoolPair => {
+    sortedSchools.forEach((schoolPair, i) => {
         const schoolID = schoolPair[0];
 
         if (!schools.hasOwnProperty(schoolID)) {
@@ -419,6 +442,7 @@ function addSchoolSections(parentEl, districtID) {
             title: schoolName,
             cases: schoolMaxValues.totalCases,
             casesHaveData: casesHaveData,
+            deltaCases: caseRelValues[schoolID],
             url: urlParams.toString(),
         });
         tilesEl.appendChild(tileEl);
