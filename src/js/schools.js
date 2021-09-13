@@ -469,13 +469,15 @@ function setupGraphs() {
 
         const districtName = BC19.Schools.districts[district].full_name;
 
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.delete('district');
-        const allDistrictsURL = urlParams.toString();
+        if (!BC19.Schools.isEmbedded) {
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.delete('district');
+            const allDistrictsURL = urlParams.toString();
 
-        overviewTitleEl.innerHTML =
-            `<h2>${districtName}</h2>` +
-            `<a href="?${allDistrictsURL}">See all districts</a>`;
+            overviewTitleEl.innerHTML =
+                `<h2>${districtName}</h2>` +
+                `<a href="?${allDistrictsURL}">See all districts</a>`;
+        }
 
         document.title = `${districtName} | ${document.title}`;
     } else if (mode === 'school') {
@@ -487,17 +489,19 @@ function setupGraphs() {
         const districtName = BC19.Schools.districts[district].full_name;
         const schoolName = BC19.Schools.schools[district][school];
 
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.delete('school');
-        const districtURL = urlParams.toString();
+        if (!BC19.Schools.isEmbedded) {
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.delete('school');
+            const districtURL = urlParams.toString();
 
-        urlParams.delete('district');
-        const allDistrictsURL = urlParams.toString();
+            urlParams.delete('district');
+            const allDistrictsURL = urlParams.toString();
 
-        overviewTitleEl.innerHTML =
-            `<h2>${schoolName}</h2>` +
-            `<h3><a href="?${districtURL}">${districtName}</a></h3>` +
-            `<a href="?${allDistrictsURL}">See all districts</a>`;
+            overviewTitleEl.innerHTML =
+                `<h2>${schoolName}</h2>` +
+                `<h3><a href="?${districtURL}">${districtName}</a></h3>` +
+                `<a href="?${allDistrictsURL}">See all districts</a>`;
+        }
 
         document.title = `${schoolName} | ${document.title}`;
     }
@@ -576,6 +580,7 @@ BC19.init = function() {
         '/data/json/bc19-schools.1.min.json',
         data => {
             const urlParams = new URLSearchParams(window.location.search);
+            const embed = urlParams.get('embed');
             const year = urlParams.get('year') ||
                          data.schoolYears[data.schoolYears.length - 1];
             const school = urlParams.get('school');
@@ -599,6 +604,7 @@ BC19.init = function() {
             BC19.Schools.schools = data.schools;
             BC19.Schools.schoolYears = data.schoolYears;
             BC19.Schools.urlParams = urlParams;
+            BC19.Schools.isEmbedded = !!embed;
 
             BC19.processDashboardData({
                 barGraphs: data.barGraphs[year],
@@ -610,6 +616,10 @@ BC19.init = function() {
                 reportTimestamp: data.reportTimestamp,
                 timelineGraphs: data.timelineGraphs[year],
             });
+
+            if (embed) {
+                document.body.classList.add('-is-embedded');
+            }
 
             setupElements();
 
