@@ -92,7 +92,6 @@ function setupBarGraphs() {
  *     * % of Cases In Each Batch of Test Results
  *     * Test Results
  *     * Total Hospitalizations vs. ICU
- *     * Hospitalized Butte County Residents
  *     * People In Isolation
  *     * Skilled Nursing Facility Cases
  *     * Skilled Nursing Facility Deaths
@@ -1182,43 +1181,6 @@ function setupTimelineGraphs() {
         },
         legend: {
             show: true,
-        },
-        axis: {
-            x: axisX,
-            y: {
-                max: BC19.getMaxY(maxValues.hospitalizations,
-                                  tickCounts.STANDARD),
-                padding: 0,
-                tick: {
-                    stepSize: BC19.getStepSize(maxValues.hospitalizations,
-                                               tickCounts.STANDARD),
-                },
-            },
-        },
-    });
-
-    BC19.setupBBGraph({
-        bindto: '#hospitalized_residents_timeline_graph',
-        size: {
-            height: BC19.graphSizes.STANDARD,
-        },
-        data: {
-            x: 'date',
-            colors: BC19.colors,
-            columns: [
-                graphData.dates,
-                graphData.hospitalizations.residents,
-            ],
-            names: {
-                residents: 'County Residents',
-            },
-            order: null,
-            types: {
-                residents: 'area-step',
-            },
-        },
-        legend: {
-            show: false,
         },
         axis: {
             x: axisX,
