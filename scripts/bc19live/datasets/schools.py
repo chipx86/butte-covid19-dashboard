@@ -247,6 +247,8 @@ DATASETS = [
                 'McManus Elementary School',
                 'Little Chico Creek Elementary School',
                 'Marigold/Loma Vista School',
+                'Marigold School: Marigold K-5',
+                'Marigold School: Loma Vista',
                 'Neal Dow Elementary School',
                 'Parkview Elementary School',
                 'Rosedale Elementary School',
