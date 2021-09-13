@@ -1061,7 +1061,7 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
                 rows,
                 row_index=latest_cases_row_index,
                 get_value=lambda row: row['deaths']['total'],
-                delta_days=[1, 7, 14, 30]),
+                delta_days=[1, 30, 60, 90]),
             'inIsolation': build_counter_data(
                 rows,
                 row_index=latest_isolation_row_index,
