@@ -336,31 +336,6 @@ def build_dataset(response, out_filename, **kwargs):
             'labels': ['currently hospitalized'],
             'entity_id': '3e7ad00d-727d-436a-bdf6-edef227d7c28',
         },
-        'vaccines_total_allocation': {
-            'labels': ['total vaccine allocation for butte county'],
-            'entity_id': '6735874d-4394-4f10-92c4-60a861aef46f',
-        },
-        'vaccines_total_received': {
-            'labels': ['total vaccine received'],
-            'entity_id': 'f844fcb6-6b99-4267-8491-9f43e47bcc63',
-        },
-        'vaccines_total_first_doses_ordered': {
-            'labels': ['total number of first doses ordered'],
-            'entity_id': '70ab4c6c-10c4-4f04-ae90-d9a0ddcdffca',
-        },
-        'vaccines_total_second_doses_ordered': {
-            'labels': ['total number of second doses ordered'],
-            'entity_id': '8637a3ab-5335-467d-95b8-53f413a74238',
-        },
-        'vaccines_total_administered': {
-            'labels': ['total administered vaccines*'],
-            'entity_id': '74e76670-078b-40b9-8ec5-b61159126122',
-        },
-        'vaccines_total_fully_vaccinated': {
-            'labels': ['total number of fully vaccinated butte county '
-                       'residents*'],
-            'entity_id': 'b402bf81-a3db-4129-9be3-204449596cf0',
-        },
     }
 
     CHART_KEYS_TO_ENTITIES = {
@@ -378,7 +353,7 @@ def build_dataset(response, out_filename, **kwargs):
     }
 
     STACKED_BAR_CHART_KEYS_TO_ENTITIES = {
-        'sequenced_variants': '6b5fa17c-275b-457e-b676-bcca85e4107f',
+        'sequenced_variants': 'f96daffb-b27b-458a-a474-b7460bee5415',
     }
 
     scraped_data = {
@@ -521,16 +496,12 @@ def build_dataset(response, out_filename, **kwargs):
                 'gridley': None,
             },
             'vaccines': {
-                'total_allocation': scraped_data['vaccines_total_allocation'],
-                'total_administered':
-                    scraped_data['vaccines_total_administered'],
-                'total_received': scraped_data['vaccines_total_received'],
-                'total_first_doses_ordered':
-                    scraped_data['vaccines_total_first_doses_ordered'],
-                'total_second_doses_ordered':
-                    scraped_data['vaccines_total_second_doses_ordered'],
-                'total_fully_vaccinated':
-                    scraped_data['vaccines_total_fully_vaccinated'],
+                'total_allocation': None,
+                'total_administered': None,
+                'total_received': None,
+                'total_first_doses_ordered': None,
+                'total_second_doses_ordered': None,
+                'total_fully_vaccinated': None,
                 'as_of_date': vaccines_datestamp.strftime('%Y-%m-%d'),
             },
             'history': scraped_history_data,
