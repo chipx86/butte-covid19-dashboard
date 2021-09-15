@@ -475,6 +475,7 @@ function setupGraphs() {
     let counters;
     let graphData;
     let maxValues;
+    let notice;
 
     const overviewTitleEl = document.getElementById('overview-title');
 
@@ -490,6 +491,7 @@ function setupGraphs() {
         counters = BC19.countersData.districts[district];
         graphData = BC19.graphData.districts[district];
         maxValues = BC19.maxValues.districts[district];
+        notice = BC19.Schools.notices.districts[district];
 
         const districtName = BC19.Schools.districts[district].full_name;
 
@@ -509,6 +511,7 @@ function setupGraphs() {
         counters = BC19.countersData.schools[school];
         graphData = BC19.graphData.schools[school];
         maxValues = BC19.maxValues.schools[school];
+        notice = BC19.Schools.notices.districts[district];
 
         const districtName = BC19.Schools.districts[district].full_name;
         const schoolName = BC19.Schools.schools[district][school];
@@ -532,6 +535,10 @@ function setupGraphs() {
 
     console.assert(maxValues);
     console.assert(graphData);
+
+    if (notice) {
+        overviewTitleEl.innerHTML += `<p class="bc19-c-notice">${notice}</p>`;
+    }
 
     BC19.setCounter('student-cases-counter', counters.studentCases);
     BC19.setCounter('staff-cases-counter', counters.staffCases);
@@ -625,6 +632,7 @@ BC19.init = function() {
             BC19.Schools.curSchool = school;
             BC19.Schools.districts = data.districts;
             BC19.Schools.mode = mode;
+            BC19.Schools.notices = data.notices;
             BC19.Schools.schools = data.schools;
             BC19.Schools.schoolYears = data.schoolYears;
             BC19.Schools.urlParams = urlParams;
