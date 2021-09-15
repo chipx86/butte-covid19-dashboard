@@ -1929,6 +1929,7 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
             for _school_year in school_years
         },
         'monitoringTier': bc19_dashboard['monitoringTier'],
+        'notices': info['notices'],
         'reportTimestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'schools': {
             _district_id: {
@@ -2077,5 +2078,15 @@ DATASETS = [
             ('college', 'College'),
             ('other', 'Other'),
         ],
+        'notices': {
+            'districts': {
+                'pusd': (
+                    "Due to a change in Paradise Unified School District's "
+                    "reporting on September 15th, I can no longer accurately "
+                    "track or report on numbers. If you work for the "
+                    "district, please contact me."
+                ),
+            },
+        },
     },
 ]
