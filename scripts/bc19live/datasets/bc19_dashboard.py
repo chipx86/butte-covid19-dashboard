@@ -1799,9 +1799,6 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
 
     school_years = state.school_years.values()
 
-    import pprint
-    pprint.pprint(state.cur_school_year_state.week_district_schools_with_cases)
-
     result = {
         'barGraphs': {
             _school_year.year: {
