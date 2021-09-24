@@ -87,6 +87,10 @@ The structures of the data is subject to change.
 
 ### School Data
 
+Added September 23, 2021:
+
+* [Biggs Unified School District (JSON)](https://bc19.live/data/json/schools-busd.json)
+
 Added August 26, 2021:
 
 * [Chico Country Day School (JSON)](https://bc19.live/data/json/schools-ccds.json)

@@ -2018,6 +2018,11 @@ DATASETS = [
         },
         'parser': build_schools_dataset,
         'districts': [
+            ('busd', {
+                'short_name': 'Biggs Unified',
+                'full_name': 'Biggs Unified School District',
+                'source': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT2pZkDGxGGeyUJhEHtfOdYdl0k0NWMpjfocw2jGaYi0s0opjDKC6ESOuDzTwB-QIrlWzxAXy5M0AbZ/pubhtml',
+            }),
             ('buttecollege', {
                 'short_name': 'Butte College',
                 'full_name': 'Butte College',
