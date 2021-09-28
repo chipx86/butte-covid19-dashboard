@@ -2029,6 +2029,10 @@ DATASETS = [
                 'short_name': 'Chico Country Day School',
                 'full_name': 'Chico Country Day School',
             }),
+            ('corebutte', {
+                'short_name': 'CORE Butte',
+                'full_name': 'CORE Butte Charter School',
+            }),
             ('csuchico', {
                 'short_name': 'Chico State',
                 'full_name': 'Chico State',

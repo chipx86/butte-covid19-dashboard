@@ -87,6 +87,10 @@ The structures of the data is subject to change.
 
 ### School Data
 
+Added September 28, 2021:
+
+* [CORE Butte Charter School (JSON)](https://bc19.live/data/json/schools-corebutte.json)
+
 Added September 23, 2021:
 
 * [Biggs Unified School District (JSON)](https://bc19.live/data/json/schools-busd.json)

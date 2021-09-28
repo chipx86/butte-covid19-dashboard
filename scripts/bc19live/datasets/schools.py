@@ -304,6 +304,23 @@ DATASETS = [
         },
     },
     {
+        'filename': 'schools-corebutte.json',
+        'format': 'json',
+        'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRUZCiEH2327_GwtD13qx-R6QpZOx5nv3UnnG-bFd-t-dwAv_OqYTiQLI55-vL_TfOsbsFtbK-lwJyx/pub?gid=337564809&single=true&output=csv',
+        'parser': build_district_json,
+        'school_types': {
+            'elementary': [
+                'CORE Butte TK-8',
+            ],
+            'high_school': [
+                'CORE Butte High School',
+            ],
+            'other': [
+                'Administrative Office',
+            ],
+        },
+    },
+    {
         'filename': 'schools-dusd.json',
         'format': 'json',
         'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRUZCiEH2327_GwtD13qx-R6QpZOx5nv3UnnG-bFd-t-dwAv_OqYTiQLI55-vL_TfOsbsFtbK-lwJyx/pub/sheet?gid=407839734&output=csv',
@@ -461,6 +478,10 @@ DATASETS = [
                 'filename': 'schools-cusd.json',
                 'format': 'json',
             },
+            'corebutte': {
+                'filename': 'schools-corebutte.json',
+                'format': 'json',
+            },
             'dusd': {
                 'filename': 'schools-dusd.json',
                 'format': 'json',
@@ -496,6 +517,7 @@ DATASETS = [
             'ccds': 'Chico Country Day School',
             'csuchico': 'Chico State',
             'cusd': 'Chico Unified School District',
+            'corebutte': 'CORE Butte Charter School',
             'dusd': 'Durham Unified School District',
             'inspire': 'Inspire School',
             'nordcountryschool': 'Nord Country School',
