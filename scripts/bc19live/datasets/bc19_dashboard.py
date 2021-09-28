@@ -2086,12 +2086,6 @@ DATASETS = [
         ],
         'notices': {
             'districts': {
-                'pusd': (
-                    "Due to a change in Paradise Unified School District's "
-                    "reporting on September 15th, I can no longer accurately "
-                    "track or report on numbers. If you work for the "
-                    "district, please contact me."
-                ),
             },
         },
     },
