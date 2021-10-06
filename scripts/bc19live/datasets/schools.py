@@ -202,6 +202,17 @@ def build_all_schools_json(in_fps, out_filename, info, **kwargs):
 
 DATASETS = [
     {
+        'filename': 'schools-blueoak.json',
+        'format': 'json',
+        'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRUZCiEH2327_GwtD13qx-R6QpZOx5nv3UnnG-bFd-t-dwAv_OqYTiQLI55-vL_TfOsbsFtbK-lwJyx/pub?gid=1369610365&single=true&output=csv',
+        'parser': build_district_json,
+        'school_types': {
+            'elementary': [
+                'Blue Oak Charter School',
+            ],
+        },
+    },
+    {
         'filename': 'schools-busd.json',
         'format': 'json',
         'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRUZCiEH2327_GwtD13qx-R6QpZOx5nv3UnnG-bFd-t-dwAv_OqYTiQLI55-vL_TfOsbsFtbK-lwJyx/pub?gid=1409133151&single=true&output=csv',
@@ -458,6 +469,10 @@ DATASETS = [
         'format': 'json',
         'parser': build_all_schools_json,
         'local_sources': {
+            'blueoak': {
+                'filename': 'schools-blueoak.json',
+                'format': 'json',
+            },
             'busd': {
                 'filename': 'schools-busd.json',
                 'format': 'json',
@@ -512,6 +527,7 @@ DATASETS = [
             },
         },
         'district_key_map': {
+            'blueoak': 'Blue Oak Charter School',
             'busd': 'Biggs Unified School District',
             'buttecollege': 'Butte College',
             'ccds': 'Chico Country Day School',

@@ -2015,6 +2015,10 @@ DATASETS = [
         },
         'parser': build_schools_dataset,
         'districts': [
+            ('blueoak', {
+                'short_name': 'Blue Oak',
+                'full_name': 'Blue Oak Charter School',
+            }),
             ('busd', {
                 'short_name': 'Biggs Unified',
                 'full_name': 'Biggs Unified School District',

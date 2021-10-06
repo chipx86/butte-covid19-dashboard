@@ -87,6 +87,10 @@ The structures of the data is subject to change.
 
 ### School Data
 
+Added October 5, 2021:
+
+* [Blue Oak Charter School (JSON)](https://bc19.live/data/json/schools-blueoak.json)
+
 Added September 28, 2021:
 
 * [CORE Butte Charter School (JSON)](https://bc19.live/data/json/schools-corebutte.json)
