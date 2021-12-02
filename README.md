@@ -70,9 +70,10 @@ The following data is made available for others to use:
 * [State Skilled Nursing Facilities - Butte County Only (CSV)](https://bc19.live/data/csv/skilled-nursing-facilities-v3.csv)
 * [State Hospital Case Statistics - Butte County Only (CSV)](https://bc19.live/data/csv/state-hospitals-v3.csv)
 * [State Tests - Butte County Only (CSV)](https://bc19.live/data/csv/state-tests.csv)
-* [State Vaccines Administered Statistics (CSV)](https://bc19.live/data/csv/chhs-vaccinations-administered.csv)
-* [State Vaccine Demographics - Butte County Only (JSON)](https://bc19.live/data/json/vaccination-demographics.json)
-* [State Vaccine Demographics - Butte County Only (CSV)](https://bc19.live/data/json/vaccination-demographics-v2.csv)
+* [State Vaccines Demographics (JSON)](https://bc19.live/data/json/vaccination-demographics-v3.json)
+* [State Vaccines Demographics - Ages (CSV)](https://bc19.live/data/csv/vaccination-demographics-ages.csv)
+* [State Vaccines Demographics - Ethnicity (CSV)](https://bc19.live/data/csv/vaccination-demographics-ethnicity.csv)
+* [State Vaccines Demographics - VEM Quartiles (CSV)](https://bc19.live/data/csv/vaccination-demographics-vem-quartiles.csv)
 
 
 ### Dashboard-Specific Data
@@ -131,3 +132,5 @@ This data is no longer updated, and is provided for historical reasons.
 * [State Resources - Butte County Only (CSV)](https://bc19.live/data/csv/state-resources.csv)
 * [State Resources - Butte County Only (JSON)](https://bc19.live/data/json/state-resources.json)
 * [Stay-at-Home Regions Information (JSON)](https://bc19.live/data/json/stay-at-home.json)
+* [State Vaccine Demographics - Butte County Only (JSON)](https://bc19.live/data/json/vaccination-demographics.json)
+* [State Vaccine Demographics - Butte County Only (CSV)](https://bc19.live/data/json/vaccination-demographics-v2.csv)

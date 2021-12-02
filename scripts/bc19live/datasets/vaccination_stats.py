@@ -1,23 +1,28 @@
+import codecs
+import csv
+import itertools
 import json
 from datetime import datetime
 
 from bc19live.utils import (add_or_update_json_date_row,
-                            convert_json_to_csv)
+                            convert_json_to_csv,
+                            parse_real,
+                            safe_open_for_write)
 
 
-def build_demographic_stats_json_dataset(session, responses, out_filename,
+def build_demographic_stats_json_dataset(session, response, out_filename,
                                          **kwargs):
     """Build JSON data for vaccination demographic stats.
 
-    This parses the datasets that make up https://covid19.ca.gov/vaccines/
-    and creates a dataset with all stats for Butte County.
+    This parses the vaccination stats dataset and creates a dataset with
+    all stats for Butte County.
 
     Args:
         session (requests.Session):
             The HTTP request session, for cookie management.
 
-        responses (dict):
-            A mapping of keys to HTTP responses.
+        response (requests.Respone):
+            The HTTP response containing the CSV file.
 
         out_filename (str):
             The name of the outputted JSON file.
@@ -34,34 +39,88 @@ def build_demographic_stats_json_dataset(session, responses, out_filename,
             Expected data was missing or was in an unexpected format. Detailed
             information will be in the error message.
     """
-    def _gen_data(key):
-        return {
-            row['CATEGORY']: row['METRIC_VALUE']
-            for row in payloads[key]['data']
+    def _int_or_none(value):
+        if value == 'None':
+            return value
+
+        return parse_real(value)
+
+    lines = response.iter_lines()
+    reader = csv.DictReader(codecs.iterdecode(lines, 'utf-8'),
+                            delimiter=',')
+    cur_date = None
+    dates = {}
+
+    category_map = {
+        'Age Group': 'age',
+        'Race/Ethnicity': 'ethnicity',
+        'VEM Quartile': 'vem_quartiles',
+    }
+
+    for row in reader:
+        if row['county'] != 'Butte':
+            continue
+
+        category_key = category_map.get(row['demographic_category'])
+
+        if not category_key:
+            continue
+
+        date = row['administered_date']
+        demographic = row['demographic_value']
+
+        info = dates.setdefault(date, {
+            'age': {},
+            'date': date,
+            'ethnicity': {},
+            'vem_quartiles': {},
+        })
+
+        payload = {
+            'population': {
+                'total': _int_or_none(row['est_population']),
+            },
+            'vaccinated': {
+                'new_partial': _int_or_none(row['partially_vaccinated']),
+                'total_partial':
+                    _int_or_none(row['total_partially_vaccinated']),
+                'new_full': _int_or_none(row['fully_vaccinated']),
+                'total_full':
+                    _int_or_none(row['cumulative_fully_vaccinated']),
+                'total_one_plus_dose':
+                    _int_or_none(row['cumulative_at_least_one_dose']),
+            },
+            'unvaccinated': {
+                'total': _int_or_none(row['cumulative_unvax_total_pop']),
+            },
         }
 
-    payloads = {}
-    cur_date = None
+        if category_key != 'age':
+            payload['population'].update({
+                'total_age_12_plus': _int_or_none(row['est_age_12plus_pop']),
+                'total_age_5_plus': _int_or_none(row['est_age_5plus_pop']),
+            })
 
-    for key, response in responses.items():
-        payload = json.loads(response.text)
-        date = datetime.strptime(payload['meta']['LATEST_ADMIN_DATE'],
-                                 '%Y-%m-%d')
+            payload['unvaccinated'].update({
+                'total_age_12_plus':
+                    _int_or_none(row['cumulative_unvax_12plus_pop']),
+                'total_age_5_plus':
+                    _int_or_none(row['cumulative_unvax_5plus_pop']),
+            })
 
-        if (date > datetime.now() or
-            (cur_date is not None and cur_date != date)):
-            # This isn't today's date, or there's an inconsistency. Skip it.
-            return False
+        payload = info[category_key][demographic] = payload
 
-        payloads[key] = payload
-        cur_date = date
 
-    add_or_update_json_date_row(out_filename, {
-        'date': cur_date.strftime('%Y-%m-%d'),
-        'age': _gen_data('age'),
-        'ethnicity': _gen_data('ethnicity'),
-        'genders': _gen_data('gender'),
-    })
+    with safe_open_for_write(out_filename) as fp:
+        json.dump(
+            [
+                _info
+                for _date, _info in sorted(dates.items(),
+                                           key=lambda pair: pair[0])
+            ],
+            fp,
+            sort_keys=True,
+            indent=2)
 
     return True
 
@@ -104,55 +163,111 @@ DATASETS = [
         },
     },
     {
-        'filename': 'vaccination-demographics.json',
+        'filename': 'vaccination-demographics-v3.json',
         'format': 'json',
-        'urls': {
-            'age': (
-                'https://files.covid19.ca.gov/data/vaccine-equity/age/'
-                'vaccines_by_age_butte.json'
-            ),
-            'ethnicity': (
-                'https://files.covid19.ca.gov/data/vaccine-equity/'
-                'race-ethnicity/vaccines_by_race_ethnicity_butte.json'
-            ),
-            'gender': (
-                'https://files.covid19.ca.gov/data/vaccine-equity/gender/'
-                'vaccines_by_gender_butte.json'
-            ),
-        },
+        'url': 'https://data.chhs.ca.gov/dataset/e283ee5a-cf18-4f20-a92c-ee94a2866ccd/resource/71729331-2f09-4ea4-a52f-a2661972e146/download/covid19vaccinesbycountybydemographic.csv',
         'parser': build_demographic_stats_json_dataset,
     },
     {
-        'filename': 'vaccination-demographics-v2.csv',
+        'filename': 'vaccination-demographics-ages.csv',
         'format': 'csv',
         'local_source': {
-            'filename': 'vaccination-demographics.json',
+            'filename': 'vaccination-demographics-v3.json',
             'format': 'json',
         },
         'parser': convert_json_to_csv,
         'key_map': [
             ('Date', ('date',)),
-            ('Gender: Female', ('genders', 'Female')),
-            ('Gender: Male', ('genders', 'Male')),
-            ('Gender: Unknown/Undifferentiated',
-             ('genders', 'Unknown/undifferentiated')),
-            ('Age: 0-11', ('age', '0-11')),
-            ('Age: 12-17', ('age', '12-17')),
-            ('Age: 18-49', ('age', '18-49')),
-            ('Age: 50-64', ('age', '50-64')),
-            ('Age: 65+', ('age', '65+')),
-            ('Age: Unknown', ('age', 'Unknown')),
-            ('Ethnicity: American Indian/Alaska Native',
-             ('ethnicity', 'American Indian or Alaska Native (AI/AN)')),
-            ('Ethnicity: Asian American', ('ethnicity', 'Asian American')),
-            ('Ethnicity: Black', ('ethnicity', 'Black')),
-            ('Ethnicity: Latino', ('ethnicity', 'Latino')),
-            ('Ethnicity: Multi-race', ('ethnicity', 'Multi-race')),
-            ('Ethnicity: Native Hawaiian or Other Pacific Islander',
-             ('ethnicity', 'Native Hawaiian or Other Pacific Islander (NHPI)')),
-            ('Ethnicity: White', ('ethnicity', 'White')),
-            ('Ethnicity: Other', ('ethnicity', 'Other')),
-            ('Ethnicity: Unknown', ('ethnicity', 'Unknown')),
-        ],
+        ] + list(itertools.chain.from_iterable(
+            [
+                ('%s - Population' % age,
+                 ('age', age, 'population', 'total')),
+                ('%s - Unvaccinated' % age,
+                 ('age', age, 'unvaccinated', 'total')),
+                ('%s - Vaccinated - Total (Partial)' % age,
+                 ('age', age, 'vaccinated', 'total_partial')),
+                ('%s - Vaccinated - Total (Full)' % age,
+                 ('age', age, 'vaccinated', 'total_full')),
+                ('%s - Vaccinated - Total (1+ Doses)' % age,
+                 ('age', age, 'vaccinated', 'total_one_plus_dose')),
+                ('%s - Vaccinated - New (Partial)' % age,
+                 ('age', age, 'vaccinated', 'new_partial')),
+                ('%s - Vaccinated - New (Full)' % age,
+                 ('age', age, 'vaccinated', 'new_full')),
+            ]
+            for age in ('5-11', '12-17', '18-49', '50-64', '65+')
+        )),
+    },
+    {
+        'filename': 'vaccination-demographics-ethnicity.csv',
+        'format': 'csv',
+        'local_source': {
+            'filename': 'vaccination-demographics-v3.json',
+            'format': 'json',
+        },
+        'parser': convert_json_to_csv,
+        'key_map': [
+            ('Date', ('date',)),
+        ] + list(itertools.chain.from_iterable(
+            [
+                ('%s - Population' % ethnicity,
+                 ('ethnicity', ethnicity, 'population', 'total')),
+                ('%s - Unvaccinated' % ethnicity,
+                 ('ethnicity', ethnicity, 'unvaccinated', 'total')),
+                ('%s - Vaccinated - Total (Partial)' % ethnicity,
+                 ('ethnicity', ethnicity, 'vaccinated', 'total_partial')),
+                ('%s - Vaccinated - Total (Full)' % ethnicity,
+                 ('ethnicity', ethnicity, 'vaccinated', 'total_full')),
+                ('%s - Vaccinated - Total (1+ Doses)' % ethnicity,
+                 ('ethnicity', ethnicity, 'vaccinated',
+                  'total_one_plus_dose')),
+                ('%s - Vaccinated - New (Partial)' % ethnicity,
+                 ('ethnicity', ethnicity, 'vaccinated', 'new_partial')),
+                ('%s - Vaccinated - New (Full)' % ethnicity,
+                 ('ethnicity', ethnicity, 'vaccinated', 'new_full')),
+            ]
+            for ethnicity in (
+                'White',
+                'Latino',
+                'Asian',
+                'Black or African American',
+                'American Indian or Alaska Native',
+                'Native Hawaiian or Other Pacific Islander',
+                'Multiracial',
+                'Other Race',
+                'Unknown',
+            )
+        )),
+    },
+    {
+        'filename': 'vaccination-demographics-vem-quartiles.csv',
+        'format': 'csv',
+        'local_source': {
+            'filename': 'vaccination-demographics-v3.json',
+            'format': 'json',
+        },
+        'parser': convert_json_to_csv,
+        'key_map': [
+            ('Date', ('date',)),
+        ] + list(itertools.chain.from_iterable(
+            [
+                ('%s - Population' % quartile,
+                 ('vem_quartiles', quartile, 'population', 'total')),
+                ('%s - Unvaccinated' % quartile,
+                 ('vem_quartiles', quartile, 'unvaccinated', 'total')),
+                ('%s - Vaccinated - Total (Partial)' % quartile,
+                 ('vem_quartiles', quartile, 'vaccinated', 'total_partial')),
+                ('%s - Vaccinated - Total (Full)' % quartile,
+                 ('vem_quartiles', quartile, 'vaccinated', 'total_full')),
+                ('%s - Vaccinated - Total (1+ Doses)' % quartile,
+                 ('vem_quartiles', quartile, 'vaccinated',
+                  'total_one_plus_dose')),
+                ('%s - Vaccinated - New (Partial)' % quartile,
+                 ('vem_quartiles', quartile, 'vaccinated', 'new_partial')),
+                ('%s - Vaccinated - New (Full)' % quartile,
+                 ('vem_quartiles', quartile, 'vaccinated', 'new_full')),
+            ]
+            for quartile in ('1', '2', '3', '4')
+        )),
     },
 ]

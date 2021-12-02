@@ -435,7 +435,12 @@ def convert_json_to_csv(info, in_fp, out_filename, **kwargs):
             ])
         csv_writer.writeheader()
 
-        for row in dataset.get('dates', []):
+        if isinstance(dataset, list):
+            rows = dataset
+        else:
+            rows = dataset.get('dates', [])
+
+        for row in rows:
             csv_writer.writerow({
                 key: get_nested_key(row, paths, must_resolve=False)
                 for key, paths in key_map
