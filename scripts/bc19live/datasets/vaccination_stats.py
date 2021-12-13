@@ -130,10 +130,7 @@ DATASETS = [
         'filename': 'chhs-vaccinations-administered.csv',
         'format': 'csv',
         'url': (
-            'https://data.chhs.ca.gov/dataset/'
-            'e283ee5a-cf18-4f20-a92c-ee94a2866ccd/resource/'
-            '130d7ba2-b6eb-438d-a412-741bde207e1c/download/'
-            'covid19vaccinesbycounty.csv'
+            'https://data.chhs.ca.gov/dataset/e283ee5a-cf18-4f20-a92c-ee94a2866ccd/resource/130d7ba2-b6eb-438d-a412-741bde207e1c/download/covid19vaccinesbycounty.csv'
         ),
         'csv': {
             'match_row': lambda row: row['county'] == 'Butte',
@@ -159,6 +156,8 @@ DATASETS = [
                 {'name': 'cumulative_fully_vaccinated'},
                 {'name': 'at_least_one_dose'},
                 {'name': 'cumulative_at_least_one_dose'},
+                {'name': 'booster_recip_count'},
+                {'name': 'cumulative_booster_recip_count'},
             ],
         },
     },
