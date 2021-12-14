@@ -16,6 +16,8 @@ function setupCounters() {
     BC19.setCounter('vaccines-1dose-pct-counter', data.vaccines1DosePct);
     BC19.setCounter('vaccines-full-doses-pct-counter',
                     data.vaccinesFullDosesPct);
+    BC19.setCounter('vaccines-boosted-pct-counter',
+                    data.vaccinesBoostedPct);
     BC19.setCounter('total-tests-counter', data.totalTests);
     BC19.setCounter('positive-test-results-counter', data.positiveTestResults);
     BC19.setCounter('positive-test-rate-counter', data.positiveTestRate);
@@ -715,11 +717,13 @@ function setupTimelineGraphs() {
                 graphData.dates,
                 graphData.vaccines.firstDosesPct,
                 graphData.vaccines.fullDosesPct,
+                graphData.vaccines.boostersPct,
             ],
             type: 'area-step',
             names: {
                 vaccines_1st_dose_pct: 'Received 1 or More Doses',
                 vaccines_full_doses_pct: 'Fully Vaccinated',
+                vaccines_boosters_pct: 'Boosted',
             },
         },
         axis: {
@@ -786,11 +790,13 @@ function setupTimelineGraphs() {
                 graphData.dates,
                 graphData.vaccines.firstDoses,
                 graphData.vaccines.fullDoses,
+                graphData.vaccines.boosters,
             ],
             type: 'area-step',
             names: {
                 vaccines_1st_dose: 'Received 1 or More Doses',
                 vaccines_full_doses: 'Fully Vaccinated',
+                vaccines_boosters: 'Boosted',
             },
         },
         axis: {
@@ -844,6 +850,7 @@ function setupTimelineGraphs() {
                 graphData.dates,
                 graphData.vaccines.oneWeek1DoseRate,
                 graphData.vaccines.oneWeekFullDosesRate,
+                graphData.vaccines.oneWeekBoostersRate,
             ],
             names: {
                 vaccines_1st_dose_rate: '1+ Doses The Past 7 Days',
