@@ -347,9 +347,12 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
     graph_vaccines_1st_dose_pct = ['vaccines_1st_dose_pct']
     graph_vaccines_full_doses = ['vaccines_full_doses']
     graph_vaccines_full_doses_pct = ['vaccines_full_doses_pct']
+    graph_vaccines_boosters = ['vaccines_boosters']
+    graph_vaccines_boosters_pct = ['vaccines_boosters_pct']
 
     graph_vaccines_1st_dose_rate = ['vaccines_1st_dose_rate']
     graph_vaccines_full_doses_rate = ['vaccines_full_doses_rate']
+    graph_vaccines_boosters_rate = ['vaccines_boosters_rate']
 
     graph_vaccines_administered_total = ['vaccines_administered_total']
     graph_vaccines_administered_pfizer = ['vaccines_administered_pfizer']
@@ -723,6 +726,8 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
         one_or_more_doses_pct = vaccines_administered['1_or_more_doses_pct']
         full_doses = vaccines_administered['fully']
         full_doses_pct = vaccines_administered['fully_pct']
+        boosters = vaccines_administered['boosted']
+        boosters_pct = vaccines_administered['boosted_pct']
 
         if one_or_more_doses_pct is not None:
             one_or_more_doses_pct = round(one_or_more_doses_pct, 2)
@@ -730,13 +735,20 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
         if full_doses_pct is not None:
             full_doses_pct = round(full_doses_pct, 2)
 
-        if one_or_more_doses_pct is not None and full_doses_pct is not None:
+        if boosters_pct is not None:
+            boosters_pct = round(boosters_pct, 2)
+
+        if (one_or_more_doses_pct is not None and
+            full_doses_pct is not None and
+            boosters_pct is not None):
             latest_vaccines_chhs_row_index = i
 
         graph_vaccines_1st_dose.append(one_or_more_doses)
         graph_vaccines_1st_dose_pct.append(one_or_more_doses_pct)
         graph_vaccines_full_doses.append(full_doses)
         graph_vaccines_full_doses_pct.append(full_doses_pct)
+        graph_vaccines_boosters.append(boosters)
+        graph_vaccines_boosters_pct.append(boosters_pct)
 
         vaccines_administered_total = vaccines_administered['total']
         vaccines_pfizer = vaccines_administered['pfizer']
@@ -793,10 +805,12 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
         one_week_vaccines_rate_i1 = i - 7
         one_week_vaccines_1_dose_rate = None
         one_week_vaccines_full_doses_rate = None
+        one_week_vaccines_boosters_rate = None
 
         if one_week_vaccines_rate_i1 >= 0:
             one_week_vaccines_rate_row1 = rows[one_week_vaccines_rate_i1]
             one_week_vaccines_rate_row2 = rows[i]
+
             one_week_vaccines_rate_1_dose_total_1 = (
                 one_week_vaccines_rate_row1
                 ['vaccines']['chhs']['administered']['1_or_more_doses']
@@ -805,6 +819,7 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
                 one_week_vaccines_rate_row2
                 ['vaccines']['chhs']['administered']['1_or_more_doses']
             )
+
             one_week_vaccines_rate_full_doses_total_1 = (
                 one_week_vaccines_rate_row1
                 ['vaccines']['chhs']['administered']['fully']
@@ -812,6 +827,15 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
             one_week_vaccines_rate_full_doses_total_2 = (
                 one_week_vaccines_rate_row2
                 ['vaccines']['chhs']['administered']['fully']
+            )
+
+            one_week_vaccines_rate_boosters_total_1 = (
+                one_week_vaccines_rate_row1
+                ['vaccines']['chhs']['administered']['boosted']
+            )
+            one_week_vaccines_rate_boosters_total_2 = (
+                one_week_vaccines_rate_row2
+                ['vaccines']['chhs']['administered']['boosted']
             )
 
             if (one_week_vaccines_rate_1_dose_total_1 is not None and
@@ -826,14 +850,22 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
                     one_week_vaccines_rate_full_doses_total_2 -
                     one_week_vaccines_rate_full_doses_total_1)
 
+            if (one_week_vaccines_rate_boosters_total_1 is not None and
+                one_week_vaccines_rate_boosters_total_2 is not None):
+                one_week_vaccines_boosters_rate = (
+                    one_week_vaccines_rate_boosters_total_2 -
+                    one_week_vaccines_rate_boosters_total_1)
+
             max_one_week_vaccines_rate = max(
                 max_one_week_vaccines_rate,
                 one_week_vaccines_1_dose_rate or 0,
-                one_week_vaccines_full_doses_rate or 0)
+                one_week_vaccines_full_doses_rate or 0,
+                one_week_vaccines_boosters_rate or 0)
 
         graph_vaccines_1st_dose_rate.append(one_week_vaccines_1_dose_rate)
         graph_vaccines_full_doses_rate.append(
             one_week_vaccines_full_doses_rate)
+        graph_vaccines_boosters_rate.append(one_week_vaccines_boosters_rate)
 
     latest_rows = {
         'ages': latest_age_data_row_index,
@@ -1112,31 +1144,14 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
                 ),
                 delta_days=[1, 7, 14],
                 is_pct=True),
-            'vaccinesAllocated': build_counter_data(
+            'vaccinesBoostedPct': build_counter_data(
                 rows,
-                row_index=latest_vaccines_county_row_index,
-                get_value=lambda row: row['vaccines']['allocated'],
-                delta_days=[1, 7, 14]),
-            'vaccinesAdministered': build_counter_data(
-                rows,
-                row_index=latest_vaccines_county_row_index,
-                get_value=lambda row: row['vaccines']['administered'],
-                delta_days=[1, 7, 14]),
-            'vaccinesOrdered1': build_counter_data(
-                rows,
-                row_index=latest_vaccines_county_row_index,
-                get_value=lambda row: row['vaccines']['first_doses_ordered'],
-                delta_days=[1, 7, 14]),
-            'vaccinesOrdered2': build_counter_data(
-                rows,
-                row_index=latest_vaccines_county_row_index,
-                get_value=lambda row: row['vaccines']['second_doses_ordered'],
-                delta_days=[1, 7, 14]),
-            'vaccinesReceived': build_counter_data(
-                rows,
-                row_index=latest_vaccines_county_row_index,
-                get_value=lambda row: row['vaccines']['received'],
-                delta_days=[1, 7, 14]),
+                row_index=latest_vaccines_chhs_row_index,
+                get_value=lambda row: (
+                    row['vaccines']['chhs']['administered']['boosted_pct']
+                ),
+                delta_days=[1, 7, 14],
+                is_pct=True),
             'totalTests': build_counter_data(
                 rows,
                 row_index=latest_tests_row_index,
@@ -1301,8 +1316,10 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
             'vaccines': {
                 'firstDoses': graph_vaccines_1st_dose,
                 'fullDoses': graph_vaccines_full_doses,
+                'boosters': graph_vaccines_boosters,
                 'firstDosesPct': graph_vaccines_1st_dose_pct,
                 'fullDosesPct': graph_vaccines_full_doses_pct,
+                'boostersPct': graph_vaccines_boosters_pct,
                 'administeredTotal': graph_vaccines_administered_total,
                 'administeredPfizer': graph_vaccines_administered_pfizer,
                 'administeredModerna': graph_vaccines_administered_moderna,
@@ -1334,6 +1351,7 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
                 },
                 'oneWeek1DoseRate': graph_vaccines_1st_dose_rate,
                 'oneWeekFullDosesRate': graph_vaccines_full_doses_rate,
+                'oneWeekBoostersRate': graph_vaccines_boosters_rate,
             },
             'viralTests': {
                 'negativeResults': graph_negative_results,

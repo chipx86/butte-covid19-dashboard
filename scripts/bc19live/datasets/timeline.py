@@ -524,6 +524,11 @@ DATASETS = [
                     'name': 'vaccines:chhs:administered:fully_pct',
                     'type': 'pct',
                 },
+                {'name': 'vaccines:chhs:administered:boosted'},
+                {
+                    'name': 'vaccines:chhs:administered:boosted_pct',
+                    'type': 'pct',
+                },
                 {'name': 'vaccines:chhs:administered:total'},
                 {'name': 'vaccines:chhs:administered:pfizer'},
                 {'name': 'vaccines:chhs:administered:moderna'},
