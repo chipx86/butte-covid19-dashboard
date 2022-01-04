@@ -5,9 +5,13 @@ import json
 from datetime import datetime
 
 from bc19live.utils import (add_or_update_json_date_row,
+                            build_missing_date_rows,
                             convert_json_to_csv,
                             parse_real,
                             safe_open_for_write)
+
+
+STATE_START_DATE = datetime(year=2020, month=7, day=29)
 
 
 def build_demographic_stats_json_dataset(session, response, out_filename,
@@ -67,6 +71,10 @@ def build_demographic_stats_json_dataset(session, response, out_filename,
             continue
 
         date = row['administered_date']
+
+        if datetime.strptime(date, '%Y-%m-%d') < STATE_START_DATE:
+            continue
+
         demographic = row['demographic_value']
 
         info = dates.setdefault(date, {
@@ -110,17 +118,32 @@ def build_demographic_stats_json_dataset(session, response, out_filename,
 
         payload = info[category_key][demographic] = payload
 
+    # Add missing dates, since that's common with the vaccination stats.
+    sorted_rows = (
+        _info
+        for _date, _info in sorted(dates.items(),
+                                   key=lambda pair: pair[0])
+    )
+    results = []
 
+    prev_date = None
+
+    for row in sorted_rows:
+        date = datetime.strptime(row['date'], '%Y-%m-%d')
+
+        if prev_date is not None:
+            results += build_missing_date_rows(cur_date=date,
+                                               latest_date=prev_date)
+
+        results.append(row)
+        prev_date = date
+
+    # Write the result.
     with safe_open_for_write(out_filename) as fp:
-        json.dump(
-            [
-                _info
-                for _date, _info in sorted(dates.items(),
-                                           key=lambda pair: pair[0])
-            ],
-            fp,
-            sort_keys=True,
-            indent=2)
+        json.dump(results,
+                  fp,
+                  sort_keys=True,
+                  indent=2)
 
     return True
 
@@ -133,8 +156,17 @@ DATASETS = [
             'https://data.chhs.ca.gov/dataset/e283ee5a-cf18-4f20-a92c-ee94a2866ccd/resource/130d7ba2-b6eb-438d-a412-741bde207e1c/download/covid19vaccinesbycounty.csv'
         ),
         'csv': {
-            'match_row': lambda row: row['county'] == 'Butte',
+            'match_row': lambda row: (
+                row['county'] == 'Butte' and
+                (datetime.strptime(row['administered_date'], '%Y-%m-%d') >=
+                 STATE_START_DATE)
+            ),
+            'validator': lambda results: (
+                len(results) > 0 and
+                results[0]['date'] == STATE_START_DATE.strftime('%Y-%m-%d')
+            ),
             'sort_by': 'date',
+            'add_missing_dates': True,
             'columns': [
                 {
                     'name': 'date',
