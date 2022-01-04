@@ -212,6 +212,7 @@ def build_dataset(response, out_filename, **kwargs):
         entity = get_entity(entity_id)
         history = []
         year = 2020
+        prev_month = 0
 
         for item in entity['props']['chartData']['data'][0][1:]:
             if item[0] is None:
@@ -222,12 +223,30 @@ def build_dataset(response, out_filename, **kwargs):
                 for _i in item[0].split('/')
             ]
 
-            if parts[0] == 1 and parts[1] == 1:
-                year += 1
+            if len(parts) == 3:
+                # Dates in M/D/YYYY
+                month, day, year = parts
 
-            assert len(parts) == 2 or parts[2] + 2000 == year
+                if year < 100:
+                    # The year is in YY form, and not YYYY form. Hello, Y2K
+                    # problem.
+                    year += 2000
+            else:
+                # Dates are probably in M/D. Kind of annoyoing.
+                #
+                # We'll need to use the previously-computed (or default) year
+                # as a base.
+                month, day = parts
 
-            key = '%d-%02d-%02d' % (year, parts[0], parts[1])
+                if month < prev_month:
+                    # It's a new year. Happy new year.
+                    year += 1
+
+            assert 1 <= day <= 31
+            assert 1 <= month <= 12
+            assert 2020 <= year
+
+            key = '%d-%02d-%02d' % (year, month, day)
 
             try:
                 value = int(item[2])
@@ -235,6 +254,8 @@ def build_dataset(response, out_filename, **kwargs):
                 value = None
 
             history.append((key, value))
+
+            prev_month = month
 
         return history
 
@@ -397,6 +418,13 @@ def build_dataset(response, out_filename, **kwargs):
         probable_cases = scraped_data['probable_cases']
         probable_deaths_by_age = scraped_data['probable_deaths_by_age']
 
+        # Normalize some of these values.
+        #
+        # The 05-12 key was introduced on January 4, 2022. Not sure if it
+        # will stay.
+        if '05-12' in by_age:
+            by_age['5-12'] = by_age.pop('05-12')
+
         # As of Monday, September 28, 2020, the county has changed the By Ages
         # graph to show the non-fatal vs. fatal cases, instead of total vs.
         # fatal. To preserve the information we had, we need to add the deaths
@@ -422,35 +450,35 @@ def build_dataset(response, out_filename, **kwargs):
             'deaths': scraped_data['deaths'],
             'deaths_by': {
                 'age_ranges_in_years': {
-                    '0-4': deaths_by_age.get('0-4 Years', 0),
-                    '5-12': deaths_by_age.get('5-12 Years', 0),
-                    '13-17': deaths_by_age.get('13-17 Years', 0),
-                    '18-24': deaths_by_age['18-24 Years'],
-                    '25-34': deaths_by_age['25-34 Years'],
-                    '35-44': deaths_by_age['35-44 Years'],
-                    '45-54': deaths_by_age['45-54 Years'],
-                    '55-64': deaths_by_age['55-64 Years'],
-                    '65-74': deaths_by_age['65-74 Years'],
-                    '75_plus': deaths_by_age['75+ Years'],
+                    '0-4': deaths_by_age.get('0-4', 0),
+                    '5-12': deaths_by_age.get('5-12', 0),
+                    '13-17': deaths_by_age.get('13-17', 0),
+                    '18-24': deaths_by_age['18-24'],
+                    '25-34': deaths_by_age['25-34'],
+                    '35-44': deaths_by_age['35-44'],
+                    '45-54': deaths_by_age['45-54'],
+                    '55-64': deaths_by_age['55-64'],
+                    '65-74': deaths_by_age['65-74'],
+                    '75_plus': deaths_by_age['75+'],
 
                     # Legacy
-                    '0-17': (deaths_by_age.get('0-4 Years', 0) +
-                             deaths_by_age.get('5-12 Years', 0) +
-                             deaths_by_age.get('13-17 Years', 0)),
+                    '0-17': (deaths_by_age.get('0-4', 0) +
+                             deaths_by_age.get('5-12', 0) +
+                             deaths_by_age.get('13-17', 0)),
                 },
             },
             'probable_deaths_by': {
                 'age_ranges_in_years': {
-                    '0-4': probable_deaths_by_age.get('0-4 Years', 0),
-                    '5-12': probable_deaths_by_age.get('5-12 Years', 0),
-                    '13-17': probable_deaths_by_age.get('13-17 Years', 0),
-                    '18-24': probable_deaths_by_age['18-24 Years'],
-                    '25-34': probable_deaths_by_age['25-34 Years'],
-                    '35-44': probable_deaths_by_age['35-44 Years'],
-                    '45-54': probable_deaths_by_age['45-54 Years'],
-                    '55-64': probable_deaths_by_age['55-64 Years'],
-                    '65-74': probable_deaths_by_age['65-74 Years'],
-                    '75_plus': probable_deaths_by_age['75+ Years'],
+                    '0-4': probable_deaths_by_age.get('0-4', 0),
+                    '5-12': probable_deaths_by_age.get('5-12', 0),
+                    '13-17': probable_deaths_by_age.get('13-17', 0),
+                    '18-24': probable_deaths_by_age['18-24'],
+                    '25-34': probable_deaths_by_age['25-34'],
+                    '35-44': probable_deaths_by_age['35-44'],
+                    '45-54': probable_deaths_by_age['45-54'],
+                    '55-64': probable_deaths_by_age['55-64'],
+                    '65-74': probable_deaths_by_age['65-74'],
+                    '75_plus': probable_deaths_by_age['75+'],
                 },
             },
             'in_isolation': {
@@ -465,31 +493,31 @@ def build_dataset(response, out_filename, **kwargs):
                 'current': scraped_data['hospitalized'],
             },
             'age_ranges_in_years': {
-                '0-4': by_age['0-4 Years'],
-                '5-12': by_age['5-12 Years'],
-                '13-17': by_age['13-17 Years'],
-                '18-24': by_age['18-24 Years'],
-                '25-34': by_age['25-34 Years'],
-                '35-44': by_age['35-44 Years'],
-                '45-54': by_age['45-54 Years'],
-                '55-64': by_age['55-64 Years'],
-                '65-74': by_age['65-74 Years'],
-                '75_plus': by_age['75+ Years'],
+                '0-4': by_age['0-4'],
+                '5-12': by_age['5-12'],
+                '13-17': by_age['13-17'],
+                '18-24': by_age['18-24'],
+                '25-34': by_age['25-34'],
+                '35-44': by_age['35-44'],
+                '45-54': by_age['45-54'],
+                '55-64': by_age['55-64'],
+                '65-74': by_age['65-74'],
+                '75_plus': by_age['75+'],
 
                 # Legacy
-                '0-17': (by_age['0-4 Years'] +
-                         by_age['5-12 Years'] +
-                         by_age['13-17 Years']),
+                '0-17': (by_age['0-4'] +
+                         by_age['5-12'] +
+                         by_age['13-17']),
                 '18-49': None,
                 '50-64': None,
-                '65_plus': by_age['65-74 Years'] + by_age['75+ Years'],
+                '65_plus': by_age['65-74'] + by_age['75+'],
             },
             'regions': {
                 'biggs_gridley': by_region['Biggs/Gridley'],
                 'chico': by_region['Chico'],
                 'durham': by_region['Durham'],
                 'oroville': by_region['Oroville'],
-                'other': by_region['Other'],
+                'other': by_region['Other/Missing'],
                 'ridge': by_region['Ridge Communities'],
 
                 # Legacy
