@@ -310,7 +310,8 @@ def parse_csv_value(value, data_type, col_info):
     return value
 
 
-def build_missing_date_rows(cur_date, latest_date, date_field='date'):
+def build_missing_date_rows(cur_date, latest_date, date_field='date',
+                            empty_row_data={}):
     """Build empty rows for a span of dates.
 
     Args:
@@ -320,20 +321,26 @@ def build_missing_date_rows(cur_date, latest_date, date_field='date'):
         latest_date (datetime.datetime):
             The latest date in the dataset.
 
-        date_field (str):
+        date_field (str, optional):
             The name of the field to add to generated rows for the row date.
+
+        empty_row_data (dict, optional):
+            Data to add to each empty row.
 
     Returns:
         list of dict:
         The generated list of rows.
     """
-    assert cur_date >= latest_date
+    assert cur_date >= latest_date, (
+        'Current date (%s) should be >= latest date (%s)' % (
+            cur_date, latest_date,
+        ))
 
     return [
-        {
+        dict(empty_row_data, **{
             date_field: (latest_date +
                          timedelta(days=day)).strftime('%Y-%m-%d'),
-        }
+        })
         for day in range(1, (cur_date - latest_date).days)
     ]
 
@@ -457,6 +464,10 @@ def parse_csv(info, response, out_filename, **kwargs):
 
     These options live in ``info['csv']``, and contain:
 
+    ``add_missing_dates`` (bool, optional):
+        Whether to ensure that missing date rows are present. They will be
+        filled in with blanks.
+
     ``columns`` (list):
         A list of column definitions. Each definition contains:
 
@@ -536,6 +547,7 @@ def parse_csv(info, response, out_filename, **kwargs):
     skip_rows = csv_info.get('skip_rows', 0)
     default_type = csv_info.get('default_type')
     end_if = csv_info.get('end_if')
+    add_missing_dates = csv_info.get('add_missing_dates', False)
 
     unique_found = set()
     results = []
@@ -614,6 +626,58 @@ def parse_csv(info, response, out_filename, **kwargs):
     # Some datasets are unordered or not in an expected order. If needed, sort.
     if sort_by is not None:
         results = sorted(results, key=lambda row: row[sort_by])
+
+    if add_missing_dates:
+        # Make sure that the source feed doesn't skip any days. If they
+        # do, we need to pad them out.
+        #
+        # This has been an on-going problem with state vaccine data.
+        date_source_col = None
+        date_dest_col = None
+        empty_row_data = None
+        date_fmt = None
+
+        if add_missing_dates:
+            empty_row_data = {}
+
+            for col_info in columns:
+                col_name = col_info['name']
+
+                if col_info.get('type') == 'date':
+                    assert not date_source_col
+                    assert not date_dest_col
+                    date_dest_col = col_name
+                    date_source_col = col_info.get('source_column',
+                                                   date_dest_col)
+                    date_fmt = col_info.get('format', '%Y-%m-%d')
+                else:
+                    empty_row_data[col_name] = None
+
+            assert date_source_col, 'Could not determine date column'
+            assert date_fmt, (
+                'Could not determine format for date column "%s"'
+                % date_source_col)
+
+        prev_date = None
+        new_results = []
+
+        for row in results:
+            date = datetime.strptime(row[date_dest_col], date_fmt)
+
+            if prev_date is not None:
+                missing_rows = build_missing_date_rows(
+                    cur_date=date,
+                    latest_date=prev_date,
+                    date_field=date_dest_col,
+                    empty_row_data=empty_row_data)
+
+                if missing_rows:
+                    new_results += missing_rows
+
+            new_results.append(row)
+            prev_date = date
+
+        results = new_results
 
     # Validate that we have the data we expect. We don't want to be offset by
     # a row or have garbage or something.
