@@ -131,10 +131,16 @@ def build_district_json(response, out_filename, info, **kwargs):
             district_total_cases[key] += new_count
             district_new_cases[key] += new_count
 
-        date_row[school_type][school].update({
-            'new_cases': new_cases,
-            'population_at_site': total_at_school,
-        })
+        date_school_data = date_row[school_type][school]
+        date_school_new_cases = date_school_data['new_cases']
+
+        for key, count in new_cases.items():
+            if key in date_school_new_cases:
+                date_school_new_cases[key] += count
+            else:
+                date_school_new_cases[key] = count
+
+        date_school_data['population_at_site'] = total_at_school
         date_row['district_wide']['population_at_site'] = total_in_district
 
     dataset = {
