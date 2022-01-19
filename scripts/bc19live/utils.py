@@ -574,11 +574,19 @@ def parse_csv(info, response, out_filename, **kwargs):
             dest_name = col_info['name']
             src_name = col_info.get('source_column', dest_name)
             data_type = col_info.get('type', default_type)
+            func = col_info.get('transform_func')
 
-            try:
-                value = row[src_name]
-            except KeyError:
-                raise ParseError('Missing column in CSV file: %s' % src_name)
+            if callable(func):
+                value = func(row=row,
+                             src_name=src_name,
+                             data_type=data_type,
+                             col_info=col_info)
+            else:
+                try:
+                    value = row[src_name]
+                except KeyError:
+                    raise ParseError('Missing column in CSV file: %s'
+                                     % src_name)
 
             if data_type == 'delta':
                 delta_from = col_info['delta_from']
@@ -625,7 +633,15 @@ def parse_csv(info, response, out_filename, **kwargs):
 
     # Some datasets are unordered or not in an expected order. If needed, sort.
     if sort_by is not None:
-        results = sorted(results, key=lambda row: row[sort_by])
+        if isinstance(sort_by, tuple):
+            results = sorted(
+                results,
+                key=lambda row: tuple(
+                    row[_key]
+                    for _key in sort_by
+                ))
+        else:
+            results = sorted(results, key=lambda row: row[sort_by])
 
     if add_missing_dates:
         # Make sure that the source feed doesn't skip any days. If they
