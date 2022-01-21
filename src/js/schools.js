@@ -158,7 +158,7 @@ function setupTimelineGraph(options) {
 
 
 function setupTotalCasesGraph(options) {
-    const graphData = options.graphData;
+    const graphData = options.graphData.total;
 
     options.columns = [
         BC19.graphData.dates,
@@ -187,15 +187,16 @@ function setupTotalCasesGraph(options) {
     setupTimelineGraph(options);
 }
 
+
 function setupNewCasesGraph(options) {
-    const graphData = options.graphData;
+    const graphData = options.graphData.newCases;
 
     options.columns = [
         BC19.graphData.dates,
-        graphData.newStudentLocalCases,
-        graphData.newStudentRemoteCases,
-        graphData.newStaffLocalCases,
-        graphData.newStaffRemoteCases,
+        graphData.studentLocalCases,
+        graphData.studentRemoteCases,
+        graphData.staffLocalCases,
+        graphData.staffRemoteCases,
     ];
 
     options.names = {
@@ -213,6 +214,37 @@ function setupNewCasesGraph(options) {
     ]];
 
     options.type = 'bar';
+
+    setupTimelineGraph(options);
+}
+
+
+function setupCaseRateGraph(options) {
+    const graphData = options.graphData.caseRate;
+
+    options.columns = [
+        BC19.graphData.dates,
+        graphData.studentLocalCases,
+        graphData.studentRemoteCases,
+        graphData.staffLocalCases,
+        graphData.staffRemoteCases,
+    ];
+
+    options.names = {
+        case_rate_students_local: 'Students (in person)',
+        case_rate_students_remote: 'Students (remote)',
+        case_rate_staff_local: 'Staff (in person)',
+        case_rate_staff_remote: 'Staff (remote)',
+    };
+
+    options.groups = [[
+        'case_rate_students_local',
+        'case_rate_students_remote',
+        'case_rate_staff_local',
+        'case_rate_staff_remote',
+    ]];
+
+    options.type = 'area';
 
     setupTimelineGraph(options);
 }
@@ -594,6 +626,11 @@ function setupGraphs() {
         graphID: 'new_cases_graph',
         graphData: graphData,
         maxValue: maxValues.newCases,
+    });
+    setupCaseRateGraph({
+        graphID: 'case_rate_graph',
+        graphData: graphData,
+        maxValue: maxValues.caseRate,
     });
 
     if (mode === 'county') {

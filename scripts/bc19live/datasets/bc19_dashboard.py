@@ -1427,6 +1427,14 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
             self.new_student_remote_cases = ['new_students_remote'] + values
             self.new_staff_local_cases = ['new_staff_local'] + values
             self.new_staff_remote_cases = ['new_staff_remote'] + values
+            self.case_rate_student_local_cases = \
+                ['case_rate_students_local'] + values
+            self.case_rate_student_remote_cases = \
+                ['case_rate_students_remote'] + values
+            self.case_rate_staff_local_cases = \
+                ['case_rate_staff_local'] + values
+            self.case_rate_staff_remote_cases = \
+                ['case_rate_staff_remote'] + values
 
             self.total_cases = [] + values
             self.student_cases = [] + values
@@ -1453,6 +1461,7 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
             self.graphs = CaseGraphs(skip_days=skip_days)
             self.counts = CaseCounts()
             self.max_new_cases = 0
+            self.max_case_rate = 0
             self._pending_case_counts = CaseCounts()
 
         def add_cases(self, student_local_cases, student_remote_cases,
@@ -1475,6 +1484,7 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
             graphs = self.graphs
             pending_counts = self._pending_case_counts
 
+            # New cases
             graphs.new_student_local_cases.append(
                 pending_counts.student_local_cases)
             graphs.new_student_remote_cases.append(
@@ -1484,6 +1494,14 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
             graphs.new_staff_remote_cases.append(
                 pending_counts.staff_remote_cases)
 
+            self.max_new_cases = max(
+                self.max_new_cases,
+                (pending_counts.student_local_cases +
+                 pending_counts.student_remote_cases +
+                 pending_counts.staff_local_cases +
+                 pending_counts.staff_remote_cases))
+
+            # Total cases
             graphs.student_local_cases.append(counts.student_local_cases)
             graphs.student_remote_cases.append(counts.student_remote_cases)
             graphs.staff_local_cases.append(counts.staff_local_cases)
@@ -1499,13 +1517,46 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
 
             graphs.weekly_total_cases[-1] += total_cases
 
-            self.max_new_cases = max(
-                self.max_new_cases,
-                (pending_counts.student_local_cases +
-                 pending_counts.student_remote_cases +
-                 pending_counts.staff_local_cases +
-                 pending_counts.staff_remote_cases))
+            # 7-day new case rate
+            case_rate_i2 = len(graphs.student_local_cases)
+            case_rate_i1 = max(case_rate_i2 - 7, 1)
 
+            if case_rate_i1 >= 0:
+                case_rate_student_local_cases = (
+                    counts.student_local_cases -
+                    graphs.student_local_cases[case_rate_i1]) / 7
+                case_rate_student_remote_cases = (
+                    counts.student_remote_cases -
+                    graphs.student_remote_cases[case_rate_i1]) / 7
+                case_rate_staff_local_cases = (
+                    counts.staff_local_cases -
+                    graphs.staff_local_cases[case_rate_i1]) / 7
+                case_rate_staff_remote_cases = (
+                    counts.staff_remote_cases -
+                    graphs.staff_remote_cases[case_rate_i1]) / 7
+            else:
+                case_rate_student_local_cases = 0
+                case_rate_student_remote_cases = 0
+                case_rate_staff_local_cases = 0
+                case_rate_staff_remote_cases = 0
+
+            graphs.case_rate_student_local_cases.append(
+                case_rate_student_local_cases)
+            graphs.case_rate_student_remote_cases.append(
+                case_rate_student_remote_cases)
+            graphs.case_rate_staff_local_cases.append(
+                case_rate_staff_local_cases)
+            graphs.case_rate_staff_remote_cases.append(
+                case_rate_staff_remote_cases)
+
+            self.max_case_rate = max(
+                self.max_case_rate,
+                (case_rate_student_local_cases +
+                 case_rate_student_remote_cases +
+                 case_rate_staff_local_cases +
+                 case_rate_staff_remote_cases))
+
+            # Reset for the next day.
             self._pending_case_counts = CaseCounts()
 
         def finalize_week(self):
@@ -1742,14 +1793,24 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
 
     def make_graph_result(graphs):
         return {
-            'studentLocalCases': graphs.student_local_cases,
-            'studentRemoteCases': graphs.student_remote_cases,
-            'staffLocalCases': graphs.staff_local_cases,
-            'staffRemoteCases': graphs.staff_remote_cases,
-            'newStudentLocalCases': graphs.new_student_local_cases,
-            'newStudentRemoteCases': graphs.new_student_remote_cases,
-            'newStaffLocalCases': graphs.new_staff_local_cases,
-            'newStaffRemoteCases': graphs.new_staff_remote_cases,
+            'total': {
+                'studentLocalCases': graphs.student_local_cases,
+                'studentRemoteCases': graphs.student_remote_cases,
+                'staffLocalCases': graphs.staff_local_cases,
+                'staffRemoteCases': graphs.staff_remote_cases,
+            },
+            'newCases': {
+                'studentLocalCases': graphs.new_student_local_cases,
+                'studentRemoteCases': graphs.new_student_remote_cases,
+                'staffLocalCases': graphs.new_staff_local_cases,
+                'staffRemoteCases': graphs.new_staff_remote_cases,
+            },
+            'caseRate': {
+                'studentLocalCases': graphs.case_rate_student_local_cases,
+                'studentRemoteCases': graphs.case_rate_student_remote_cases,
+                'staffLocalCases': graphs.case_rate_staff_local_cases,
+                'staffRemoteCases': graphs.case_rate_staff_remote_cases,
+            },
         }
 
     def iter_districts(school_year):
@@ -1924,11 +1985,13 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
                 'countyWide': {
                     'totalCases': _school_year.total.counts.total_cases,
                     'newCases': _school_year.total.max_new_cases,
+                    'caseRate': _school_year.total.max_case_rate,
                 },
                 'districts': {
                     _district_id: {
                         'totalCases': _district.counts.total_cases,
                         'newCases': _district.max_new_cases,
+                        'caseRate': _district.max_case_rate,
                     }
                     for (_district_id,
                          _district) in _school_year.districts.items()
@@ -1937,6 +2000,7 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
                     _school: {
                         'totalCases': _state.counts.total_cases,
                         'newCases': _state.max_new_cases,
+                        'caseRate': _state.max_case_rate,
                     }
                     for _school, _state in _school_year.schools.items()
                 },

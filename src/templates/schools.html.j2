@@ -23,12 +23,12 @@
 {% block sections %}
 
 {%  call header(id='overview-title') -%}
-	 <div id="overview-title"></div>
+     <div id="overview-title"></div>
 {%-  endcall -%}
 
 {%  call section(id='overview',
                  aria_label='Totals of school cases in the district',
-				 has_counters=True) -%}
+                 has_counters=True) -%}
 
      {{counter(
          id='student-cases-counter',
@@ -51,7 +51,7 @@
          title='Districts With Cases This Week',
          timestamp_key='schools',
          up_is_bad=True,
-		 show_weeks=True
+         show_weeks=True
      )}}
 
      {{counter(
@@ -59,7 +59,7 @@
          title='Schools With Cases This Week',
          timestamp_key='schools',
          up_is_bad=True,
-		 show_weeks=True
+         show_weeks=True
      )}}
 {%-  endcall -%}
 
@@ -70,17 +70,17 @@
       {{bar_graph(
           id='by_grade_level',
           title='% of Cases By Grade Level',
-		  subtitle='Includes student and staff cases',
+          subtitle='Includes student and staff cases',
           timestamp_key='schools')
       }}
 
       {{bar_graph(
           id='by_district',
           title='% of Cases By District',
-		  subtitle='Includes student and staff cases',
+          subtitle='Includes student and staff cases',
           timestamp_key='schools')
       }}
-	 </div>
+     </div>
 
      <div class="bc19-c-dashboard__section-main">
       {{timeline_graph(
@@ -90,9 +90,16 @@
 
       {{timeline_graph(
           data_id='new_cases_graph',
-          title='New Cases This School Year'
+          title='New Cases This School Year',
+          subtitles=["By each school's report date"]
       )}}
-	 </div>
+
+      {{timeline_graph(
+          data_id='case_rate_graph',
+          title='7-Day New Case Rate',
+          subtitles=["By each school's report date"]
+      )}}
+     </div>
 {%-  endcall -%}
 {% endblock sections %}
 
