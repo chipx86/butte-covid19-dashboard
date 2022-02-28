@@ -75,11 +75,15 @@ def build_dataset(response, out_filename, **kwargs):
         # overwriting historical data, and instead bail.
         return False
 
+    def ws_pattern(pattern):
+        return r'(?:\s|&nbsp;)+'.join(pattern.split(' '))
+
     def get_int(pattern):
         m = re.search(pattern, content)
 
         if not m:
-            raise ParseError('Unable to find "%s" in Butte County Jail')
+            raise ParseError('Unable to find "%s" in Butte County Jail'
+                             % pattern)
 
         try:
             return int(m.group(1))
@@ -88,21 +92,32 @@ def build_dataset(response, out_filename, **kwargs):
                              'int!')
 
     inmates_data = {
-        'current_population': get_int(r'inmate population as of '
-                                      r'[A-Za-z]+ \d+, 20\d{2}: (\d+)'),
-        'current_cases': get_int(r'currently has (\d+) positive '
-                                 r'in-custody inmate'),
-        'pending_tests': get_int(r'has (\d+) inmate COVID-19 tests pending'),
-        'total_negative': get_int(r'(\d+) negative'),
-        'total_recovered': get_int(r'(\d+) recovered'),
-        'total_tests': get_int(r'Estimate of (\d+) total inmate tests'),
+        'current_population': get_int(ws_pattern(
+            r'inmate population as of [A-Za-z]+ \d+, 20\d{2}: (\d+)'
+        )),
+        'current_cases': get_int(ws_pattern(
+            r'currently has (\d+) positive in-custody inmate'
+        )),
+        'pending_tests': get_int(ws_pattern(
+            r'has (\d+) inmate COVID-19 tests pending'
+        )),
+        'total_negative': get_int(ws_pattern(r'(\d+) negative')),
+        'total_recovered': get_int(ws_pattern(r'(\d+) recovered')),
+        'total_tests': get_int(ws_pattern(
+            r'Estimate of (\d+) total inmate tests'
+        )),
     }
 
     staff_data = {
-        'total_tests': get_int(r'conducted (\d+) tests on staff'),
-        'total_cases': get_int('total of (\d+) staff cases'),
-        'total_recovered': get_int('(\d+) of those have recovered and '
-                                   'returned to work'),
+        'total_tests': get_int(ws_pattern(
+            r'conducted (\d+) tests on staff'
+        )),
+        'total_cases': get_int(ws_pattern(
+            'total of (\d+) staff cases'
+        )),
+        'total_recovered': get_int(ws_pattern(
+            '(\d+) of those have recovered and returned to work'
+        )),
     }
 
     inmates_data['total_positive'] = \
@@ -119,7 +134,7 @@ DATASETS = [
     {
         'filename': 'butte-county-jail.json',
         'format': 'json',
-        'url': 'https://www.buttecounty.net/sheriffcoroner/Covid-19',
+        'url': 'https://www.buttecounty.net/sheriffcoroner/Covid19',
         'parser': build_dataset,
     },
     {
