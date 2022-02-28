@@ -36,7 +36,13 @@ DATASETS = [
                 row['as_of_date'] not in ('2020-04-21', '2020-04-22',
                                           '2020-04-23')
             ),
-            'validator': lambda results: results[0]['date'] == '2020-04-24',
+            'validators': [
+                lambda results: (
+                    results[0]['date'] == '2020-04-24',
+                    'Start date was not 2020-04-24 (found %s)'
+                    % results[0]['date']
+                ),
+            ],
             'sort_by': ('date', 'name'),
             'unique_col': ('date', 'name'),
             'add_missing_dates': True,

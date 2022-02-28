@@ -2,7 +2,7 @@ import csv
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from bc19live.utils import add_nested_key, safe_open_for_write
 
@@ -102,6 +102,9 @@ def build_dataset(info, in_fp, out_filename, **kwargs):
     return True
 
 
+_report_data_date_str = (datetime.now() -
+                         timedelta(days=1)).strftime('%Y-%m-%d')
+
 DATASETS = [
     {
         'filename': 'timeline.csv',
@@ -112,13 +115,38 @@ DATASETS = [
                 row['confirmed_cases:total'] == '' and
                 row['county_jail:inmates:population'] == ''
             ),
-            'validator': lambda results: (
-                len(results) > 0 and
-                results[0]['date'] == '2020-03-20' and
-                (results[-1]['confirmed_cases:total'] != '' or
-                 results[-2]['confirmed_cases:total'] != '' or
-                 results[-3]['confirmed_cases:total'] != '')
-            ),
+            'validators': [
+                lambda results: (
+                    len(results) > 0,
+                    'No results found',
+                ),
+                lambda results: (
+                    results[0]['date'] == '2020-03-20',
+                    ('Start date was not 2020-03-20 (found %s)'
+                     % results[0]['date']),
+                ),
+                lambda results: (
+                    _report_data_date_str in (results[-1]['date'],
+                                              results[-2]['date']),
+                    ('Latest report data date (%s) not found in last two '
+                     'rows (%s, %s)'
+                     % (_report_data_date_str,
+                        results[-1]['date'],
+                        results[-2]['date'])),
+                ),
+                lambda results: (
+                    results[-1]['confirmed_cases:total'] != '' or
+                    results[-2]['confirmed_cases:total'] != '' or
+                    results[-3]['confirmed_cases:total'] != '',
+                    'Confirmed cases missing in last 3 rows',
+                ),
+                lambda results: (
+                    results[-1]['deaths:total'] != '' or
+                    results[-2]['deaths:total'] != '' or
+                    results[-3]['deaths:total'] != '',
+                    'Total deaths missing in last 3 rows',
+                ),
+            ],
             'skip_rows': 4,
             'default_type': 'int_or_blank',
             'columns': [

@@ -542,7 +542,7 @@ def parse_csv(info, response, out_filename, **kwargs):
     columns = csv_info['columns']
     match = csv_info.get('match_row')
     sort_by = csv_info.get('sort_by')
-    validator = csv_info.get('validator')
+    validators = csv_info.get('validators', csv_info.get('validator'))
     unique_col = csv_info.get('unique_col')
     skip_rows = csv_info.get('skip_rows', 0)
     default_type = csv_info.get('default_type')
@@ -697,8 +697,22 @@ def parse_csv(info, response, out_filename, **kwargs):
 
     # Validate that we have the data we expect. We don't want to be offset by
     # a row or have garbage or something.
-    if validator is not None and not validator(results):
-        raise ParseError('Resulting CSV file did not pass validation!')
+    if validators is not None:
+        if not isinstance(validators, list):
+            validators = [validators]
+
+        for validate_func in validators:
+            result = validate_func(results)
+
+            if isinstance(result, tuple):
+                result, reason = result
+            else:
+                reason = None
+
+            if not result:
+                raise ParseError('Resulting CSV file did not pass '
+                                 'validation: %s'
+                                 % (reason or 'Checks failed'))
 
     with safe_open_for_write(out_filename) as out_fp:
         writer = csv.DictWriter(
