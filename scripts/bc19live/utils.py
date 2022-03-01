@@ -561,7 +561,7 @@ def parse_csv(info, response, out_filename, **kwargs):
                             delimiter=',')
     prev_row = None
 
-    for row in reader:
+    for row_i, row in enumerate(reader):
         if match is not None and not match(row):
             continue
 
@@ -587,6 +587,11 @@ def parse_csv(info, response, out_filename, **kwargs):
                 except KeyError:
                     raise ParseError('Missing column in CSV file: %s'
                                      % src_name)
+
+                if value == '#DIV/0!':
+                    raise ParseError('Got DIV/0 for row=%s, column=%s'
+                                     % (row_i, src_name),
+                                     row=row)
 
             if data_type == 'delta':
                 delta_from = col_info['delta_from']

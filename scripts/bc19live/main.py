@@ -268,6 +268,10 @@ def main():
         except ParseError as e:
             sys.stderr.write('Data parse error while building %s: %s\n'
                              % (filename, e))
+
+            if e.row is not None:
+                sys.stderr.write('Row: %r\n' % e.row)
+
             continue
         except Exception as e:
             sys.stderr.write('Unexpected error while building %s: %s\n'
