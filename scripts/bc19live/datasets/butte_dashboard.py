@@ -195,7 +195,7 @@ def build_dataset(response, out_filename, **kwargs):
 
         return result
 
-    def get_chart_history(entity_id):
+    def get_chart_history(entity_id, data_index=2, sum_data=False):
         """Return history/timeline information from a chart.
 
         This will extract the history data and perform date normalization,
@@ -213,6 +213,7 @@ def build_dataset(response, out_filename, **kwargs):
         history = []
         year = 2020
         prev_month = 0
+        total = 0
 
         for item in entity['props']['chartData']['data'][0][1:]:
             if item[0] is None:
@@ -249,11 +250,16 @@ def build_dataset(response, out_filename, **kwargs):
             key = '%d-%02d-%02d' % (year, month, day)
 
             try:
-                value = int(item[2])
+                value = int(item[data_index])
             except ValueError:
                 value = None
 
-            history.append((key, value))
+            if sum_data:
+                total += value
+            else:
+                total = value
+
+            history.append((key, total))
 
             prev_month = month
 
@@ -336,46 +342,78 @@ def build_dataset(response, out_filename, **kwargs):
 
     datestamp = (datetime.now() - timedelta(days=1)).date()
 
+    with open('/tmp/dashboard.json', 'w') as fp:
+        fp.write(json.dumps(dashboard_data, indent=2, sort_keys=True))
+
+    # On February 28, 2022, Butte County Public Health terminated almost all
+    # of the information they had displayed on the dashboard. There's no longer
+    # an ability to graph most of this data.
+    #
+    # For historical reasons, and with a hope that the data will come back,
+    # the code below will remain, locked off with a switch.
     COUNTER_KEYS_TO_ENTITIES = {
         'confirmed_cases': {
-            'labels': ['confirmed cases total'],
-            'entity_id': '15b62ec3-79df-492a-9171-f92c09dbe3c4',
-        },
-        'in_isolation': {
-            'labels': ['currently in isolation'],
-            'entity_id': '569b986d-bb02-48dc-ae00-15b58b58f712',
-        },
-        'released_from_isolation': {
-            'labels': ['released from isolation', 'recovered'],
-            'entity_id': 'f335bb23-9900-4acf-854a-8214e532c1de',
+            'labels': ['confirmed cases total to date'],
+            'entity_id': '15b62ec3-79df-492a-9171-f92c09dbe3c4db533313-2a0e-48d8-a35c-c4da80fe3af3',
         },
         'deaths': {
             'labels': ['deaths confirmed by viral test'],
-            'entity_id': '9c8d7a74-c196-40b5-a2e5-3bd643bbae8b',
+            'entity_id': '9c8d7a74-c196-40b5-a2e5-3bd643bbae8b4da917f9-0222-4196-99e4-43b1329bb283',
         },
         'hospitalized': {
             'labels': ['currently hospitalized'],
-            'entity_id': '3e7ad00d-727d-436a-bdf6-edef227d7c28',
+            'entity_id': '3e7ad00d-727d-436a-bdf6-edef227d7c2816a4d266-2d32-47a5-a9a0-a8c6bc7e3bd0',
         },
     }
 
     CHART_KEYS_TO_ENTITIES = {
-        'by_age': ('9ba3a895-019a-4e68-99ec-0eb7b5bd026c', 1),
-        'deaths_by_age': ('f744cc14-179a-428f-8125-e68421784ada', 1),
-        'probable_deaths_by_age': ('f744cc14-179a-428f-8125-e68421784ada', 2),
-        'by_region': ('b26b9acd-b036-40bc-bbbe-68667dd338e4', 1),
-        'probable_cases': ('7e36765a-23c2-4bc7-9fc1-ea4a927c8064', 2),
+        'by_age': (
+            '9ba3a895-019a-4e68-99ec-0eb7b5bd026c965c7238-c7a5-4b69-8ae9-617ad32c3fbb',
+            1),
+        'deaths_by_age': (
+            'f744cc14-179a-428f-8125-e68421784ada00564073-e26d-4558-aa6b-71dbb2eca932',
+            1),
+        'probable_deaths_by_age': (
+            'f744cc14-179a-428f-8125-e68421784ada00564073-e26d-4558-aa6b-71dbb2eca932',
+            2),
+        'probable_cases': (
+            '7e36765a-23c2-4bc7-9fc1-ea4a927c8064544fabc9-c97c-4193-96dc-2e88ec0a59c1',
+            2),
     }
 
     HISTORY_CHART_KEYS_TO_ENTITIES = {
-        'cases': '65c738a3-4a8f-4938-92c5-d282362a4a77',
-        'deaths': 'ee2d7dd8-d5b2-45c4-b866-6013db24ad19',
-        'probable_cases': '7e36765a-23c2-4bc7-9fc1-ea4a927c8064',
+        'cases': {
+            'entity_id': '65c738a3-4a8f-4938-92c5-d282362a4a77e4a402fb-cb25-4f3a-bea6-680035690924',
+        },
+        'deaths': {
+            'entity_id': 'ee2d7dd8-d5b2-45c4-b866-6013db24ad1913109eac-b8d6-48e5-8281-1e1b7badf748',
+            'sum_data': True,
+            'data_index': 1,
+        },
+        'probable_cases': {
+            'entity_id': '7e36765a-23c2-4bc7-9fc1-ea4a927c8064544fabc9-c97c-4193-96dc-2e88ec0a59c1',
+        },
     }
 
     STACKED_BAR_CHART_KEYS_TO_ENTITIES = {
-        'sequenced_variants': 'f96daffb-b27b-458a-a474-b7460bee5415',
+        'sequenced_variants': 'f96daffb-b27b-458a-a474-b7460bee5415f4f333db-3b42-46bb-aab3-c7e40e6db552',
     }
+
+    if 0:
+        COUNTER_KEYS_TO_ENTITIES.update({
+            'in_isolation': {
+                'labels': ['currently in isolation'],
+                'entity_id': '569b986d-bb02-48dc-ae00-15b58b58f712',
+            },
+            'released_from_isolation': {
+                'labels': ['released from isolation', 'recovered'],
+                'entity_id': 'f335bb23-9900-4acf-854a-8214e532c1de',
+            },
+        })
+
+        CHART_KEYS_TO_ENTITIES.update({
+            'by_region': ('b26b9acd-b036-40bc-bbbe-68667dd338e4', 1),
+        })
 
     scraped_data = {
         key: get_counter_value(info['entity_id'],
@@ -389,8 +427,8 @@ def build_dataset(response, out_filename, **kwargs):
 
 
     scraped_history_data = {
-        key: get_chart_history(entity_id)
-        for key, entity_id in HISTORY_CHART_KEYS_TO_ENTITIES.items()
+        _key: get_chart_history(**_options)
+        for _key, _options in HISTORY_CHART_KEYS_TO_ENTITIES.items()
     }
     scraped_history_data.update({
         key: get_stacked_bar_chart_history(entity_id)
@@ -412,11 +450,11 @@ def build_dataset(response, out_filename, **kwargs):
                                  datestamp.strftime('%d').lstrip('0'))
 
     try:
-        by_age = scraped_data['by_age']
-        by_region = scraped_data['by_region']
-        deaths_by_age = scraped_data['deaths_by_age']
-        probable_cases = scraped_data['probable_cases']
-        probable_deaths_by_age = scraped_data['probable_deaths_by_age']
+        by_age = scraped_data.get('by_age', {})
+        by_region = scraped_data.get('by_region', {})
+        deaths_by_age = scraped_data.get('deaths_by_age', {})
+        probable_cases = scraped_data.get('probable_cases', {})
+        probable_deaths_by_age = scraped_data.get('probable_deaths_by_age', {})
 
         # Normalize some of these values.
         #
@@ -453,13 +491,13 @@ def build_dataset(response, out_filename, **kwargs):
                     '0-4': deaths_by_age.get('0-4', 0),
                     '5-12': deaths_by_age.get('5-12', 0),
                     '13-17': deaths_by_age.get('13-17', 0),
-                    '18-24': deaths_by_age['18-24'],
-                    '25-34': deaths_by_age['25-34'],
-                    '35-44': deaths_by_age['35-44'],
-                    '45-54': deaths_by_age['45-54'],
-                    '55-64': deaths_by_age['55-64'],
-                    '65-74': deaths_by_age['65-74'],
-                    '75_plus': deaths_by_age['75+'],
+                    '18-24': deaths_by_age.get('18-24'),
+                    '25-34': deaths_by_age.get('25-34'),
+                    '35-44': deaths_by_age.get('35-44'),
+                    '45-54': deaths_by_age.get('45-54'),
+                    '55-64': deaths_by_age.get('55-64'),
+                    '65-74': deaths_by_age.get('65-74'),
+                    '75_plus': deaths_by_age.get('75+'),
 
                     # Legacy
                     '0-17': (deaths_by_age.get('0-4', 0) +
@@ -472,53 +510,61 @@ def build_dataset(response, out_filename, **kwargs):
                     '0-4': probable_deaths_by_age.get('0-4', 0),
                     '5-12': probable_deaths_by_age.get('5-12', 0),
                     '13-17': probable_deaths_by_age.get('13-17', 0),
-                    '18-24': probable_deaths_by_age['18-24'],
-                    '25-34': probable_deaths_by_age['25-34'],
-                    '35-44': probable_deaths_by_age['35-44'],
-                    '45-54': probable_deaths_by_age['45-54'],
-                    '55-64': probable_deaths_by_age['55-64'],
-                    '65-74': probable_deaths_by_age['65-74'],
-                    '75_plus': probable_deaths_by_age['75+'],
+                    '18-24': probable_deaths_by_age.get('18-24'),
+                    '25-34': probable_deaths_by_age.get('25-34'),
+                    '35-44': probable_deaths_by_age.get('35-44'),
+                    '45-54': probable_deaths_by_age.get('45-54'),
+                    '55-64': probable_deaths_by_age.get('55-64'),
+                    '65-74': probable_deaths_by_age.get('65-74'),
+                    '75_plus': probable_deaths_by_age.get('75+'),
                 },
             },
             'in_isolation': {
-                'current': scraped_data['in_isolation'],
-                'total_released': scraped_data['released_from_isolation'],
+                'current': scraped_data.get('in_isolation'),
+                'total_released': scraped_data.get('released_from_isolation'),
             },
             'viral_tests': {
                 'total': None,
                 'results': None,
             },
             'hospitalized': {
-                'current': scraped_data['hospitalized'],
+                'current': scraped_data.get('hospitalized'),
             },
             'age_ranges_in_years': {
-                '0-4': by_age['0-4'],
-                '5-12': by_age['5-12'],
-                '13-17': by_age['13-17'],
-                '18-24': by_age['18-24'],
-                '25-34': by_age['25-34'],
-                '35-44': by_age['35-44'],
-                '45-54': by_age['45-54'],
-                '55-64': by_age['55-64'],
-                '65-74': by_age['65-74'],
-                '75_plus': by_age['75+'],
+                '0-4': by_age.get('0-4'),
+                '5-12': by_age.get('5-12'),
+                '13-17': by_age.get('13-17'),
+                '18-24': by_age.get('18-24'),
+                '25-34': by_age.get('25-34'),
+                '35-44': by_age.get('35-44'),
+                '45-54': by_age.get('45-54'),
+                '55-64': by_age.get('55-64'),
+                '65-74': by_age.get('65-74'),
+                '75_plus': by_age.get('75+'),
 
                 # Legacy
-                '0-17': (by_age['0-4'] +
-                         by_age['5-12'] +
-                         by_age['13-17']),
+                '0-17': (
+                    (by_age.get('0-4') +
+                     by_age.get('5-12') +
+                     by_age.get('13-17'))
+                    if by_age
+                    else None
+                ),
                 '18-49': None,
                 '50-64': None,
-                '65_plus': by_age['65-74'] + by_age['75+'],
+                '65_plus': (
+                    (by_age['65-74'] + by_age['75+'])
+                    if by_age
+                    else None
+                ),
             },
             'regions': {
-                'biggs_gridley': by_region['Biggs/Gridley'],
-                'chico': by_region['Chico'],
-                'durham': by_region['Durham'],
-                'oroville': by_region['Oroville'],
-                'other': by_region['Other/Missing'],
-                'ridge': by_region['Ridge Communities'],
+                'biggs_gridley': by_region.get('Biggs/Gridley'),
+                'chico': by_region.get('Chico'),
+                'durham': by_region.get('Durham'),
+                'oroville': by_region.get('Oroville'),
+                'other': by_region.get('Other/Missing'),
+                'ridge': by_region.get('Ridge Communities'),
 
                 # Legacy
                 'gridley': None,
