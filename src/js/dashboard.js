@@ -6,7 +6,12 @@ function setupCounters() {
 
     BC19.setCounter('total-cases-counter', data.totalCases);
     BC19.setCounter('deaths-counter', data.totalDeaths);
+
+/* This is no longer available, as of February 28, 2022:
+
     BC19.setCounter('in-isolation-counter', data.inIsolation);
+*/
+
     BC19.setCounter('hospitalized-counter', data.allHospitalized);
     BC19.setCounter('icu-counter', data.inICU);
     BC19.setCounter('school-year-student-cases',
@@ -43,12 +48,15 @@ function setupBarGraphs() {
         },
         data.casesByAge);
 
+/* This is no longer available, as of February 28, 2022:
+
     BC19.setupBarGraph(
         d3.select('#by_region_graph'),
         {
             pct: true,
         },
         data.casesByRegion);
+*/
 
     BC19.setupBarGraph(
         d3.select('#deaths_by_age_graph'),
@@ -942,6 +950,9 @@ function setupTimelineGraphs() {
         },
     });
 
+
+/* These are no longer available, as of August 10, 2021:
+
     const vaccinationsByGenderGraph = BC19.setupBBGraph({
         bindto: '#vaccines_by_gender',
         size: {
@@ -1161,6 +1172,7 @@ function setupTimelineGraphs() {
             },
         },
     });
+*/
 
     BC19.setupBBGraph({
         bindto: '#hospitalizations_icu_timeline_graph',
@@ -1374,6 +1386,8 @@ function setupTimelineGraphs() {
         },
     });
 
+/* These are no longer available, as of August 29, 2021:
+
     const adultSeniorCareGraph = BC19.setupBBGraph({
         bindto: '#adult_senior_care_graph',
         size: {
@@ -1502,6 +1516,7 @@ function setupTimelineGraphs() {
             },
         },
     });
+*/
 
     const maxInmateCasesValue = Math.max(maxValues.jailInmateCurCases,
                                          maxValues.jailInmatePopulation);
