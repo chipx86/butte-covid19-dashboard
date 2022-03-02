@@ -109,7 +109,7 @@ DATASETS = [
     {
         'filename': 'timeline.csv',
         'format': 'csv',
-        'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRwJpCeZj4tsxMXqrHFDjIis5Znv-nI0kQk9enEAJAbYzZUBHm7TELQe0wl2huOYEkdaWLyR8N9k_uq/pub?gid=169564738&single=true&output=csv',
+        'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRwJpCeZj4tsxMXqrHFDjIis5Znv-nI0kQk9enEAJAbYzZUBHm7TELQe0wl2huOYEkdaWLyR8N9k_uq/pub?gid=169564738&single=true&output=csv&_=%s' % datetime.timestamp(datetime.now()),
         'csv': {
             'end_if': lambda row: (
                 row['confirmed_cases:total'] == '' and
