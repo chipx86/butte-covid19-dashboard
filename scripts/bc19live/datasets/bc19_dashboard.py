@@ -341,7 +341,7 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
     graph_jail_inmate_pos_results = ['jail_inmate_pos_results']
     graph_jail_inmate_cur_cases = ['jail_inmate_cur_cases']
     graph_jail_staff_tests = ['jail_staff_tests']
-    graph_jail_staff_total_cases = ['jail_staff_total_cases']
+    graph_jail_staff_cur_cases = ['jail_staff_cur_cases']
 
     graph_vaccines_1st_dose = ['vaccines_1st_dose']
     graph_vaccines_1st_dose_pct = ['vaccines_1st_dose_pct']
@@ -398,7 +398,7 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
     max_seven_day_pos_rate = 0
     max_jail_inmate_cur_cases = 0
     max_jail_inmate_pop = 0
-    max_jail_staff_total_cases = 0
+    max_jail_staff_cur_cases = 0
     max_vaccines_doses = 0
     max_vaccines_by_type = 0
     max_one_week_vaccines_rate = 0
@@ -696,7 +696,7 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
         jail_staff_data = county_jail_data['staff']
         jail_inmate_cur_cases = jail_inmates_data['current_cases']
         jail_inmate_pop = jail_inmates_data['population']
-        jail_staff_total_cases = jail_staff_data['total_positive']
+        jail_staff_cur_cases = jail_staff_data['current_cases']
 
         graph_jail_pop.append(jail_inmate_pop)
         graph_jail_inmate_tests.append(jail_inmates_data['total_tests'])
@@ -704,14 +704,14 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
             jail_inmates_data['total_positive'])
         graph_jail_inmate_cur_cases.append(jail_inmate_cur_cases)
         graph_jail_staff_tests.append(jail_staff_data['total_tests'])
-        graph_jail_staff_total_cases.append(jail_staff_total_cases)
+        graph_jail_staff_cur_cases.append(jail_staff_cur_cases)
 
         max_jail_inmate_cur_cases = max(max_jail_inmate_cur_cases,
                                         jail_inmate_cur_cases or 0)
         max_jail_inmate_pop = max(max_jail_inmate_pop,
                                   jail_inmate_pop or 0)
-        max_jail_staff_total_cases = max(max_jail_staff_total_cases,
-                                         jail_staff_total_cases or 0)
+        max_jail_staff_cur_cases = max(max_jail_staff_cur_cases,
+                                       jail_staff_cur_cases or 0)
 
         if jail_inmate_pop is not None:
             latest_jail_row_index = i
@@ -1206,11 +1206,11 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
                 get_value=lambda row: (
                     row['county_jail']['staff']['total_tests']
                 )),
-            'jailStaffTotalCases': build_counter_data(
+            'jailStaffCurCases': build_counter_data(
                 rows,
                 row_index=latest_jail_row_index,
                 get_value=lambda row: (
-                    row['county_jail']['staff']['total_positive']
+                    row['county_jail']['staff']['current_cases']
                 )),
         },
         'dates': {
@@ -1225,7 +1225,7 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
         'maxValues': {
             'jailInmateCurCases': max_jail_inmate_cur_cases,
             'jailInmatePopulation': max_jail_inmate_pop,
-            'jailStaffTotalCases': max_jail_staff_total_cases,
+            'jailStaffCurCases': max_jail_staff_cur_cases,
             'newCases': max_new_cases,
             'newDeaths': max_new_deaths,
             'semesterSchoolCases': max_semester_school_cases,
@@ -1280,7 +1280,7 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
                 'inmatePosResults': graph_jail_inmate_pos_results,
                 'inmateTests': graph_jail_inmate_tests,
                 'staffTests': graph_jail_staff_tests,
-                'staffTotalCases': graph_jail_staff_total_cases,
+                'staffCurCases': graph_jail_staff_cur_cases,
             },
             'notes': graph_notes,
             'regions': {

@@ -31,7 +31,7 @@ function setupCounters() {
     BC19.setCounter('jail-inmate-cur-cases', data.jailInmateCurCases);
     BC19.setCounter('jail-inmate-pos-rate', data.jailInmatePosRate);
     BC19.setCounter('jail-staff-total-tests', data.jailStaffTotalTests);
-    BC19.setCounter('jail-staff-total-cases', data.jailStaffTotalCases);
+    BC19.setCounter('jail-staff-cur-cases', data.jailStaffCurCases);
 };
 
 
@@ -1560,7 +1560,7 @@ function setupTimelineGraphs() {
     });
 
     BC19.setupBBGraph({
-        bindto: '#jail_staff_total_cases_timeline_graph',
+        bindto: '#jail_staff_cur_cases_timeline_graph',
         size: {
             height: BC19.graphSizes.SMALL,
         },
@@ -1569,21 +1569,21 @@ function setupTimelineGraphs() {
             colors: BC19.colors,
             columns: [
                 graphData.dates,
-                graphData.jail.staffTotalCases,
+                graphData.jail.staffCurCases,
             ],
             names: {
-                jail_staff_total_cases: 'Total Staff Cases',
+                jail_staff_cur_cases: 'Current Staff Cases',
             },
             type: 'area-step',
         },
         axis: {
             x: axisX,
             y: {
-                max: BC19.getMaxY(maxValues.jailStaffTotalCases,
+                max: BC19.getMaxY(maxValues.jailStaffCurCases,
                                   tickCounts.SMALL),
                 padding: 0,
                 tick: {
-                    stepSize: BC19.getStepSize(maxValues.jailStaffTotalCases,
+                    stepSize: BC19.getStepSize(maxValues.jailStaffCurCases,
                                                tickCounts.SMALL),
                 },
             },

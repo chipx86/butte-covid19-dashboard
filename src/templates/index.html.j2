@@ -468,8 +468,8 @@
      )}}
 
      {{counter(
-         id='jail-staff-total-cases',
-         title='Total Staff Cases',
+         id='jail-staff-cur-cases',
+         title='Current Staff Cases',
          timestamp_key='jail',
          up_is_bad=True
      )}}
@@ -484,12 +484,8 @@
      )}}
 
      {{timeline_graph(
-         data_id='jail_staff_total_cases_timeline_graph',
-         title='Total Staff Cases',
-         subtitles=[
-             'Only total cases are available. Unlike inmate numbers, current '
-             'cases are not provided by the county.',
-         ]
+         data_id='jail_staff_cur_cases_timeline_graph',
+         title='Total Staff Cases'
      )}}
 {%-  endcall %}
 {%- endblock sections %}

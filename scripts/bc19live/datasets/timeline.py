@@ -507,11 +507,11 @@ DATASETS = [
                     'type': 'delta',
                     'delta_from': 'county_jail:staff:total_tests',
                 },
-                {'name': 'county_jail:staff:total_positive'},
+                {'name': 'county_jail:staff:current_cases'},
                 {
-                    'name': 'county_jail:staff:delta_total_positive',
+                    'name': 'county_jail:staff:delta_current_cases',
                     'type': 'delta',
-                    'delta_from': 'county_jail:staff:total_positive',
+                    'delta_from': 'county_jail:staff:current_cases',
                 },
                 {
                     'name': 'monitoring:tier',
