@@ -386,7 +386,7 @@ def build_dataset(response, out_filename, **kwargs):
             'entity_id': '65c738a3-4a8f-4938-92c5-d282362a4a77e4a402fb-cb25-4f3a-bea6-680035690924',
         },
         'deaths': {
-            'entity_id': 'ee2d7dd8-d5b2-45c4-b866-6013db24ad1913109eac-b8d6-48e5-8281-1e1b7badf748',
+            'entity_id': 'ee2d7dd8-d5b2-45c4-b866-6013db24ad1967da35c2-eefb-44e9-abff-19ac84d3afdd',
             'sum_data': True,
             'data_index': 1,
         },
