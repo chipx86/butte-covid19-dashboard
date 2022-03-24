@@ -140,12 +140,6 @@ DATASETS = [
                     results[-3]['confirmed_cases:total'] != '',
                     'Confirmed cases missing in last 3 rows',
                 ),
-                lambda results: (
-                    results[-1]['deaths:total'] != '' or
-                    results[-2]['deaths:total'] != '' or
-                    results[-3]['deaths:total'] != '',
-                    'Total deaths missing in last 3 rows',
-                ),
             ],
             'skip_rows': 4,
             'default_type': 'int_or_blank',
@@ -176,10 +170,11 @@ DATASETS = [
                 },
                 {'name': 'deaths:total_as_of_report'},
                 {'name': 'deaths:total'},
+                {'name': 'deaths:by_week:total'},
                 {
-                    'name': 'deaths:delta_total',
+                    'name': 'deaths:by_week:delta_total',
                     'type': 'delta',
-                    'delta_from': 'deaths:total',
+                    'delta_from': 'deaths:by_week:total',
                 },
                 {'name': 'deaths:age_ranges_in_years:0-4'},
                 {

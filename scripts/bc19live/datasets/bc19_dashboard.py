@@ -466,17 +466,22 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
             latest_cases_row_index = i
 
         # Deaths
-        deaths_total = deaths_data['total']
-        deaths_delta_total = deaths_data['delta_total']
-
-        graph_total_deaths.append(deaths_total)
-        graph_new_deaths.append(deaths_delta_total)
-
-        max_new_deaths = max(max_new_deaths, deaths_delta_total or 0)
-        max_total_deaths = max(max_total_deaths, deaths_total or 0)
+        deaths_total = deaths_data['by_week']['total']
+        deaths_delta_total = deaths_data['by_week']['delta_total']
 
         if deaths_total is not None:
+            deaths_delta_total = deaths_total - max_total_deaths
+
+            graph_total_deaths.append(deaths_total)
+            graph_new_deaths.append(deaths_delta_total)
+
+            max_total_deaths = max(max_total_deaths, deaths_total or 0)
+            max_new_deaths = max(max_new_deaths, deaths_delta_total or 0)
+
             latest_deaths_row_index = i
+        else:
+            graph_total_deaths.append(max_total_deaths)
+            graph_new_deaths.append(0)
 
         # 7-Day New Case Rate
         one_week_case_rate_i1 = i - 7
