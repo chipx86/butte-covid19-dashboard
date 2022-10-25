@@ -301,6 +301,20 @@ function makeTile(options) {
     const tileEl = document.createElement('div');
     tileEl.classList.add('bc19-c-tiles__tile');
 
+    if (options.inactive) {
+        tileEl.classList.add('-is-inactive')
+        options.subtitle = 'This district is no longer reporting cases';
+    }
+
+    if (options.uncertain) {
+        tileEl.classList.add('-is-uncertain')
+    }
+
+    /* Override the subtitle if we have a message for this. */
+    if (options.message) {
+        options.subtitle = message;
+    }
+
     const titleEl = document.createElement('a');
     titleEl.classList.add('bc19-c-tiles__tile-header');
     titleEl.innerText = options.title;
@@ -309,7 +323,7 @@ function makeTile(options) {
 
     const cases = options.cases;
 
-    if (cases !== undefined) {
+    if (cases !== undefined && !options.subtitle) {
         if (cases === 0 && !options.casesHaveData) {
             options.subtitle = '0 cases or no data';
         } else if (cases === 1) {
@@ -366,7 +380,8 @@ function addDistrictSections(parentEl) {
         title: 'Districts',
         headerText: [
             ('<em>If a district or school is not listed, it may not ' +
-             'provide public case information.</em>'),
+             'provide public case information. Not all listed districts ' +
+             'are reporting starting in 2022.</em>'),
             'Click or tap a district name to see more information.',
         ],
     });
@@ -375,6 +390,8 @@ function addDistrictSections(parentEl) {
     sectionEl.appendChild(tilesEl);
 
     const districts = BC19.Schools.districts;
+    const schoolsStatus =
+        BC19.Schools.schoolsStatus[BC19.Schools.curSchoolYearStatusKey] || {};
 
     const sortedDistricts = Object.entries(districts).sort(
         (districtPair1, districtPair2) => compareGraphCaseSets(
@@ -394,14 +411,21 @@ function addDistrictSections(parentEl) {
         const districtInfo = districtPair[1];
         const source = districtInfo.source;
         const districtMaxValues = BC19.maxValues.districts[districtID];
+        const districtStatusInfo = schoolsStatus[districtID] || {};
+        const districtStatus = districtStatusInfo.status;
 
         const urlParams = new URLSearchParams(window.location.search);
         urlParams.set('district', districtID);
 
+        const cases = districtMaxValues.totalCases;
+
         const tileEl = makeTile({
             title: districtInfo.full_name,
-            cases: districtMaxValues.totalCases,
+            cases: cases,
             deltaCases: caseRelValues[districtID],
+            inactive: districtStatus === 'inactive' && cases === 0,
+            uncertain: districtStatus === 'uncertain' || cases === 0,
+            message: districtStatusInfo.message,
             url: urlParams.toString(),
         });
         tilesEl.appendChild(tileEl);
@@ -426,6 +450,8 @@ function addDistrictSections(parentEl) {
 
 function addSchoolSections(parentEl, districtID) {
     const schools = BC19.Schools.schools[districtID];
+    const schoolsStatus =
+        BC19.Schools.schoolsStatus[BC19.Schools.curSchoolYearStatusKey] || {};
 
     const sectionEl = setupNewSection({
         parentEl: parentEl,
@@ -466,15 +492,21 @@ function addSchoolSections(parentEl, districtID) {
         const schoolName = schoolPair[1];
         const schoolGraphs = BC19.graphData.schools[schoolID];
         const schoolMaxValues = BC19.maxValues.schools[schoolID];
+        const districtStatusInfo = schoolsStatus[districtID] || {};
+        const districtStatus = districtStatusInfo.status;
+        const cases = schoolMaxValues.totalCases;
 
         const urlParams = new URLSearchParams(window.location.search);
         urlParams.set('school', schoolID);
 
         const tileEl = makeTile({
             title: schoolName,
-            cases: schoolMaxValues.totalCases,
+            cases: cases,
             casesHaveData: casesHaveData,
             deltaCases: caseRelValues[schoolID],
+            inactive: districtStatus === 'inactive' && cases === 0,
+            uncertain: districtStatus === 'uncertain' || cases === 0,
+            message: districtStatusInfo.message,
             url: urlParams.toString(),
         });
         tilesEl.appendChild(tileEl);
@@ -503,6 +535,9 @@ function setupGraphs() {
     const mode = BC19.Schools.mode;
     const school = BC19.Schools.curSchool;
     const district = BC19.Schools.curDistrict;
+    const schoolsStatus =
+        BC19.Schools.schoolsStatus[BC19.Schools.curSchoolYearStatusKey] || {};
+    const statusInfo = schoolsStatus[district] || {};
     let barGraphData;
     let counters;
     let graphData;
@@ -510,6 +545,21 @@ function setupGraphs() {
     let notice;
 
     const overviewTitleEl = document.getElementById('overview-title');
+
+    if (district) {
+        const districtName = BC19.Schools.districts[district].full_name;
+
+        notice = statusInfo.message;
+
+        if (!notice) {
+            if (statusInfo.status === 'inactive') {
+                notice = `${districtName} is no longer reporting COVID cases.`;
+            } else if (statusInfo.status === 'uncertain') {
+                notice =
+                    `${districtName} may no longer be reporting COVID cases.`;
+            }
+        }
+    }
 
     if (mode === 'county') {
         barGraphData = BC19.barGraphsData.countyWide;
@@ -523,7 +573,6 @@ function setupGraphs() {
         counters = BC19.countersData.districts[district];
         graphData = BC19.graphData.districts[district];
         maxValues = BC19.maxValues.districts[district];
-        notice = BC19.Schools.notices.districts[district];
 
         const districtName = BC19.Schools.districts[district].full_name;
 
@@ -665,12 +714,17 @@ BC19.init = function() {
             }
 
             BC19.Schools.curSchoolYear = year;
+            BC19.Schools.curSchoolYear = year;
+            BC19.Schools.curSchoolYearStatusKey =
+                `${BC19.Schools.curSchoolYear}-` +
+                `${BC19.Schools.curSchoolYear + 1}`;
             BC19.Schools.curDistrict = district;
             BC19.Schools.curSchool = school;
             BC19.Schools.districts = data.districts;
             BC19.Schools.mode = mode;
             BC19.Schools.notices = data.notices;
             BC19.Schools.schools = data.schools;
+            BC19.Schools.schoolsStatus = data.schoolsStatus;
             BC19.Schools.schoolYears = data.schoolYears;
             BC19.Schools.urlParams = urlParams;
             BC19.Schools.isEmbedded = !!embed;

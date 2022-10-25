@@ -1833,8 +1833,9 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
 
     SCHOOL_TYPE_ID_NAME_MAP = dict(info['school_types'])
 
-    bc19_dashboard = json.loads(in_fps['bc19_dashboard'].read())
-    rows = json.loads(in_fps['schools'].read())
+    bc19_dashboard = json.load(in_fps['bc19_dashboard'])
+    schools_status = json.load(in_fps['schools_status'])
+    rows = json.load(in_fps['schools'])
 
     # Set up the initial state.
     first_school_year = 2020
@@ -2028,6 +2029,7 @@ def build_schools_dataset(info, in_fps, out_filename, **kwargs):
             _school_year.year
             for _school_year in school_years
         ],
+        'schoolsStatus': schools_status,
         'timelineGraphs': {
             _school_year.year: {
                 'dates': _school_year.total.graphs.dates,
@@ -2097,6 +2099,10 @@ DATASETS = [
             },
             'schools': {
                 'filename': 'schools.json',
+                'format': 'json',
+            },
+            'schools_status': {
+                'filename': 'schools-status.json',
                 'format': 'json',
             },
         },

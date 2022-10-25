@@ -10,6 +10,31 @@ from bc19live.utils import (build_missing_date_rows,
                             safe_open_for_write)
 
 
+def build_schools_status_json(response, out_filename, info, **kwargs):
+    reader = csv.DictReader(codecs.iterdecode(response.iter_lines(), 'utf-8'),
+                            delimiter=',')
+
+    school_years = {}
+
+    for row in reader:
+        school_year = row['School Year']
+        district = row['District']
+        status = row['Status']
+        message = row['Message']
+
+        districts = school_years.setdefault(school_year, {})
+        districts[district] = {
+            'status': status,
+            'message': message,
+        }
+
+    with safe_open_for_write(out_filename) as fp:
+        json.dump(school_years,
+                  fp,
+                  indent=2,
+                  sort_keys=True)
+
+
 def build_district_json(response, out_filename, info, **kwargs):
     """Build a dataset for a school district.
 
@@ -143,6 +168,9 @@ def build_district_json(response, out_filename, info, **kwargs):
         date_school_data['population_at_site'] = total_at_school
         date_row['district_wide']['population_at_site'] = total_in_district
 
+    results += build_missing_date_rows(cur_date=datetime.now(),
+                                       latest_date=last_date)
+
     dataset = {
         'dates': results,
     }
@@ -207,6 +235,12 @@ def build_all_schools_json(in_fps, out_filename, info, **kwargs):
 
 
 DATASETS = [
+    {
+        'filename': 'schools-status.json',
+        'format': 'json',
+        'url': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRUZCiEH2327_GwtD13qx-R6QpZOx5nv3UnnG-bFd-t-dwAv_OqYTiQLI55-vL_TfOsbsFtbK-lwJyx/pub?gid=1727454372&single=true&output=csv',
+        'parser': build_schools_status_json,
+    },
     {
         'filename': 'schools-blueoak.json',
         'format': 'json',

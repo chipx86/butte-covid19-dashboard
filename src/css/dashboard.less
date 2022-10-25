@@ -621,6 +621,24 @@ a:visited {
 .bc19-c-tiles {
   display: grid;
 
+  &__tile {
+    &.-is-inactive {
+      opacity: 0.7;
+
+      a {
+        color: darkgrey;
+      }
+    }
+
+    &.-is-uncertain {
+      opacity: 0.7;
+
+      a {
+        color: darkgrey;
+      }
+    }
+  }
+
   @media only screen and (min-width: 600px) {
     grid: auto-flow e('/') repeat(2, 50%);
 
