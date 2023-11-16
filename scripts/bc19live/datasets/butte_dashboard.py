@@ -1,9 +1,12 @@
 import csv
+import itertools
 import json
 import os
 import re
 from collections import OrderedDict
 from datetime import datetime, timedelta
+
+from bs4 import BeautifulSoup
 
 from bc19live.errors import ParseError
 from bc19live.utils import (add_or_update_json_date_row,
@@ -15,14 +18,9 @@ def build_dataset(response, out_filename, **kwargs):
     """Parse the Butte County dashboard.
 
     This extracts case, fatalities, hospitalization, demographics, and testing
-    information from the Butte County COVID-19 dashboard, hosted on Infogram.
+    information from the Butte County COVID-19 dashboard, hosted on Netlify.
     It's built to work around quirks that may show up from time to time, and
     to cancel out if any data appears to be missing.
-
-    Infogram pages contain a JSON payload of data used to generate the
-    dashboard. These consist of entities, which contain information for some
-    part of the dashboard. An entity may be broken into blocks that each
-    contain a label and a value, or may contain chart data.
 
     If the current timestamp on the dashboard doesn't match today's date, the
     dashboard state will not be loaded.
@@ -66,7 +64,7 @@ def build_dataset(response, out_filename, **kwargs):
             ['entities'][entity_id]
         )
 
-    def get_counter_value(entity_id, expected_labels, label_first=False):
+    def get_counter_value(entity_id):
         """Return a value from a counter entity.
 
         This is used for entities like "Confirmed Cases". It will look for a
@@ -91,56 +89,28 @@ def build_dataset(response, out_filename, **kwargs):
             ParseError:
                 The entity could not be found.
         """
-        entity = get_entity(entity_id)
-        blocks = entity['props']['content']['blocks']
+        div = soup.find(id=entity_id)
 
-        value = None
+        if not div:
+            raise ParseError('Could not find counter ID "%s"' % entity_id)
 
-        if blocks[0]['text'].strip().lower() in expected_labels:
-            value = blocks[1]['text']
-        elif (len(blocks) > 1 and
-              blocks[1]['text'].strip().lower() in expected_labels):
-            value = blocks[0]['text']
-        else:
-            # They probably broke the labels/values again. Let's try to
-            # find the label *in* the value.
-            for label in expected_labels:
-                for i in (0, 1):
-                    if (len(blocks) >= i and
-                        label in blocks[0]['text'].strip().lower()):
-                        value = (
-                            blocks[0]['text']
-                            .lower()
-                            .split(label)[0]
-                            .strip()
-                        )
+        value_el = div.find('span', 'value-output')
 
-            if value is None:
-                found_labels = [
-                    block['text'].strip().lower()
-                    for block in blocks
-                ]
+        if not value_el:
+            raise ParseError('Could not find "value-output" for counter ID '
+                             '"%s"'
+                             % entity_id)
 
-                raise ParseError(
-                    'Expected one of label %r to be one of %r for '
-                    'entity %s'
-                    % (found_labels, expected_labels, entity_id))
-
-        # This won't always be "pending", but the idea is that we're trying
-        # to gracefully handle when there's an issue with some value coming
-        # from the county or state.
-        if 'pending' in value.lower():
-            return None
+        value = value_el.string
 
         try:
             return int(re.sub(r'[, ]+', '', value))
         except Exception:
-            raise ParseError('Expected value %r for entity %s (%s) to be int, '
+            raise ParseError('Expected value %r for counter ID "%s" to be int, '
                              'got %s'
-                             % (value, entity_id, ', '.join(expected_labels),
-                                type(value)))
+                             % (value, entity_id, type(value)))
 
-    def get_chart_info(entity_id, label_col=0, value_col=1):
+    def get_chart_data(container_id, _chart_data_cache={}):
         """Return information from a chart.
 
         This will extract a chart's data, returning a mapping of chart axis
@@ -162,40 +132,54 @@ def build_dataset(response, out_filename, **kwargs):
             dict:
             A dictionary mapping chart labels to values.
         """
-        entity = get_entity(entity_id)
-        data = entity['props']['chartData']['data'][0]
+        try:
+            data = _chart_data_cache[container_id]
+        except KeyError:
+            script_el = soup.find(id=container_id).find('script')
 
-        result = OrderedDict()
+            if script_el is None:
+                raise ParseError('Could not find chart data for widget ID "%s"'
+                                 % container_id)
 
-        whitespace_re = re.compile('\s+')
-
-        for row in data[1:]:
             try:
-                label = row[label_col]
-                value = row[value_col]
-            except IndexError:
-                label = None
-                value = ''
+                data = json.loads(script_el.string)
+            except json.JSONDecodeError:
+                raise ParseError('Unable to parse JSON chart data for widget '
+                                 'ID "%s"'
+                                 % container_id)
 
-            if label is None:
-                continue
+            _chart_data_cache[container_id] = data
 
-            if value == '':
-                value = 0
-            else:
-                try:
-                    value = int(value)
-                except IndexError:
-                    # This column may not exist in this field, due to no value
-                    # provided yet in the graph data.
-                    value = 0
+        return data
 
-            key = whitespace_re.sub(' ', label)
-            result[key] = value
+    def get_chart_axis(container_id, label_key, value_key, data_index=0,
+                       **kwargs):
+        data = get_chart_data(container_id, **kwargs)
 
-        return result
+        try:
+            chart_data = data['x']['data'][data_index]
+            labels = chart_data[label_key]
+            values = chart_data[value_key]
+        except KeyError as e:
+            raise ParseError('Unable to find chart data key "%s" for widget '
+                             'ID "%s"'
+                             % (e, container_id))
 
-    def get_chart_history(entity_id, data_index=2, sum_data=False):
+        return labels, values
+
+    def get_chart_keyvals(label_map={}, label_key='y', value_key='x',
+                          **kwargs):
+        chart_data = get_chart_axis(label_key=label_key,
+                                    value_key=value_key,
+                                    **kwargs)
+
+        return OrderedDict(
+            (label_map.get(_label, _label), _value)
+            for _label, _value in zip(*chart_data)
+        )
+
+    def get_chart_history(label_key='x', value_key='y', sum_data=False,
+                          **kwargs):
         """Return history/timeline information from a chart.
 
         This will extract the history data and perform date normalization,
@@ -209,64 +193,16 @@ def build_dataset(response, out_filename, **kwargs):
             dict:
             A dictionary mapping chart labels to values.
         """
-        entity = get_entity(entity_id)
-        history = []
-        year = 2020
-        prev_month = 0
-        total = 0
+        labels, values = get_chart_axis(label_key=label_key,
+                                        value_key=value_key,
+                                        **kwargs)
 
-        for item in entity['props']['chartData']['data'][0][1:]:
-            if item[0] is None:
-                continue
+        if sum_data:
+            return list(zip(labels, itertools.accumulate(values)))
+        else:
+            return list(zip(labels, values))
 
-            parts = [
-                int(_i)
-                for _i in item[0].split('/')
-            ]
-
-            if len(parts) == 3:
-                # Dates in M/D/YYYY
-                month, day, year = parts
-
-                if year < 100:
-                    # The year is in YY form, and not YYYY form. Hello, Y2K
-                    # problem.
-                    year += 2000
-            else:
-                # Dates are probably in M/D. Kind of annoyoing.
-                #
-                # We'll need to use the previously-computed (or default) year
-                # as a base.
-                month, day = parts
-
-                if month < prev_month:
-                    # It's a new year. Happy new year.
-                    year += 1
-
-            assert 1 <= day <= 31
-            assert 1 <= month <= 12
-            assert 2020 <= year
-
-            key = '%d-%02d-%02d' % (year, month, day)
-
-            try:
-                value = int(item[data_index])
-            except ValueError:
-                value = None
-
-            if sum_data:
-                total += value
-            else:
-                total = value
-
-            history.append((key, total))
-
-            prev_month = month
-
-        return history
-
-    def get_stacked_bar_chart_history(entity_id, row_label_offset=1,
-                                      column_data_offset=2):
+    def get_variant_data(**kwargs):
         """Return historical data from a stacked bar chart.
 
         This will extract the history data and perform date normalization.
@@ -290,164 +226,135 @@ def build_dataset(response, out_filename, **kwargs):
             list of dict:
             The history data.
         """
-        MONTH_MAP = {
-            'Jan.': 'January',
-            'Feb.': 'February',
-            'Mar.': 'March',
-            'Apr.': 'April',
-            'Jun.': 'June',
-            'Jul.': 'July',
-            'Aug.': 'August',
-            'Sept.': 'September',
-            'Oct.': 'October',
-            'Nov.': 'November',
-            'Dec.': 'December',
+        VARIANT_LABEL_RE = re.compile(
+            r'^<b>(?P<name>[^:]+): </b><br>(?P<month>[^\s]+) (?P<year>\d{4}) '
+            r'(?P<count>\d+).*')
+
+        VARIANT_NAME_MAP = {
+            'Omicron BA.1': 'Omicron - BA.1',
+            'Omicron BA.2': 'Omicron - BA.2',
         }
 
-        entity = get_entity(entity_id)
-        history = []
+        data = get_chart_data(**kwargs)
 
-        chart_data = entity['props']['chartData']['data'][0]
-        row_labels = chart_data[0][row_label_offset:]
+        all_variant_names = set()
+        dates = {}
 
-        for column_data in chart_data[1:]:
-            # Kind of a hack... Definitely going to have to change this if
-            # dealing with more stacked bar charts.
-            label = ' '.join(
-                MONTH_MAP.get(_s, _s)
-                for _s in column_data[0].split(' ')
-            )
-            row_data = column_data[column_data_offset - 1:]
+        for variant_data in data['x']['data']:
+            # This is pretty hacky. There's no other way currently to get
+            # the information we need.
+            for date, custom_data in zip(variant_data['x'],
+                                         variant_data['customdata']):
+                m = VARIANT_LABEL_RE.match(custom_data)
 
-            history.append({
-                'label': label,
-                'rows': dict(zip(row_labels, row_data)),
+                if not m:
+                    raise ParseError('Unable to match custom_data label for '
+                                     'variant data: %r'
+                                     % custom_data)
+
+                variant_name = m.group('name')
+                month = m.group('month')
+                year = m.group('year')
+                count = int(m.group('count'))
+
+                variant_name = VARIANT_NAME_MAP.get(variant_name, variant_name)
+                all_variant_names.add(variant_name)
+
+                if date not in dates:
+                    dates[date] = {
+                        'variants': OrderedDict(),
+                        'date_label': '%s-%s' % (month, year),
+                    }
+
+                dates[date]['variants'][variant_name] = count
+
+        results = []
+
+        for date, date_info in sorted(dates.items(),
+                                      key=lambda pair: pair[0]):
+            date_variants = date_info['variants']
+            total = sum(date_variants.values())
+
+            results.append({
+                'label': '%s (N = %d)' % (date_info['date_label'], total),
+                'rows': {
+                    _variant_name: date_variants.get(_variant_name, 0)
+                    for _variant_name in all_variant_names
+                },
             })
 
-        return history
+        return results
 
-    # Sometimes the county reports the current day in the report, and sometimes
-    # the previous day. This flag dictates behavior around that.
-    m = re.search(r'window.infographicData=(.*);</script>', response.text)
-
-    if not m:
-        raise ParseError('Unable to find infographicData in Butte Dashboard')
-
-    try:
-        dashboard_data = json.loads(m.group(1))
-    except Exception as e:
-        raise ParseError('Unable to parse infographicData in Butte Dashboard: '
-                         '%s'
-                         % e)
+    soup = BeautifulSoup(response.text, 'html5lib')
 
     datestamp = (datetime.now() - timedelta(days=1)).date()
 
-    with open('/tmp/dashboard.json', 'w') as fp:
-        fp.write(json.dumps(dashboard_data, indent=2, sort_keys=True))
-
-    # On February 28, 2022, Butte County Public Health terminated almost all
-    # of the information they had displayed on the dashboard. There's no longer
-    # an ability to graph most of this data.
-    #
-    # For historical reasons, and with a hope that the data will come back,
-    # the code below will remain, locked off with a switch.
     COUNTER_KEYS_TO_ENTITIES = {
         'confirmed_cases': {
-            'labels': ['confirmed cases total to date'],
-            'entity_id': '15b62ec3-79df-492a-9171-f92c09dbe3c4db533313-2a0e-48d8-a35c-c4da80fe3af3',
+            'entity_id': 'total-confirmed-cases-since-march-14-2020',
         },
         'deaths': {
-            'labels': ['deaths confirmed by viral test'],
-            'entity_id': '9c8d7a74-c196-40b5-a2e5-3bd643bbae8b4da917f9-0222-4196-99e4-43b1329bb283',
+            'entity_id': 'total-laboratory-confirmed-lives-lost-to-date',
         },
         'hospitalized': {
-            'labels': ['currently hospitalized'],
-            'entity_id': '3e7ad00d-727d-436a-bdf6-edef227d7c2816a4d266-2d32-47a5-a9a0-a8c6bc7e3bd0',
+            'entity_id': 'currently-hospitalized-in-butte-county',
         },
     }
 
+    # On February 28, 2022, Butte County Public Health terminated almost all
+    # of the information they had displayed on the dashboard. There's no longer
+    # an ability to graph smoe of the data we once had (like cases by area).
+    #
+    # The following map entries are left here for historical purposes.
     CHART_KEYS_TO_ENTITIES = {
-        'by_age': (
-            '9ba3a895-019a-4e68-99ec-0eb7b5bd026c965c7238-c7a5-4b69-8ae9-617ad32c3fbb',
-            1),
-        'deaths_by_age': (
-            'f744cc14-179a-428f-8125-e68421784ada00564073-e26d-4558-aa6b-71dbb2eca932',
-            1),
-        'probable_deaths_by_age': (
-            'f744cc14-179a-428f-8125-e68421784ada00564073-e26d-4558-aa6b-71dbb2eca932',
-            2),
-        'probable_cases': (
-            '7e36765a-23c2-4bc7-9fc1-ea4a927c8064544fabc9-c97c-4193-96dc-2e88ec0a59c1',
-            2),
+        #'by_age': {
+        #    'container_id': 'cases-by-age',
+        #    'label_map': AGE_LABEL_MAP,
+        #},
+        #'deaths_by_age': {
+        #    'container_id': 'verified-covid-19-lives-lost-by-age-group',
+        #    'label_map': AGE_LABEL_MAP,
+        #},
+        #'probable_deaths_by_age': {
+        #    'data_index': 1,
+        #    'container_id': 'verified-covid-19-lives-lost-by-age-group',
+        #    'label_map': AGE_LABEL_MAP,
+        #},
     }
 
     HISTORY_CHART_KEYS_TO_ENTITIES = {
         'cases': {
-            'entity_id': '65c738a3-4a8f-4938-92c5-d282362a4a77e4a402fb-cb25-4f3a-bea6-680035690924',
+            'container_id': 'cases',
+            'data_index': 1,
+            'sum_data': True,
         },
         'deaths': {
-            'entity_id': 'ee2d7dd8-d5b2-45c4-b866-6013db24ad1967da35c2-eefb-44e9-abff-19ac84d3afdd',
+            'container_id': 'verified-covid-19-lives-lost',
+            'data_index': 0,
             'sum_data': True,
-            'data_index': 1,
         },
         'probable_cases': {
-            'entity_id': '7e36765a-23c2-4bc7-9fc1-ea4a927c8064544fabc9-c97c-4193-96dc-2e88ec0a59c1',
+            'container_id': 'cases',
+            'data_index': 2,
+            'sum_data': True,
         },
     }
 
-    STACKED_BAR_CHART_KEYS_TO_ENTITIES = {
-        'sequenced_variants': 'f96daffb-b27b-458a-a474-b7460bee5415f4f333db-3b42-46bb-aab3-c7e40e6db552',
-    }
-
-    if 0:
-        COUNTER_KEYS_TO_ENTITIES.update({
-            'in_isolation': {
-                'labels': ['currently in isolation'],
-                'entity_id': '569b986d-bb02-48dc-ae00-15b58b58f712',
-            },
-            'released_from_isolation': {
-                'labels': ['released from isolation', 'recovered'],
-                'entity_id': 'f335bb23-9900-4acf-854a-8214e532c1de',
-            },
-        })
-
-        CHART_KEYS_TO_ENTITIES.update({
-            'by_region': ('b26b9acd-b036-40bc-bbbe-68667dd338e4', 1),
-        })
-
     scraped_data = {
-        key: get_counter_value(info['entity_id'],
-                               expected_labels=info['labels'])
-        for key, info in COUNTER_KEYS_TO_ENTITIES.items()
+        _key: get_counter_value(**_kwargs)
+        for _key, _kwargs in COUNTER_KEYS_TO_ENTITIES.items()
     }
     scraped_data.update({
-        key: get_chart_info(entity_id, value_col=value_col)
-        for key, (entity_id, value_col) in CHART_KEYS_TO_ENTITIES.items()
+        _key: get_chart_keyvals(**_kwargs)
+        for _key, _kwargs in CHART_KEYS_TO_ENTITIES.items()
     })
-
 
     scraped_history_data = {
-        _key: get_chart_history(**_options)
-        for _key, _options in HISTORY_CHART_KEYS_TO_ENTITIES.items()
+        _key: get_chart_history(**_kwargs)
+        for _key, _kwargs in HISTORY_CHART_KEYS_TO_ENTITIES.items()
     }
-    scraped_history_data.update({
-        key: get_stacked_bar_chart_history(entity_id)
-        for key, entity_id in STACKED_BAR_CHART_KEYS_TO_ENTITIES.items()
-    })
-
-    # Find the datestamp for vaccines.
-    #
-    # XXX This is no longer available on the dashboard itself.
-    vaccines_datestamp = datestamp
-
-    # We have two forms of dates being used on the dashboard.
-    #
-    # strftime sadly does not allow for representing day/month numbers
-    # without a padded 0, so do this the hard way.
-    graph_date_key1 = '%s-%s' % (datestamp.strftime('%d').lstrip('0'),
-                                 datestamp.strftime('%b').lstrip('0'))
-    graph_date_key2 = '%s/%s' % (datestamp.strftime('%m').lstrip('0'),
-                                 datestamp.strftime('%d').lstrip('0'))
+    scraped_history_data['sequenced_variants'] = \
+        get_variant_data(container_id='variant-sequencing-results')
 
     try:
         by_age = scraped_data.get('by_age', {})
@@ -456,13 +363,6 @@ def build_dataset(response, out_filename, **kwargs):
         probable_cases = scraped_data.get('probable_cases', {})
         probable_deaths_by_age = scraped_data.get('probable_deaths_by_age', {})
 
-        # Normalize some of these values.
-        #
-        # The 05-12 key was introduced on January 4, 2022. Not sure if it
-        # will stay.
-        if '05-12' in by_age:
-            by_age['5-12'] = by_age.pop('05-12')
-
         # As of Monday, September 28, 2020, the county has changed the By Ages
         # graph to show the non-fatal vs. fatal cases, instead of total vs.
         # fatal. To preserve the information we had, we need to add the deaths
@@ -470,22 +370,13 @@ def build_dataset(response, out_filename, **kwargs):
         for key in list(by_age.keys()):
             by_age[key] += deaths_by_age.get(key, 0)
 
-        try:
-            # Normal graph entries: <dd>-<Mon>
-            probable_case_total = probable_cases[graph_date_key1]
-        except KeyError:
-            # Variant: <mm>/<dd>
-            try:
-                probable_case_total = probable_cases[graph_date_key2]
-            except KeyError:
-                # The graph wasn't updated in the current report.
-                probable_case_total = None
+        probable_case_total = sum(probable_cases.values())
 
         row_result = {
             'date': datestamp.strftime('%Y-%m-%d'),
             'confirmed_cases': scraped_data['confirmed_cases'],
             'probable_cases': probable_case_total,
-            'deaths': scraped_data['deaths'],
+            'deaths': scraped_data.get('deaths', []),
             'deaths_by': {
                 'age_ranges_in_years': {
                     '0-4': deaths_by_age.get('0-4', 0),
@@ -576,7 +467,7 @@ def build_dataset(response, out_filename, **kwargs):
                 'total_first_doses_ordered': None,
                 'total_second_doses_ordered': None,
                 'total_fully_vaccinated': None,
-                'as_of_date': vaccines_datestamp.strftime('%Y-%m-%d'),
+                'as_of_date': datestamp.strftime('%Y-%m-%d'),
             },
             'history': scraped_history_data,
         }
@@ -607,9 +498,15 @@ def build_history_dataset(in_fp, out_filename, **kwargs):
     history = dataset['dates'][-1]['history']
 
     dates_to_values = {}
+    start_i = 0
+
+    for date, value in history['cases']:
+        if value == '':
+            start_i += 1
+            break
 
     for key in keys:
-        for date, value in history[key]:
+        for date, value in history.get(key, [])[start_i:]:
             dates_to_values.setdefault(date, {})[key] = value
 
     with safe_open_for_write(out_filename) as fp:
@@ -618,9 +515,10 @@ def build_history_dataset(in_fp, out_filename, **kwargs):
 
         for date, values in sorted(dates_to_values.items(),
                                    key=lambda pair: pair[0]):
-            csv_writer.writerow(dict({
-                'date': date,
-            }, **values))
+            if datetime.strptime(date, '%Y-%m-%d') >= HISTORY_START_DATE:
+                csv_writer.writerow(dict({
+                    'date': date,
+                }, **values))
 
 
 def build_sequenced_variants_dataset(in_fp, out_filename, **kwargs):
@@ -651,11 +549,14 @@ def build_sequenced_variants_dataset(in_fp, out_filename, **kwargs):
             }, **column['rows']))
 
 
+HISTORY_START_DATE = datetime(2020, 3, 14)
+
+
 DATASETS = [
     {
         'filename': 'butte-dashboard.json',
         'format': 'json',
-        'url': 'https://infogram.com/1pe66wmyjnmvkrhm66x9362kp3al60r57ex',
+        'url': 'https://bcph.netlify.app/',
         'parser': build_dataset,
     },
     {

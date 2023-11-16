@@ -19,8 +19,7 @@ TEMPLATES = [
             'title': 'Unofficial Butte County COVID-19 Dashboard',
 
             # URLs
-            'county_dashboard_url':
-                'https://infogram.com/1pe66wmyjnmvkrhm66x9362kp3al60r57ex',
+            'county_dashboard_url': 'https://bcph.netlify.app/',
         },
     },
     {
@@ -33,8 +32,7 @@ TEMPLATES = [
             'title': 'Unofficial Butte County COVID-19 Schools Dashboard',
 
             # URLs
-            'county_dashboard_url':
-                'https://infogram.com/1pe66wmyjnmvkrhm66x9362kp3al60r57ex',
+            'county_dashboard_url': 'https://bcph.netlify.app/',
         },
     },
 ]
