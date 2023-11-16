@@ -453,8 +453,9 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
 
         # Confirmed cases
         confirmed_cases_total = confirmed_cases_data['total']
-        delta_confirmed_cases = max(confirmed_cases_data['delta_total'] or 0,
-                                    0)
+        delta_confirmed_cases = max(
+            confirmed_cases_data['new_by_episode_date'] or 0,
+            0)
 
         graph_total_cases.append(confirmed_cases_total)
         graph_new_cases.append(delta_confirmed_cases)
@@ -490,10 +491,16 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
         if one_week_case_rate_i1 >= 0:
             one_week_case_rate_row1 = rows[one_week_case_rate_i1]
             one_week_case_rate_row2 = rows[i]
-            one_week_case_rate_total1 = \
-                one_week_case_rate_row1['confirmed_cases']['total']
-            one_week_case_rate_total2 = \
-                one_week_case_rate_row2['confirmed_cases']['total']
+            one_week_case_rate_total1 = (
+                one_week_case_rate_row1
+                ['confirmed_cases']
+                ['total_by_episode_date']
+            )
+            one_week_case_rate_total2 = (
+                one_week_case_rate_row2
+                ['confirmed_cases']
+                ['total_by_episode_date']
+            )
 
             if (one_week_case_rate_total1 is not None and
                 one_week_case_rate_total2 is not None):

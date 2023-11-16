@@ -156,6 +156,8 @@ DATASETS = [
                     'type': 'delta',
                     'delta_from': 'confirmed_cases:total',
                 },
+                {'name': 'confirmed_cases:total_by_episode_date'},
+                {'name': 'confirmed_cases:new_by_episode_date'},
                 {'name': 'in_isolation:current'},
                 {
                     'name': 'in_isolation:delta_current',
