@@ -38,8 +38,8 @@ DATASETS = [
             ),
             'validators': [
                 lambda results: (
-                    results[0]['date'] == '2020-04-24',
-                    'Start date was not 2020-04-24 (found %s)'
+                    results[0]['date'] == '2020-05-15',
+                    'Start date was not 2020-05-15 (found %s)'
                     % results[0]['date']
                 ),
             ],
