@@ -874,10 +874,12 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
                 one_week_vaccines_full_doses_rate or 0,
                 one_week_vaccines_boosters_rate or 0)
 
-        graph_vaccines_1st_dose_rate.append(one_week_vaccines_1_dose_rate)
+        graph_vaccines_1st_dose_rate.append(
+            max(one_week_vaccines_1_dose_rate or 0, 0))
         graph_vaccines_full_doses_rate.append(
-            one_week_vaccines_full_doses_rate)
-        graph_vaccines_boosters_rate.append(one_week_vaccines_boosters_rate)
+            max(one_week_vaccines_full_doses_rate or 0, 0))
+        graph_vaccines_boosters_rate.append(
+            max(one_week_vaccines_boosters_rate or 0, 0))
 
     latest_rows = {
         'ages': latest_age_data_row_index,
