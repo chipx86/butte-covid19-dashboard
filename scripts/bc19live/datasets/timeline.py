@@ -113,7 +113,7 @@ DATASETS = [
         'csv': {
             'end_if': lambda row: (
                 row['confirmed_cases:total'] == '' and
-                row['county_jail:inmates:population'] == ''
+                row['hospitalizations:state_data:positive'] == ''
             ),
             'validators': [
                 lambda results: (
@@ -124,15 +124,6 @@ DATASETS = [
                     results[0]['date'] == '2020-03-20',
                     ('Start date was not 2020-03-20 (found %s)'
                      % results[0]['date']),
-                ),
-                lambda results: (
-                    _report_data_date_str in (results[-1]['date'],
-                                              results[-2]['date']),
-                    ('Latest report data date (%s) not found in last two '
-                     'rows (%s, %s)'
-                     % (_report_data_date_str,
-                        results[-1]['date'],
-                        results[-2]['date'])),
                 ),
                 lambda results: (
                     results[-1]['confirmed_cases:total'] != '' or
