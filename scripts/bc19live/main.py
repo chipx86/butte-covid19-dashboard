@@ -13,19 +13,11 @@ from bc19live.utils import parse_csv
 
 #: The list of dataset module names.
 DATASET_MODULE_NAMES = [
-    'butte_county_jail',
     'butte_dashboard',
     'hospital_cases',
-    'skilled_nursing_facilities',
-    'adult_and_senior_care',
-    'schools',
     'state_cases',
     'state_hospitals',
-    'state_region_icu_pct',
-    'state_resources',
     'state_tests',
-    'state_tiers',
-    'stay_at_home',
     'vaccination_stats',
 
     # These must be last.
