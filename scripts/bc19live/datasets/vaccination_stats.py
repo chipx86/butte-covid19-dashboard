@@ -176,20 +176,44 @@ DATASETS = [
                 },
                 {'name': 'total_doses'},
                 {'name': 'cumulative_total_doses'},
-                {'name': 'pfizer_doses'},
-                {'name': 'cumulative_pfizer_doses'},
-                {'name': 'moderna_doses'},
-                {'name': 'cumulative_moderna_doses'},
-                {'name': 'jj_doses'},
-                {'name': 'cumulative_jj_doses'},
+                {
+                    'name': 'pfizer_doses',
+                    'default': 0,
+                },
+                {
+                    'name': 'cumulative_pfizer_doses',
+                    'default': 0,
+                },
+                {
+                    'name': 'moderna_doses',
+                    'default': 0,
+                },
+                {
+                    'name': 'cumulative_moderna_doses',
+                    'default': 0,
+                },
+                {
+                    'name': 'jj_doses',
+                    'default': 0,
+                },
+                {
+                    'name': 'cumulative_jj_doses',
+                    'default': 0,
+                },
                 {'name': 'partially_vaccinated'},
                 {'name': 'total_partially_vaccinated'},
                 {'name': 'fully_vaccinated'},
                 {'name': 'cumulative_fully_vaccinated'},
                 {'name': 'at_least_one_dose'},
                 {'name': 'cumulative_at_least_one_dose'},
-                {'name': 'booster_recip_count'},
-                {'name': 'cumulative_booster_recip_count'},
+                {
+                    'name': 'booster_recip_count',
+                    'default': 0,
+                },
+                {
+                    'name': 'cumulative_booster_recip_count',
+                    'default': 0,
+                },
             ],
         },
     },
@@ -226,7 +250,7 @@ DATASETS = [
                 ('%s - Vaccinated - New (Full)' % age,
                  ('age', age, 'vaccinated', 'new_full')),
             ]
-            for age in ('5-11', '12-17', '18-49', '50-64', '65+')
+            for age in ('Under 5', '5-11', '12-17', '18-49', '50-64', '65+')
         )),
     },
     {
