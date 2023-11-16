@@ -8,6 +8,7 @@ DATASETS = [
             'validator': lambda results: results[0]['date'] == '2020-03-29',
             'sort_by': 'date',
             'unique_col': 'date',
+            'add_missing_dates': True,
             'columns': [
                 {
                     'name': 'date',
