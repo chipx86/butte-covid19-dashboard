@@ -19,6 +19,7 @@ DATASET_MODULE_NAMES = [
     'state_hospitals',
     'state_tests',
     'vaccination_stats',
+    'wastewater',
 
     # These must be last.
     'timeline',
