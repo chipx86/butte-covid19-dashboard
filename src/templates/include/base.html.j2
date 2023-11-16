@@ -58,6 +58,7 @@
       <dl class="bc19-c-dashboard__nav-section">
        <dt>Weekday Reports</dt>
        <dd><a href="https://facebook.com/bc19.live">Facebook</a></dd>
+       <dd><a href="https://mastodon.online/@bc19live" rel="me">Mastodon</a></dd>
        <dd><a href="https://twitter.com/bc19live">Twitter</a></dd>
        <dd><a href="https://www.notion.so/6b6b4635f8f84896873664eb42ba58ca?v=861aa8fd432e4a82a3f33fa6fb9b7c91">Archives</a></dd>
       </dl>
@@ -65,12 +66,16 @@
       <dl class="bc19-c-dashboard__nav-section">
        <dt>Dashboard</dt>
        <dd><a href="#cases">Cases</a></dd>
+{#
        <dd><a href="#demographics">Demographics</a></dd>
-       <dd><a href="#vaccines">Vaccines</a></dd>
-       <dd><a href="#testing">Viral Testing</a></dd>
+#}
        <dd><a href="#hospitalizations">Hospitalizations/Care</a></dd>
+       <dd><a href="#testing">Viral Testing</a></dd>
+       <dd><a href="#vaccines">Vaccines</a></dd>
+{#
        <dd><a href="#jail">Butte County Jail</a></dd>
        <dd><a href="/schools/">Schools Dashboard</a></dd>
+#}
       </dl>
 
       <dl class="bc19-c-dashboard__nav-section">
@@ -86,8 +91,10 @@
 {%  call section(id='monitoring-tier-section',
                  css_class='-is-monitoring-tier',
                  aria_label='County monitoring tier') -%}
+{#
  <strong>County risk level:</strong>
  <span id="monitoring-tier"></span>
+#}
 {%-  endcall -%}
 
     <div class="bc19-c-dashboard__sections">

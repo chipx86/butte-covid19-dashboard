@@ -1,6 +1,7 @@
 {# Macros -#}
-{% macro section(css_class, aria_label, id='', has_counters=False) %}
-   <section class="bc19-c-dashboard__section{% if has_counters %} -has-counters{% endif %} {{css_class}}"
+{% macro section(css_class, aria_label, id='', has_counters=False,
+                 discontinued=False) %}
+   <section class="bc19-c-dashboard__section{% if has_counters %} -has-counters{% endif %}{% if discontinued %} bc19-o-discontinued{% endif %} {{css_class}}"
 {%- if id %}
             id="{{id}}"
 {%- endif %}
@@ -9,14 +10,17 @@
    </section>
 {% endmacro -%}
 
-{% macro header(css_class, aria_label, id='', title='') %}
-   <header class="bc19-c-dashboard__header {{css_class}}"
+{% macro header(css_class, aria_label, id='', title='', discontinued=false) %}
+   <header class="bc19-c-dashboard__header {{css_class}}{% if discontinued %} bc19-o-discontinued{% endif %}"
 {%- if id %}
            id="{{id}}"
 {%- endif %}
            aria-label="{{aria_label}}">
 {%- if title %}
-    <h2>{{title}}</h2>
+    <h2>{{title}}{% if discontinued %} [Discontinued]{% endif %}</h2>
+{%- endif %}
+{%- if discontinued %}
+     <p><em>This is no longer updated due to lack of available data.</em></p>
 {%- endif %}
     {{caller()}}
    </header>
@@ -59,10 +63,16 @@
     </figure>
 {%- endmacro -%}
 
-{% macro timeline_graph(data_id, title, subtitles=[], note='') -%}
-    <figure class="bc19-c-timeline-graph">
+{% macro timeline_graph(data_id, title, subtitles=[], note='',
+                        discontinued=false) -%}
+    <figure class="bc19-c-timeline-graph{% if discontinued %} bc19-o-discontinued{% endif %}">
      <h3 class="bc19-c-timeline-graph__title"
-         id="{{data_id}}_label">{{title}}</h3>
+         id="{{data_id}}_label">{{title}}{% if discontinued %} [Discontinued]{% endif %}</h3>
+{%- if discontinued %}
+     <h4 class="bc19-c-timeline-graph__subtitle">
+      This is no longer updated due to lack of available data.
+    </h4>
+{%- endif %}
 {%- for subtitle in subtitles %}
      <h4 class="bc19-c-timeline-graph__subtitle">
       {{subtitle}}

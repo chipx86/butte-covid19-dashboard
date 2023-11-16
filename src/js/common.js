@@ -106,6 +106,7 @@ window.BC19 = {
     firstMDate: null,
     graphData: null,
     scheduledGraphData: [],
+    delayedScheduledGraphData: [],
     scheduledGraphRangeUpdates: [],
     lastMDate: null,
     latestRowDates: null,
@@ -546,6 +547,15 @@ BC19.makeSectionElement = function(options) {
  *     The graph object.
  */
 BC19.setupBBGraph = function(options) {
+    const graphEl = document.getElementById(options.bindto.substr(1));
+    console.assert(graphEl);
+
+    if (graphEl.offsetParent === null) {
+        /* This graph is not currently shown. Schedule for later. */
+        BC19.delayedScheduledGraphData.push(options);
+        return;
+    }
+
     const columns = options.data.columns;
     options.data.columns = [];
 
@@ -903,7 +913,7 @@ BC19.updateNextTimelineDateRanges = function(domain) {
  */
 BC19.getTimelineDateRange = function(value) {
     let fromMDate = BC19.lastDate;
-    let toMDate = BC19.lastMDate;
+    let toMDate = moment(BC19.lastMDate).add(1, 'days');
 
     if (value === undefined) {
         const dateSelectorEl = document.getElementById('date-selector');
@@ -931,10 +941,16 @@ BC19.setupElements = function() {
     const tier = BC19.monitoringTier;
 
     const tierSectionEl = document.getElementById('monitoring-tier-section');
-    tierSectionEl.classList.add(`-is-tier-${tier.toLowerCase()}`);
 
-    const tierEl = document.getElementById('monitoring-tier');
-    tierEl.innerText = tier;
+    if (tierSectionEl) {
+        tierSectionEl.classList.add(`-is-tier-${tier.toLowerCase()}`);
+
+        const tierEl = document.getElementById('monitoring-tier');
+
+        if (tierEl) {
+            tierEl.innerText = tier;
+        }
+    }
 
     function onDateRangeChanged() {
         BC19.setDateRange(
@@ -965,6 +981,16 @@ BC19.setupElements = function() {
     dateRangeThroughEl.max = throughDateValue;
     dateRangeThroughEl.addEventListener('change', onDateRangeChanged);
 
+    const showDiscontinuedEl = document.getElementById('show-discontinued');
+    BC19.els.showDiscontinuedEl = showDiscontinuedEl;
+    showDiscontinuedEl.addEventListener(
+        'change',
+        () => _onShowDiscontinuedChanged());
+
+
+    if (showDiscontinuedEl.checked) {
+        _onShowDiscontinuedChanged();
+    }
 
     /* Update the dates in the counters. */
     const datesMap = {};
@@ -1071,4 +1097,21 @@ function _onDateSelectorChanged(value) {
 
     BC19.setDateRange(moment.max(range[0], BC19.firstMDate).toDate(),
                       moment.max(range[1], BC19.lastMDate).toDate());
+}
+
+
+function _onShowDiscontinuedChanged() {
+    const showDiscontinuedEl = BC19.els.showDiscontinuedEl;
+
+    document.body.classList.toggle('-show-discontinued',
+                                   showDiscontinuedEl.checked);
+
+    if (showDiscontinuedEl.checked &&
+        BC19.delayedScheduledGraphData.length > 0) {
+        BC19.delayedScheduledGraphData.forEach(
+            graphOptions => BC19.setupBBGraph(graphOptions));
+
+        BC19.delayedScheduledGraphData = [];
+        BC19.renderNextGraphData();
+    }
 }

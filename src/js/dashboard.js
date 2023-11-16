@@ -162,6 +162,7 @@ function setupTimelineGraphs() {
             x: axisX,
             y: {
                 max: BC19.getMaxY(maxValues.totalCases, tickCounts.VERY_TALL),
+                min: 0,
                 padding: 0,
                 tick: {
                     stepSize: BC19.getStepSize(
@@ -191,6 +192,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.newCases, tickCounts.STANDARD),
                 padding: 0,
                 tick: {
@@ -226,6 +228,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(Math.max(90, maxValues.oneWeekCaseRate),
                                   tickCounts.STANDARD),
                 padding: 0,
@@ -301,6 +304,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.totalDeaths,
                                   tickCounts.SMALL),
                 padding: 0,
@@ -331,6 +335,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.newDeaths, tickCounts.SMALL),
                 padding: 0,
                 tick: {
@@ -376,6 +381,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.semesterSchoolCases,
                                   tickCounts.MEDIUM),
                 padding: 0,
@@ -425,6 +431,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.newSchoolCases,
                                   tickCounts.MEDIUM),
                 padding: 0,
@@ -492,6 +499,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.totalCases, tickCounts.VERY_TALL),
                 padding: 0,
                 tick: {
@@ -544,6 +552,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.totalCases, tickCounts.VERY_TALL),
                 padding: 0,
                 tick: {
@@ -632,6 +641,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.viralTests, tickCounts.STANDARD),
                 padding: 0,
                 tick: {
@@ -672,6 +682,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.sevenDayPosRate,
                                   tickCounts.STANDARD),
                 padding: 0,
@@ -731,12 +742,13 @@ function setupTimelineGraphs() {
             names: {
                 vaccines_1st_dose_pct: 'Received 1 or More Doses',
                 vaccines_full_doses_pct: 'Fully Vaccinated',
-                vaccines_boosters_pct: 'Boosted',
+                vaccines_boosters_pct: 'Boosted [Discontinued]',
             },
         },
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(100, tickCounts.STANDARD),
                 padding: 0,
                 tick: {
@@ -804,12 +816,13 @@ function setupTimelineGraphs() {
             names: {
                 vaccines_1st_dose: 'Received 1 or More Doses',
                 vaccines_full_doses: 'Fully Vaccinated',
-                vaccines_boosters: 'Boosted',
+                vaccines_boosters: 'Boosted [Discontinued]',
             },
         },
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.vaccinesAdministered,
                                   tickCounts.STANDARD),
                 padding: 0,
@@ -863,12 +876,14 @@ function setupTimelineGraphs() {
             names: {
                 vaccines_1st_dose_rate: '1+ Doses The Past 7 Days',
                 vaccines_full_doses_rate: 'Fully-Vaccinated The Past 7 Days',
+                vaccines_boosters_rate: 'Boosted [Discontinued]',
             },
             type: 'area',
         },
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.oneWeekVaccinesRate,
                                   tickCounts.STANDARD),
                 padding: 0,
@@ -912,6 +927,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.vaccinesAdministeredByType,
                                   tickCounts.STANDARD),
                 padding: 0,
@@ -982,6 +998,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(100, tickCounts.STANDARD),
                 padding: 0,
                 tick: {
@@ -1056,6 +1073,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(100, tickCounts.STANDARD),
                 padding: 0,
                 tick: {
@@ -1138,6 +1156,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(100, tickCounts.STANDARD),
                 padding: 0,
                 tick: {
@@ -1204,6 +1223,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.hospitalizations,
                                   tickCounts.STANDARD),
                 padding: 0,
@@ -1251,6 +1271,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxIsolationValue, tickCounts.STANDARD),
                 padding: 0,
                 tick: {
@@ -1313,6 +1334,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.snf, tickCounts.MEDIUM),
                 padding: 0,
                 tick: {
@@ -1376,6 +1398,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.newSNFDeaths, tickCounts.SMALL),
                 padding: 0,
                 tick: {
@@ -1440,6 +1463,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.adultSeniorCareCases,
                                   tickCounts.MEDIUM),
                 padding: 0,
@@ -1505,6 +1529,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.newAdultSeniorCareDeaths,
                                   tickCounts.SMALL),
                 padding: 0,
@@ -1549,6 +1574,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxInmateCasesValue, tickCounts.STANDARD),
                 padding: 0,
                 tick: {
@@ -1579,6 +1605,7 @@ function setupTimelineGraphs() {
         axis: {
             x: axisX,
             y: {
+                min: 0,
                 max: BC19.getMaxY(maxValues.jailStaffCurCases,
                                   tickCounts.SMALL),
                 padding: 0,
