@@ -53,13 +53,13 @@ def build_dataset(session, response, out_filename, **kwargs):
                     'normalize': lambda name: hospital_keys.get(name, name),
                 },
                 'AGG(Selector KPI)': {
-                    'data_type': 'real',
+                    'data_type': 'integer',
                     'result_key': 'counts',
                 },
             },
             'Updated on': {
-                'max loaded timestamp': {
-                    'data_type': 'datetime',
+                'MDY(MAX_AS_OF_DATE)': {
+                    'data_type': 'integer',
                     'result_key': 'date',
                     'value_index': 0,
                 },
@@ -117,7 +117,7 @@ def build_dataset(session, response, out_filename, **kwargs):
         include_date=True)
 
     date_raw = patients_data['date']
-    date = datetime.strptime(date_raw, '%m/%d/%Y')
+    date = datetime.strptime(date_raw, '%B %d, %Y')
 
     if date > datetime.now():
         # This isn't today's date. Skip it.
@@ -160,15 +160,18 @@ def build_dataset(session, response, out_filename, **kwargs):
         expected_date=date_raw)
 
     # Now load in information from the ICU Suspected Patients view.
-    tableau_loader.set_parameter_value(
-        '[Parameters].[Select Measure (copy)_1581607928766861312]',
-        'ICU Suspected Patients')
-
-    result['icu_suspected_patients'] = _get_col_data(
-        label='ICU suspected patients',
-        total_pres_model_name='ICU Suspected Census',
-        total_field_caption='SUM(Icu Suspected Covid Patients)',
-        expected_date=date_raw)
+    #
+    # XXX These are gone. Noticed August 24, 2023.
+#    tableau_loader.set_parameter_value(
+#        '[Parameters].[Select Measure (copy)_1581607928766861312]',
+#        'ICU Suspected Patients')
+#
+#    result['icu_suspected_patients'] = _get_col_data(
+#        label='ICU suspected patients',
+#        total_pres_model_name='ICU Suspected Census',
+#        total_field_caption='SUM(ICu Suspected Covid Patients)',
+#        expected_date=date_raw)
+    #result['icu_suspected_patients'] = {}
 
     add_or_update_json_date_row(out_filename, result)
 
