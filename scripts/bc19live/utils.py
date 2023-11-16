@@ -575,6 +575,7 @@ def parse_csv(info, response, out_filename, **kwargs):
             src_name = col_info.get('source_column', dest_name)
             data_type = col_info.get('type', default_type)
             func = col_info.get('transform_func')
+            default = col_info.get('default')
 
             if callable(func):
                 value = func(row=row,
@@ -585,8 +586,11 @@ def parse_csv(info, response, out_filename, **kwargs):
                 try:
                     value = row[src_name]
                 except KeyError:
-                    raise ParseError('Missing column in CSV file: %s'
-                                     % src_name)
+                    if default is None:
+                        raise ParseError('Missing column in CSV file: %s'
+                                         % src_name)
+
+                    value = default
 
                 if value == '#DIV/0!':
                     raise ParseError('Got DIV/0 for row=%s, column=%s'
