@@ -1070,21 +1070,7 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
                 for _key, _info in AGE_RANGE_INFO_MAP.items()
                 if not _info.get('legacy', False)
             ],
-            'mortalityRate': [
-                build_bar_graph_data(
-                    rows,
-                    data_id=_key,
-                    label=_info.get('text', _key.replace('_', '-')),
-                    row_index=latest_death_by_age_row_index,
-                    get_value=lambda row: (
-                        (row['deaths']['age_ranges_in_years']
-                         .get(_info['source_key'], 0)) /
-                        (row['age_ranges_in_years']
-                         .get(_info['source_key'], 0)) * 100
-                    ))
-                for _key, _info in AGE_RANGE_INFO_MAP.items()
-                if not _info.get('legacy', False)
-            ],
+            'mortalityRate': [],
             'casesByRegion': [
                 build_bar_graph_data(
                     rows,
