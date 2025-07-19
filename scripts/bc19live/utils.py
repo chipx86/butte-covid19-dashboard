@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import codecs
 import csv
 import json
@@ -5,12 +7,29 @@ import os
 import re
 from contextlib import contextmanager
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, overload
 
 from bc19live.errors import ParseError
 
+if TYPE_CHECKING:
+    import io
+    from collections.abc import Iterator, Mapping, Sequence
+    from typing import Any, Literal, Union
+
+    import requests
+    from typing_extensions import TypeAlias
+
+    DictKeyPath: TypeAlias = tuple[str, ...]
+    ColumnKeyMap: TypeAlias = Sequence[tuple[
+        str,
+        Union[DictKeyPath, Mapping[str, Any]]
+    ]]
+
 
 @contextmanager
-def safe_open_for_write(filename):
+def safe_open_for_write(
+    filename: str,
+) -> Iterator[io.IOBase]:
     """Safely open a file for writing.
 
     This will write to a temp file, and then rename it to the destination
@@ -33,7 +52,9 @@ def safe_open_for_write(filename):
     os.rename(temp_filename, filename)
 
 
-def convert_csv_to_tsv(filename):
+def convert_csv_to_tsv(
+    filename: str,
+) -> None:
     """Convert a CSV file to TSV.
 
     This provides an alternative feed in the event that Google Sheets cannot
@@ -53,7 +74,9 @@ def convert_csv_to_tsv(filename):
             csv.writer(out_fp, dialect='excel-tab').writerows(rows)
 
 
-def slugify(s):
+def slugify(
+    s: str,
+) -> str:
     """Return a string, slugified.
 
     This will lowercase the string and replace anything non-alphanumeric with
@@ -70,7 +93,11 @@ def slugify(s):
     return re.sub('[^A-Za-z0-9]', '_', s.strip().lower())
 
 
-def add_nested_key(d, full_key, value):
+def add_nested_key(
+    d: dict[str, Any],
+    full_key: str,
+    value: object,
+) -> None:
     """Add a nested key path to a dictionary.
 
     This takes a ``.``-separated key path, creating nested dictionaries as
@@ -95,7 +122,12 @@ def add_nested_key(d, full_key, value):
     d[keys[-1]] = value
 
 
-def get_nested_key(d, full_key, must_resolve=True):
+def get_nested_key(
+    d: Mapping[str, Any],
+    full_key: DictKeyPath,
+    *,
+    must_resolve: bool = True,
+) -> Any:
     """Return the value from a dictionary using a nested key path.
 
     This takes a ``.``-separated key path and uses it to retrieve a value
@@ -106,7 +138,7 @@ def get_nested_key(d, full_key, must_resolve=True):
             The dictionary to retrieve the key from.
 
         full_key (str):
-            The ``.``-separated key path.
+            The path components.
 
         must_resolve (bool, optional):
             Raise an exception if the key could not be fully resolved.
@@ -119,20 +151,53 @@ def get_nested_key(d, full_key, must_resolve=True):
         KeyError:
             The key could not be found, and ``must_resolve`` is ``True``.
     """
+    value: Any = d
+
     for path in full_key:
         try:
-            d = d[path]
+            value = d[path]
         except KeyError:
             if must_resolve:
                 raise
 
-            d = None
+            value = None
             break
 
-    return d
+    return value
 
 
-def parse_int(value, allow_blank=False):
+@overload
+def parse_int(
+    value: int,
+    *,
+    allow_blank: bool = ...,
+) -> int:
+    ...
+
+
+@overload
+def parse_int(
+    value: int | str,
+    *,
+    allow_blank: Literal[True],
+) -> int | str:
+    ...
+
+
+@overload
+def parse_int(
+    value: int | str,
+    *,
+    allow_blank: Literal[False] = False,
+) -> int:
+    ...
+
+
+def parse_int(
+    value: int | str,
+    *,
+    allow_blank: bool = False,
+) -> int | str:
     """Parse an integer from a string.
 
     This handles integers formatted with ``,`` separators and empty strings.
@@ -164,7 +229,38 @@ def parse_int(value, allow_blank=False):
     return int(value or 0)
 
 
-def parse_real(value, allow_blank=False):
+@overload
+def parse_real(
+    value: float,
+    *,
+    allow_blank: bool = ...,
+) -> float:
+    ...
+
+
+@overload
+def parse_real(
+    value: float | str,
+    *,
+    allow_blank: Literal[True],
+) -> float | str:
+    ...
+
+
+@overload
+def parse_real(
+    value: float | str,
+    *,
+    allow_blank: Literal[False] = False,
+) -> float:
+    ...
+
+
+def parse_real(
+    value: float | str,
+    *,
+    allow_blank: bool = False,
+) -> float | str:
     """Parse a real/float from a string.
 
     This handles reals formatted with ``,`` separators and empty strings.
@@ -188,7 +284,7 @@ def parse_real(value, allow_blank=False):
             The string did not contain a real/float.
     """
     if ((allow_blank and value == '') or
-        isinstance(value, float)):
+        isinstance(value, (int, float))):
         return value
 
     value = value.replace(',', '')
@@ -196,7 +292,9 @@ def parse_real(value, allow_blank=False):
     return float(value or 0)
 
 
-def parse_pct(value):
+def parse_pct(
+    value: str,
+) -> float | str:
     """Parse a percentage from a string.
 
     This will convert a ``X%`` value to a float.
@@ -206,17 +304,23 @@ def parse_pct(value):
             The value to parse.
 
     Returns:
-        float:
+        float or str:
         The parsed percentage as a float, or an empty string if provided.
 
     Raises:
         ValueError:
             The string did not contain a float.
     """
-    return parse_real(value.replace('%', ''), allow_blank=True)
+    return parse_real(value.replace('%', ''),
+                      allow_blank=True)
 
 
-def parse_csv_value(value, data_type, col_info):
+def parse_csv_value(
+    value: Any,
+    *,
+    data_type: str | None,
+    col_info: Mapping[str, Any],
+) -> Any:
     """Parse a value from a CSV file.
 
     This takes in a value and data type, along with parser-specified
@@ -274,44 +378,46 @@ def parse_csv_value(value, data_type, col_info):
                 .strftime('%Y-%m-%d')
             )
         except Exception:
-            raise ParseError('Unable to parse date "%s" using format '
-                             '"%s"'
-                             % (value, col_info['format']))
+            raise ParseError(
+                f'Unable to parse date "{value}" using format '
+                f'"{col_info["format"]}"'
+            )
     elif data_type == 'int_or_blank':
         try:
             value = parse_int(value, allow_blank=True)
         except ValueError:
             raise ParseError(
-                'Expected %r to be an integer or empty string.'
-                % value)
+                f'Expected {value!r} to be an integer or empty string.'
+            )
     elif data_type == 'int':
         try:
             value = parse_int(value)
         except ValueError:
-            raise ParseError('Expected %r to be an integer.'
-                             % value)
+            raise ParseError(f'Expected {value!r} to be an integer.')
     elif data_type == 'real':
         try:
             value = parse_real(value)
         except ValueError:
-            raise ParseError('Expected %r to be an integer.'
-                             % value)
+            raise ParseError(f'Expected {value!r} to be an integer.')
     elif data_type == 'pct':
         try:
             value = parse_pct(value)
         except ValueError:
-            raise ParseError('Expected %r to be a percentage.'
-                             % value)
+            raise ParseError(f'Expected {value!r} to be a percentage.')
     elif data_type == 'string' or data_type is None:
         pass
     else:
-        raise ParseError('Unexpected data type %s' % data_type)
+        raise ParseError(f'Unexpected data type {data_type}')
 
     return value
 
 
-def build_missing_date_rows(cur_date, latest_date, date_field='date',
-                            empty_row_data={}):
+def build_missing_date_rows(
+    cur_date: datetime,
+    latest_date: datetime,
+    date_field: str = 'date',
+    empty_row_data: dict[str, Any] = {},
+) -> list[dict[str, Any]]:
     """Build empty rows for a span of dates.
 
     Args:
@@ -332,20 +438,24 @@ def build_missing_date_rows(cur_date, latest_date, date_field='date',
         The generated list of rows.
     """
     assert cur_date >= latest_date, (
-        'Current date (%s) should be >= latest date (%s)' % (
-            cur_date, latest_date,
-        ))
+        f'Current date ({cur_date}) should be >= latest date ({latest_date})'
+    )
 
     return [
-        dict(empty_row_data, **{
+        {
+            **empty_row_data,
             date_field: (latest_date +
                          timedelta(days=day)).strftime('%Y-%m-%d'),
-        })
+        }
         for day in range(1, (cur_date - latest_date).days)
     ]
 
 
-def add_or_update_json_date_row(filename, row_data, date_field='date'):
+def add_or_update_json_date_row(
+    filename: str,
+    row_data: dict[str, Any],
+    date_field: str = 'date',
+) -> None:
     """Add a new row of data for a date, or update an existing one.
 
     This will effectively append a new date row to a new or existing JSON file,
@@ -407,7 +517,12 @@ def add_or_update_json_date_row(filename, row_data, date_field='date'):
                   sort_keys=True)
 
 
-def convert_json_to_csv(info, in_fp, out_filename, **kwargs):
+def convert_json_to_csv(
+    info: Mapping[str, Any],
+    in_fp: io.IOBase,
+    out_filename: str,
+    **kwargs,
+) -> None:
     """A parser that converts a JSON file to CSV.
 
     This loads a JSON file and, based on a mapping of nested key paths to
@@ -430,7 +545,8 @@ def convert_json_to_csv(info, in_fp, out_filename, **kwargs):
         **kwargs (dict, unused):
             Unused keyword arguments passed to this parser.
     """
-    key_map = info['key_map']
+    key_map: ColumnKeyMap = info['key_map']
+    rows_key = info.get('rows_key', 'dates')
     dataset = json.load(in_fp) or {}
 
     with safe_open_for_write(out_filename) as fp:
@@ -456,7 +572,12 @@ def convert_json_to_csv(info, in_fp, out_filename, **kwargs):
     convert_csv_to_tsv(out_filename)
 
 
-def parse_csv(info, response, out_filename, **kwargs):
+def parse_csv(
+    info: Mapping[str, Any],
+    response: requests.Response,
+    out_filename: str,
+    **kwargs,
+) -> None:
     """Parse a CSV file, building a new CSV file based on its information.
 
     This takes information on the columns in a source CSV file and how they
@@ -528,10 +649,6 @@ def parse_csv(info, response, out_filename, **kwargs):
 
         **kwargs (dict, unused):
             Unused keyword arguments passed to this parser.
-
-    Returns:
-        bool:
-        ``True`` if the file was written, or ``False`` if skipped.
 
     Raises:
         ParseError:
@@ -657,10 +774,10 @@ def parse_csv(info, response, out_filename, **kwargs):
         # do, we need to pad them out.
         #
         # This has been an on-going problem with state vaccine data.
-        date_source_col = None
-        date_dest_col = None
-        empty_row_data = None
-        date_fmt = None
+        date_source_col: (str | None) = None
+        date_dest_col: (str | None) = None
+        empty_row_data: (dict[str, Any] | None) = None
+        date_fmt: (str | None) = None
 
         if add_missing_dates:
             empty_row_data = {}
@@ -686,8 +803,11 @@ def parse_csv(info, response, out_filename, **kwargs):
         prev_date = None
         new_results = []
 
+        assert date_dest_col
+        assert empty_row_data is not None
+
         for row in results:
-            date = datetime.strptime(row[date_dest_col], date_fmt)
+            date = datetime.strptime(row[date_dest_col], '%Y-%m-%d')
 
             if prev_date is not None:
                 missing_rows = build_missing_date_rows(
