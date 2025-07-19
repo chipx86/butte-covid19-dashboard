@@ -548,6 +548,7 @@ def convert_json_to_csv(
     key_map: ColumnKeyMap = info['key_map']
     rows_key = info.get('rows_key', 'dates')
     dataset = json.load(in_fp) or {}
+    match = info.get('match_row')
 
     with safe_open_for_write(out_filename) as fp:
         csv_writer = csv.DictWriter(
@@ -561,13 +562,44 @@ def convert_json_to_csv(
         if isinstance(dataset, list):
             rows = dataset
         else:
-            rows = dataset.get('dates', [])
+            rows = get_nested_key(dataset, rows_key, must_resolve=False) or []
 
         for row in rows:
-            csv_writer.writerow({
-                key: get_nested_key(row, paths, must_resolve=False)
-                for key, paths in key_map
-            })
+            if match is not None and not match(row):
+                continue
+
+            row_data: dict[str, Any] = {}
+
+            for key, paths_or_info in key_map:
+                if isinstance(paths_or_info, tuple):
+                    value = get_nested_key(row, paths_or_info,
+                                           must_resolve=False)
+                else:
+                    assert isinstance(paths_or_info, dict), (
+                        f'{paths_or_info!r} must be a tuple[str, ...] or '
+                        f'dict!'
+                    )
+
+                    col_info = paths_or_info
+
+                    src_key = col_info.get('source_key', (key,))
+                    data_type = col_info.get('type')
+                    func = col_info.get('transform_func')
+
+                    if callable(func):
+                        value = func(row=row,
+                                     src_key=src_key,
+                                     col_info=col_info)
+                    else:
+                        value = parse_csv_value(
+                            value=get_nested_key(row, src_key,
+                                                 must_resolve=False),
+                            data_type=data_type,
+                            col_info=col_info)
+
+                row_data[key] = value
+
+            csv_writer.writerow(row_data)
 
     convert_csv_to_tsv(out_filename)
 
