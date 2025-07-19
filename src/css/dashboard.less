@@ -16,7 +16,11 @@ body {
 
   &.-show-discontinued {
     .bc19-o-discontinued {
-      display: block;
+      display: inherit !important;
+
+      &.-has-counters {
+        display: flex !important;
+      }
     }
   }
 }
@@ -686,7 +690,7 @@ a:visited {
 
 
 .bc19-o-discontinued {
-  display: none;
+  display: none !important;
 }
 
 .bc19-o-flex-break {

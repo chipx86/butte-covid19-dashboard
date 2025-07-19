@@ -7,8 +7,12 @@
 {% block notice %}
 <div class="bc19-c-dashboard__notice">
  <strong>
-  UPDATE: I've resumed reporting data again. Expect updates every Thursday by
-  5PM. Please see Facebook, Twitter, or Mastodon for reports.
+  UPDATE: The only data left is periodic wastewater data. Until I get these
+  on the dashboard, please follow
+  <a href="https://facebook.com/bc19.live">Facebook</a>,
+  <a href="https://bsky.app/profile/bc19.live">BlueSky</a>,
+  <a href="https://twitter.com/bc19live">Twitter/X</a>, or
+  <a href="https://mastodon.online/@bc19live">Mastodon</a> for reports.
  </strong>
 </div>
 {% endblock %}
@@ -16,10 +20,24 @@
 
 {% block sections %}
 
+{%  call section(id='wastewater',
+                 aria_label='Wastewater data') -%}
+<div style="padding: 4em 0">
+ <p>
+  <strong>Wastewater data is coming.</strong>
+ </p>
+ <p>
+  To see historical COVID data for Butte County, click
+  <strong>Show discontinued data</strong> at the bottom of the page.
+ </p>
+</div>
+{%  endcall %}
+
 {#- Cases Counters -#}
 {%  call section(id='cases',
                  aria_label='General case-related counts',
-                 has_counters=True) -%}
+                 has_counters=True,
+                 discontinued=True) -%}
      {{counter(
          id='total-cases-counter',
          title='Total Reported Cases',
@@ -66,7 +84,8 @@
 
 {#- Cases -#}
 {%  call section(id='cases-section',
-                 aria_label='Breakdown of cases') -%}
+                 aria_label='Breakdown of cases',
+                 discontinued=True) -%}
 {#
      <div class="bc19-c-dashboard__section-side">
       {{bar_graph(
@@ -152,7 +171,8 @@
 {#- Hospitalizations -#}
 {%  call header(id='hospitalizations',
                 title='Hospitalizations, Isolation, Care',
-                aria_label='Hospitalizations and isolation information') -%}
+                aria_label='Hospitalizations and isolation information',
+                discontinued=True) -%}
      <p>
       <strong>NOTE:</strong> Hospital/ICU information comes from the state,
       and lags a day behind.
@@ -166,7 +186,8 @@
      ])}}
 {%-  endcall -%}
 
-{%  call section(aria_label='Hospitalizations and isolation graphs') -%}
+{%  call section(aria_label='Hospitalizations and isolation graphs',
+                 discontinued=True) -%}
      {{timeline_graph(
          data_id='hospitalizations_icu_timeline_graph',
          title='Total Hospitalizations vs. ICU',
@@ -221,7 +242,8 @@
 {#- Viral Testing -#}
 {%  call header(id='testing',
                 title='Viral Testing',
-                aria_label='Viral tests introduction') -%}
+                aria_label='Viral tests introduction',
+                discontinued=True) -%}
      <p>
       <strong>NOTE:</strong> The number of tests performed is MORE THAN the
       number of people tested! There is <em>no</em> public data on the number
@@ -231,7 +253,8 @@
 {%-  endcall -%}
 
 {%  call section(aria_label='Viral test statistics',
-                 has_counters=True) -%}
+                 has_counters=True,
+                 discontinued=True) -%}
      {{counter(
          id='total-tests-counter',
          title='Total Tests (NOT People!)',
@@ -254,7 +277,8 @@
      )}}
 {%-  endcall -%}
 
-{%  call section(aria_label='Viral testing graphs') -%}
+{%  call section(aria_label='Viral testing graphs',
+                 discontinued=True) -%}
      {{timeline_graph(
          data_id='test_positivity_rate_graph',
          title='7-Day Test Positivity Rate',
@@ -287,7 +311,8 @@
 {#- Vaccines -#}
 {%  call header(id='vaccines',
                 title='Vaccines',
-                aria_label='Vaccines introduction') -%}
+                aria_label='Vaccines introduction',
+                discontinued=True) -%}
      <p>
       This only covers vaccines coordinated through Butte County Public Health.
       It is generally updated weekly. Number of administered doses may be
@@ -297,7 +322,8 @@
 {%-  endcall -%}
 
 {%  call section(aria_label='Vaccine information',
-                 has_counters=True) -%}
+                 has_counters=True,
+                 discontinued=True) -%}
      {{counter(
          id='vaccines-1dose-pct-counter',
          title='% Received 1 Or More Doses',
@@ -321,7 +347,8 @@
 {%-  endcall -%}
 
 
-{%  call section(aria_label='Vaccine graphs') -%}
+{%  call section(aria_label='Vaccine graphs',
+                 discontinued=True) -%}
      {{timeline_graph(
          data_id='vaccines_doses',
          title='% of County Vaccinated'

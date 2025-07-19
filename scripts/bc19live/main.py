@@ -13,16 +13,10 @@ from bc19live.utils import parse_csv
 
 #: The list of dataset module names.
 DATASET_MODULE_NAMES = [
-    'butte_dashboard',
-    'hospital_cases',
-    'state_cases',
-    'state_hospitals',
-    'state_tests',
-    'vaccination_stats',
     'wastewater',
 
     # These must be last.
-    'timeline',
+    #'timeline',
     'bc19_dashboard',
 ]
 

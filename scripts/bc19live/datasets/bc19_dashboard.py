@@ -2083,7 +2083,13 @@ DATASETS = [
         },
         'parser': build_dashboard_dataset,
     },
-    {
+
+]
+
+
+# This is just here for historical purposes.
+if 0:
+    DATASETS.append({
         'filename': 'bc19-schools.json',
         'min_filename': 'bc19-schools.%s.min.json' % DATASET_VERSION,
         'format': 'json',
@@ -2180,5 +2186,4 @@ DATASETS = [
             'districts': {
             },
         },
-    },
-]
+    })
