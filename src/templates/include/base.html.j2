@@ -43,59 +43,60 @@
 {% call header(css_class='-is-intro',
                aria_label='Dashboard introduction') -%}
     <img class="bc19-c-dashboard__logo"
-         src="./images/logo.png" width="128" height="128"
+         src="./images/logo.png" width="80" height="80"
          srcset="./images/logo.png 1x, ./images/logo@2x.png 2x"
          alt="Site logo">
     <div class="bc19-c-dashboard__intro-info">
      <h1><a href="https://bc19.live/">BC19.live</a></h1>
      <h2>{{title}}</h2>
-     <p id="report-timestamp-container">
+     <p id="report-timestamp-container" hidden>
       Updated <span id="report-timestamp"></span>
       by <a href="https://twitter.com/chipx86">Christian Hammond</a>
      </p>
      <nav class="bc19-c-dashboard__nav" aria-label="Navigation"
           id="nav">
       <dl class="bc19-c-dashboard__nav-section">
-       <dt>Weekday Reports</dt>
+       <dt>Reports</dt>
        <dd><a href="https://facebook.com/bc19.live">Facebook</a></dd>
+       <dd><a href="https://bsky.app/profile/bc19.live">BlueSky</a></dd>
        <dd><a href="https://mastodon.online/@bc19live" rel="me">Mastodon</a></dd>
-       <dd><a href="https://twitter.com/bc19live">Twitter</a></dd>
+       <dd><a href="https://twitter.com/bc19live">Twitter/X</a></dd>
        <dd><a href="https://www.notion.so/6b6b4635f8f84896873664eb42ba58ca?v=861aa8fd432e4a82a3f33fa6fb9b7c91">Archives</a></dd>
       </dl>
 
+{#
       <dl class="bc19-c-dashboard__nav-section">
        <dt>Dashboard</dt>
        <dd><a href="#cases">Cases</a></dd>
-{#
        <dd><a href="#demographics">Demographics</a></dd>
-#}
        <dd><a href="#hospitalizations">Hospitalizations/Care</a></dd>
        <dd><a href="#testing">Viral Testing</a></dd>
        <dd><a href="#vaccines">Vaccines</a></dd>
-{#
        <dd><a href="#jail">Butte County Jail</a></dd>
        <dd><a href="/schools/">Schools Dashboard</a></dd>
-#}
       </dl>
+#}
 
+{#
       <dl class="bc19-c-dashboard__nav-section">
        <dt>Information</dt>
        <dd><a href="https://www.notion.so/Frequently-Asked-Questions-98c9989c090c41a88f767830af845462">Frequently Asked Questions</a></dd>
        <dd><a href="https://github.com/chipx86/butte-covid19-dashboard">Sources/Datasets</a></dd>
        <dd><a href="https://www.buymeacoffee.com/chipx86">Donate</a></dd>
       </dl>
+#}
      </nav>
     </div>
 {%- endcall -%}
 
+{#
 {%  call section(id='monitoring-tier-section',
                  css_class='-is-monitoring-tier',
                  aria_label='County monitoring tier') -%}
-{#
  <strong>County risk level:</strong>
  <span id="monitoring-tier"></span>
-#}
 {%-  endcall -%}
+#}
 
     <div class="bc19-c-dashboard__sections">
 {% block sections %}{% endblock %}

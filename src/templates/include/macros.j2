@@ -53,6 +53,14 @@
     </figure>
 {%- endmacro -%}
 
+{% macro value_label(id, title, timestamp_key) -%}
+    <figure class="bc19-c-counter -is-text-value" id="{{id}}">
+     <h3 class="bc19-c-counter__title">{{title}}</h3>
+     <div class="bc19-c-counter__value"></div>
+     <span class="bc19-o-update-day" data-key="{{timestamp_key}}"></span>
+    </figure>
+{%- endmacro -%}
+
 {% macro bar_graph(id, title, timestamp_key, subtitle="") -%}
     <figure class="bc19-c-bar-graph -is-horiz" id="{{id}}">
      <h3 class="bc19-c-bar-graph__title">{{title}}</h3>

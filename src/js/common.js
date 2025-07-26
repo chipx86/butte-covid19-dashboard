@@ -747,6 +747,9 @@ BC19.setupBarGraph = function(graph, options={}, data) {
  *         Options for the counter's display.
  *
  * Option Args:
+ *     color (string, optional):
+ *         An explicit color to use for the value text.
+ *
  *     formatRelValues (Array of function, optional):
  *         An array of functions to format relative values for display. Each
  *         will take two aprameters, the value and the relative value, and must
@@ -777,6 +780,7 @@ BC19.setupBarGraph = function(graph, options={}, data) {
 BC19.setCounter = function(elID, options) {
     const el = document.getElementById(elID);
     const value = options.value;
+    const color = options.color;
     let formatValue = options.formatValue;
 
     if (!formatValue && options.isPct) {
@@ -797,7 +801,12 @@ BC19.setCounter = function(elID, options) {
         }
     }
 
-    el.querySelector('.bc19-c-counter__value').innerText = formatValue(value);
+    const valueEl = el.querySelector('.bc19-c-counter__value');
+    valueEl.innerText = formatValue(value);
+
+    if (color) {
+        valueEl.style.color = color;
+    }
 
     const relValues = options.relativeValues;
 

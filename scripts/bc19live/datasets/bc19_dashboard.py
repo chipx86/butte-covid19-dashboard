@@ -1,9 +1,13 @@
+from __future__ import annotations
+
+import csv
 import json
 import os
 import re
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timedelta
 
+from bc19live.errors import ParseError
 from bc19live.utils import safe_open_for_write
 
 
@@ -290,6 +294,9 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
     rows = timeline['dates']
 
     graph_dates = ['date']
+    first_date = rows[0]['date']
+    last_date = rows[-1]['date']
+    last_row_date = datetime.strptime(last_date, '%Y-%m-%d')
 
     graph_total_cases = ['cases']
     graph_new_cases = ['new_cases']
@@ -1032,6 +1039,65 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
         graph_schools_new_staff_local_cases += schools_date_pad
         graph_schools_new_staff_remote_cases += schools_date_pad
 
+    # Process the wastewater data.
+    wastewater_data = csv.DictReader(in_fps['wastewater'])
+    graph_wastewater: dict[str, list[str | float | None]] = {}
+    graph_wastewater_maxes: dict[str, float] = {}
+    graph_wastewater_prev_dates: dict[str, datetime] = {}
+
+    for row in wastewater_data:
+        wwtp_name = row['wwtp_name']
+
+        try:
+            graph = graph_wastewater[wwtp_name]
+            wval_max = graph_wastewater_maxes[wwtp_name]
+            prev_date = graph_wastewater_prev_dates[wwtp_name]
+        except KeyError:
+            graph = ['wval']
+            wval_max = 0
+            prev_date = datetime.strptime(rows[0]['date'], '%Y-%m-%d')
+
+            graph_wastewater[wwtp_name] = graph
+            graph_wastewater_maxes[wwtp_name] = wval_max
+            graph_wastewater_prev_dates[wwtp_name] = prev_date
+
+        cur_date = datetime.strptime(row['sample_collect_date'],
+                                     '%Y-%m-%d %H:%M:%S')
+        diff_days = (cur_date - prev_date).days
+
+        if diff_days > 1:
+            graph += [None] * (diff_days - 1)
+
+        wval = float(row['WVAL'])
+        graph.append(wval)
+
+        graph_wastewater_maxes[wwtp_name] = max(wval_max, wval)
+        graph_wastewater_prev_dates[wwtp_name] = cur_date
+
+    # Extend the dates, since we're not using the timeline data as much now.
+    last_wastewater_date = max(graph_wastewater_prev_dates.values())
+
+    if last_wastewater_date > last_row_date:
+        for day in range((last_wastewater_date - last_row_date).days + 1):
+            row_date = (
+                (last_row_date + timedelta(days=day))
+                .strftime('%Y-%m-%d')
+            )
+
+            graph_dates.append(row_date)
+            rows.append({
+                'date': row_date,
+            })
+
+        last_date = graph_dates[-1]
+
+    print(last_date, last_wastewater_date)
+
+    latest_rows.update({
+        'wastewater_chico': len(graph_wastewater['Chico_WPCP']),
+        'wastewater_oroville': len(graph_wastewater['OrovilleSC']),
+    })
+
     result = {
         'barGraphs': {
             'byHospital': [
@@ -1214,8 +1280,8 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
                 )),
         },
         'dates': {
-            'first': rows[0]['date'],
-            'last': rows[-1]['date'],
+            'first': first_date,
+            'last': last_date,
             'rows': {
                 _key: rows[_index]['date']
                 for _key, _index in latest_rows.items()
@@ -1243,6 +1309,10 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
             'vaccinesAdministered': max_vaccines_doses,
             'vaccinesAdministeredByType': max_vaccines_by_type,
             'viralTests': max_viral_tests,
+            'wastewaterWVALs': {
+                'chico': graph_wastewater_maxes['Chico_WPCP'],
+                'oroville': graph_wastewater_maxes['OrovilleSC'],
+            },
         },
         'monitoringTier': monitoring_tier,
         'reportTimestamp': timeline['timestamp'],
@@ -1360,6 +1430,10 @@ def build_dashboard_dataset(info, in_fps, out_filename, **kwargs):
                 'results': graph_total_test_results,
                 'testPositivityRate': graph_test_pos_rate,
                 'total': graph_total_tests,
+            },
+            'wastewater': {
+                'chico': graph_wastewater['Chico_WPCP'],
+                'oroville': graph_wastewater['OrovilleSC'],
             },
         },
     }
@@ -2079,6 +2153,10 @@ DATASETS = [
             'timeline': {
                 'filename': 'timeline.json',
                 'format': 'json',
+            },
+            'wastewater': {
+                'filename': 'wastewater-levels.csv',
+                'format': 'csv',
             },
         },
         'parser': build_dashboard_dataset,

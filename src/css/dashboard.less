@@ -8,7 +8,7 @@
 
 
 body {
-  background: #333;
+  background: white;
   margin: 0;
   padding: 0;
   font-family: Sans-Serif;
@@ -219,6 +219,10 @@ a:visited {
     color: @color-red;
   }
 
+  &.-is-text-value .bc19-c-counter__value {
+    font-size: 300%;
+  }
+
   &__relative {
     color: #777;
     font-size: 95%;
@@ -287,6 +291,30 @@ a:visited {
 
   .bb-xgrid-line,
   .bb-ygrid-line {
+    &.-is-severity-very-low {
+      line {
+        stroke: green;
+        stroke-dasharray: 3 3;
+      }
+
+      text {
+        fill: green;
+        font-size: 12px;
+      }
+    }
+
+    &.-is-severity-low {
+      line {
+        stroke: blue;
+        stroke-dasharray: 3 3;
+      }
+
+      text {
+        fill: blue;
+        font-size: 12px;
+      }
+    }
+
     &.-is-severity-medium {
       line {
         stroke: yellow;
@@ -294,7 +322,7 @@ a:visited {
       }
 
       text {
-        fill: #CAAD0D;
+        fill: #6A6D0D;
         font-size: 12px;
       }
     }
@@ -382,7 +410,6 @@ a:visited {
  * Main dashboard layout.
  */
 .bc19-c-dashboard {
-  background: white;
   overflow: hidden;
 
   &.-is-loading {
@@ -409,9 +436,9 @@ a:visited {
   }
 
   &__header {
-    background: linear-gradient(#FFF4DC, 80%, white);
+    background: linear-gradient(#DCF0FF, 80%, white);
     border-top: 1px rgba(0, 0, 0, 0.7) solid;
-    margin: 2em 0 0 0;
+    margin: 2em 0 2em 0;
     padding: 2em;
     text-align: center;
 
@@ -422,7 +449,7 @@ a:visited {
     }
 
     &.-is-intro {
-      background: #FFF4DC;
+      /* background: #FFF4DC; */
       margin-top: 0;
       text-align: left;
       padding: 1em;
@@ -491,7 +518,6 @@ a:visited {
     dt {
       display: inline-block;
       text-align: right;
-      width: 10em;
 
       &:after {
         content: "▶︎";
@@ -534,9 +560,13 @@ a:visited {
   }
 
   &__section {
-    margin: 0;
+    margin: 4em 0 0 0;
     padding: 0;
     text-align: center;
+
+    &:first-child {
+      margin-top: 0;
+    }
 
     &.-has-counters {
       display: flex;
@@ -600,8 +630,7 @@ a:visited {
 
 
 .bc19-c-option-pane {
-  background: #FFF4DC;
-  border-top: 1px #D8CFB2 solid;
+  background: #DCEDFF;
   position: fixed;
   bottom: 0;
   left: 0;

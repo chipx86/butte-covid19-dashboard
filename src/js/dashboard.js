@@ -1,8 +1,56 @@
+function mapWVALLevel(wval, valueMap) {
+    if (wval <= 1.5) {
+        // Very Low
+        return valueMap['veryLow'];
+    } else if (wval <= 3) {
+        // Low
+        return valueMap['low'];
+    } else if (wval <= 4.5) {
+        // Moderate
+        return valueMap['moderate'];
+    } else if (wval <= 8) {
+        // High
+        return valueMap['high'];
+    } else {
+        // Very High
+        return valueMap['veryHigh'];
+    }
+}
+
+
+const WVALLevelNames = {
+    veryLow: 'Very Low',
+    low: 'Low',
+    moderate: 'Moderate',
+    high: 'High',
+    veryHigh: 'Very High',
+};
+
+
+const WVALDataColors = {
+    veryLow: 'green',
+    low: '#009900',
+    moderate: 'orange',
+    high: 'red',
+    veryHigh: 'purple',
+};
+
+
 /**
  * Set up all the counters on the page.
  */
 function setupCounters() {
     const data = BC19.countersData;
+
+    ['chico', 'oroville'].forEach(location => {
+        const wastewaterData = BC19.graphData.wastewater[location];
+        const wval = wastewaterData[wastewaterData.length - 1];
+
+        BC19.setCounter(`wastewater-level-name-${location}`, {
+            color: mapWVALLevel(wval, WVALDataColors),
+            value: mapWVALLevel(wval, WVALLevelNames),
+        });
+    });
 
     BC19.setCounter('total-cases-counter', data.totalCases);
     BC19.setCounter('deaths-counter', data.totalDeaths);
@@ -107,6 +155,7 @@ function setupBarGraphs() {
  *     * Skilled Nursing Facility Deaths
  *     * Current Inmate Cases
  *     * Total Staff Cases
+ *     * Wastewater Levels
  */
 function setupTimelineGraphs() {
     const graphData = BC19.graphData;
@@ -130,6 +179,85 @@ function setupTimelineGraphs() {
         min: BC19.defaultTimelineDomain[0],
         max: BC19.defaultTimelineDomain[1],
     };
+
+    ['chico', 'oroville'].forEach(location => {
+        BC19.setupBBGraph({
+            bindto: `#wastewater_levels_${location}_graph`,
+            size: {
+                height: BC19.graphSizes.STANDARD,
+            },
+            data: {
+                x: 'date',
+                color: (color, d) => {
+                    return mapWVALLevel(d.value, WVALDataColors);
+                },
+                //colors: BC19.colors,
+                columns: [
+                    graphData.dates,
+                    graphData.wastewater[location],
+                ],
+                names: {
+                    wval: 'Wastewater Viral Activity Levels',
+                },
+                type: 'bar',
+            },
+            axis: {
+                x: axisX,
+                y: {
+                    min: 0,
+                    max: BC19.getMaxY(Math.min(maxValues.wastewaterWVALs[location],
+                                               15),
+                                      tickCounts.STANDARD),
+                    padding: 0,
+                    tick: {
+                        stepSize: BC19.getStepSize(maxValues.wastewaterWVALs[location],
+                                                   tickCounts.STANDARD),
+                    },
+                },
+            },
+            bar: {
+                width: {
+                    ratio: 4,
+                },
+            },
+            grid: {
+                y: {
+                    lines: [
+                        {
+                            value: 8,
+                            text: 'Very High',
+                            position: 'start',
+                            class: '-is-severity-extreme',
+                        },
+                        {
+                            value: 4.500000000001,
+                            text: 'High',
+                            position: 'start',
+                            class: '-is-severity-critical',
+                        },
+                        {
+                            value: 3.000000000001,
+                            text: 'Moderate',
+                            position: 'start',
+                            class: '-is-severity-high',
+                        },
+                        {
+                            value: 1.500000000001,
+                            text: 'Low',
+                            position: 'start',
+                            class: '-is-severity-medium',
+                        },
+                        {
+                            value: 0,
+                            text: 'Very Low',
+                            position: 'start',
+                            class: '-is-severity-very-low',
+                        },
+                    ],
+                },
+            },
+        });
+    });
 
     BC19.setupBBGraph({
         bindto: '#total_cases_graph',
@@ -742,7 +870,7 @@ function setupTimelineGraphs() {
             names: {
                 vaccines_1st_dose_pct: 'Received 1 or More Doses',
                 vaccines_full_doses_pct: 'Fully Vaccinated',
-                vaccines_boosters_pct: 'Boosted [Discontinued]',
+                vaccines_boosters_pct: 'Boosted [Historical]',
             },
         },
         axis: {
@@ -816,7 +944,7 @@ function setupTimelineGraphs() {
             names: {
                 vaccines_1st_dose: 'Received 1 or More Doses',
                 vaccines_full_doses: 'Fully Vaccinated',
-                vaccines_boosters: 'Boosted [Discontinued]',
+                vaccines_boosters: 'Boosted [Historical]',
             },
         },
         axis: {
@@ -876,7 +1004,7 @@ function setupTimelineGraphs() {
             names: {
                 vaccines_1st_dose_rate: '1+ Doses The Past 7 Days',
                 vaccines_full_doses_rate: 'Fully-Vaccinated The Past 7 Days',
-                vaccines_boosters_rate: 'Boosted [Discontinued]',
+                vaccines_boosters_rate: 'Boosted [Historical]',
             },
             type: 'area',
         },
