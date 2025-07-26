@@ -118,7 +118,20 @@ def build_wastewater_levels(
                     anchor_windows[anchor_date] = None  # not enough data
                 else:
                     log_concs.sort()
-                    baseline = log_concs[int(len(log_concs) * 0.10)]
+
+                    percentile_index = len(log_concs) * 0.10
+                    lower = int(math.floor(percentile_index))
+                    upper = int(math.ceil(percentile_index))
+
+                    if lower == upper:
+                        baseline = log_concs[lower]
+                    else:
+                        frac = percentile_index - lower
+                        baseline = (
+                            (log_concs[lower] * (1 - frac)) +
+                            (log_concs[upper] * frac)
+                        )
+
                     std_dev = statistics.stdev(log_concs)
                     anchor_windows[anchor_date] = (baseline, std_dev)
 
