@@ -31,8 +31,8 @@ const WVALDataColors = {
     veryLow: 'green',
     low: '#009900',
     moderate: 'orange',
-    high: 'red',
-    veryHigh: 'purple',
+    high: '#AE0000',
+    veryHigh: '#BF2799',
 };
 
 
@@ -191,7 +191,6 @@ function setupTimelineGraphs() {
                 color: (color, d) => {
                     return mapWVALLevel(d.value, WVALDataColors);
                 },
-                //colors: BC19.colors,
                 columns: [
                     graphData.dates,
                     graphData.wastewater[location],

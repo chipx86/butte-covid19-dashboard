@@ -24,7 +24,7 @@ window.BC19 = {
         total_deaths: '#A81010',
         new_deaths: '#981000',
 
-        neg_results: '#E0EDFD',
+        neg_results: '#606D6D',
         pos_results: '#D85040',
         new_tests: '#C7CA9A',
         test_results: '#57A3FF',

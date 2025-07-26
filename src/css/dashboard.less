@@ -8,7 +8,8 @@
 
 
 body {
-  background: white;
+  background: #071426;
+  color: #AAAAAA;
   margin: 0;
   padding: 0;
   font-family: Sans-Serif;
@@ -28,7 +29,7 @@ body {
 
 a:link,
 a:visited {
-  color: blue;
+  color: lightblue;
   font-weight: bold;
   text-decoration: none;
 }
@@ -66,7 +67,27 @@ a:visited {
 }
 
 .bb-grid line {
-  stroke: #F1F1F1;
+  stroke: #333;
+}
+
+.bb-tooltip {
+  background: #333;
+  border-color: #333;
+  box-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 0.5);
+
+  td {
+    background: black;
+    border-left-color: #333;
+
+    &:first-child {
+      border-right-color: #333;
+    }
+  }
+
+  th {
+    background: #222;
+    color: #EEE;
+  }
 }
 
 
@@ -191,7 +212,9 @@ a:visited {
  * Counter graph.
  */
 .bc19-c-counter {
-  display: inline-block;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.5em;
   margin: 1.5em;
   text-align: center;
   vertical-align: top;
@@ -317,19 +340,19 @@ a:visited {
 
     &.-is-severity-medium {
       line {
-        stroke: yellow;
+        stroke: rgba(0, 153, 0, 0.4);
         stroke-dasharray: 3 3;
       }
 
       text {
-        fill: #6A6D0D;
+        fill: #009900;
         font-size: 12px;
       }
     }
 
     &.-is-severity-high {
       line {
-        stroke: orange;
+        stroke: rgba(255, 165, 0, 0.5);
         stroke-dasharray: 3 3;
       }
 
@@ -341,24 +364,24 @@ a:visited {
 
     &.-is-severity-critical {
       line {
-        stroke: red;
+        stroke: rgba(255, 0, 0, 0.4);
         stroke-dasharray: 3 3;
       }
 
       text {
-        fill: red;
+        fill: #ae0000;
         font-size: 12px;
       }
     }
 
     &.-is-severity-extreme {
       line {
-        stroke: purple;
+        stroke: rgba(191, 39, 153, 0.6);
         stroke-dasharray: 3 3;
       }
 
       text {
-        fill: purple;
+        fill: #BF2799;
         font-size: 12px;
       }
     }
@@ -417,8 +440,7 @@ a:visited {
   }
 
   &__footer {
-    background: #F6F6F6;
-    border-top: 1px #EEE solid;
+    background: rgba(0, 0, 0, 0.8);
     color: #666;
     margin-top: 2em;
     padding: 0.5em 0.5em 0.5em;
@@ -436,7 +458,7 @@ a:visited {
   }
 
   &__header {
-    background: linear-gradient(#DCF0FF, 80%, white);
+    /* background: linear-gradient(#DCF0FF, 80%, white); */
     border-top: 1px rgba(0, 0, 0, 0.7) solid;
     margin: 2em 0 2em 0;
     padding: 2em;
@@ -630,7 +652,7 @@ a:visited {
 
 
 .bc19-c-option-pane {
-  background: #DCEDFF;
+  background: black;
   position: fixed;
   bottom: 0;
   left: 0;
